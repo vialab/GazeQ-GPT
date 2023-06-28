@@ -3,8 +3,8 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
 using Tobii.Interaction;
-using Tobii.Interaction.Framework;
-using Tobii.Interaction.Model;
+//using Tobii.Interaction.Framework;
+//using Tobii.Interaction.Model;
 
 /*Integrate this into a C# project that is set up to use the Tobii SDK.
   It will send the Tobii input to your electron App over UDP.
@@ -63,7 +63,7 @@ namespace TobiiSDKServer
             eyePositionStream.EyePosition((eyeData) => SendEyeInput(udpClient, eyeData));
 
             // Read
-            Console.ReadKey();
+            Console.Read();
 
             // we will close the coonection to the Tobii Engine before exit.
             host.DisableConnection();
