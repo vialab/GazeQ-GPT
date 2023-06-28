@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useEffect, useState } from 'react';
 import * as d3 from "d3";   
 import RBFChain from "../js/RBFChain";
@@ -63,20 +63,23 @@ function reviver(key, value) {
     return value;
 }
 
+let complexityMap = JSON.parse(JSON.stringify(complexityData), reviver);
+let phrases = JSON.parse(JSON.stringify(phraseDefinitions), reviver);
 
 export default function Home() {
-    let wordScores = new Map();
-    let index = 0;
-    let rawCaptions = [];
     let [ questionData, setQuestion ] = useState("");
-    let complexityMap = JSON.parse(JSON.stringify(complexityData), reviver);
-    let phrases = JSON.parse(JSON.stringify(phraseDefinitions), reviver);
-    let [paused, setPaused] = React.useState(true);
-    let pause = true, forcePause = true, end = false, onQuestions = false;
-    let [videoTime, setVideoTime] = React.useState(-1);
+    let [ paused, setPaused ] = React.useState(true);
+    let [ videoTime, setVideoTime ] = React.useState(-1);
     let [ src, setSrc ] = React.useState("file:///src/assets/videos/The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.mp4");
     let [ track, setTrack ] = React.useState("file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt");
     let [ reload, setReload ] = React.useState(false);
+
+    let wordScores = useRef(new Map());
+    let frameScores = useRef(new Map());
+    let definitionScores = useRef(new Map());
+    let index = useRef(-1);
+    let rawCaptions = useRef([]);
+    let forcePause = useRef(true), end = useRef(false), onQuestions = useRef(false);
 
     function getCollocation(text) {
         let words = tokenize.extract(text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
@@ -84,6 +87,7 @@ export default function Home() {
 
         for (let i = 0; i < words.length - 1; i++) {
             let phrase = [words[i]];
+            let wordPhrase = [words[i]];
             let ifStop = removeStopwords([words[i]])[0];
             
             if (!ifStop) {
@@ -92,6 +96,7 @@ export default function Home() {
 
             for (let j = i; j < words.length - 1; j++) {
                 phrase.push(words[j + 1]);
+                wordPhrase.push(words[j + 1]);
                 let ifStop = removeStopwords([phrase[1]])[0];
 
                 if (!ifStop) {
@@ -104,18 +109,19 @@ export default function Home() {
                     let add = true;
 
                     for (let p of uniquePhrases) {
-                        if (phrase[0].includes(p)) {
+                        if (phrase[0].includes(p.join(" "))) {
                             uniquePhrases.delete(p);
                             break;
                         }
 
-                        if (p.includes(phrase[0])) {
+                        if (p.join(" ").includes(phrase[0])) {
                             add = false;
                             break;
                         }
                     }
-                    if (add)
-                        uniquePhrases.add(phrase[0]);
+                    if (add) {
+                        uniquePhrases.add([...wordPhrase]);
+                    }
                 }
             }
         }
@@ -123,38 +129,41 @@ export default function Home() {
     }
     
     let timerCallback = (t) => {
-        index = -1;
+        index.current = -1;
 
         if (t > 0) {
-            forcePause = false;
-            end = false;
+            forcePause.current = false;
+            end.current = false;
         }
 
-        for (let i = 0; i < rawCaptions.length; i++) {
-            let startTime = rawCaptions[i].data.start;
-            let endTime = rawCaptions[i].data.end;
+        for (let i = 0; i < rawCaptions.current.length; i++) {
+            let startTime = rawCaptions.current[i].data.start;
+            let endTime = rawCaptions.current[i].data.end;
 
             if (t * 1000 >= startTime && t * 1000 <= endTime) {
-                index = i;
+                index.current = i;
                 break;
             } else if (t * 1000 < startTime) {
                 break;
             }
         }
 
-        if (index >= 0 && rawCaptions[index]) {
+        if (index.current >= 0 && rawCaptions.current[index.current]) {
             // let filteredWords = words.map(word => removeStopwords([word])[0]);
-            let subTitle = rawCaptions[index].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
-            let uniquePhrases = getCollocation(rawCaptions[index].data.text);            
+            let subTitle = rawCaptions.current[index.current].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
+            let uniquePhrases = getCollocation(rawCaptions.current[index.current].data.text);
 
             d3.select("#definitionsContainer")
             .selectAll("div")
             .remove();
+            console.log(uniquePhrases);
             
             for (let phrase of uniquePhrases) {
+
                 d3.select("#definitionsContainer")
                 .append("div")
-                .html("<b>" + phrase + "</b>" + ": " + phrases.get(phrase).definitionPhrase.definition.toLowerCase())
+                .attr("collocation", JSON.stringify(phrase))
+                .html("<b>" + phrase.join(" ") + "</b>" + ": " + phrases.get(phrase.join(" ")).definitionPhrase.definition.toLowerCase())
                 .style("text-align", "center")
             }
         }
@@ -171,18 +180,23 @@ export default function Home() {
         //     .style("opacity", 0)
         //     .style("right", "-20%")
         // });
-        end = true;
-        forcePause = true;
-        onQuestions = true;
+        end.current = true;
+        forcePause.current = true;
+        onQuestions.current = true;
+
+        d3.select("#definitionsContainer")
+        .transition()
+        .style("right", "-20%");
 
         let sortScores = [];
 
-        for (let [word, scores] of wordScores) {
+        for (let [word, scores] of wordScores.current) {
             for (let [index, score] of scores) {
                 sortScores.push({word: word, index: index, wordIndex: score.wordIndex, score: score.score.reduce((a, b) => a + b, 0)});
             }
         }
         sortScores.sort((a, b) => b.score - a.score);
+        wordScores.current.clear();
         console.log(sortScores);
         
         let topWords = sortScores;
@@ -200,33 +214,33 @@ export default function Home() {
             }
 
             for (let time of questionTime) {
-                if (Math.abs(time - rawCaptions[word.index].data.start) < 60000) {
+                if (Math.abs(time - rawCaptions.current[word.index].data.start) < 60000) {
                     continue;
                 }
             }
             questionIndex.add(word.index);
-            questionTime.add(rawCaptions[word.index].data.start);
+            questionTime.add(rawCaptions.current[word.index].data.start);
 
-            let subtitle = rawCaptions[word.index].data.text.replace(/(?:\r\n|\r|\n)/g, ' ');
-            let startTime = rawCaptions[word.index].data.start;
-            let endTime = rawCaptions[word.index].data.end;
-            let startAllTime = rawCaptions[word.index].data.start;
-            let endAllTime = rawCaptions[word.index].data.end;
+            let subtitle = rawCaptions.current[word.index].data.text.replace(/(?:\r\n|\r|\n)/g, ' ');
+            let startTime = rawCaptions.current[word.index].data.start;
+            let endTime = rawCaptions.current[word.index].data.end;
+            let startAllTime = rawCaptions.current[word.index].data.start;
+            let endAllTime = rawCaptions.current[word.index].data.end;
             
             for (let i = word.index - 1; i >= 0; i--) {
-                subtitle = rawCaptions[i].data.text + " " + subtitle;
-                startAllTime = rawCaptions[i].data.start;
+                subtitle = rawCaptions.current[i].data.text + " " + subtitle;
+                startAllTime = rawCaptions.current[i].data.start;
 
-                if (startTime - rawCaptions[i].data.end > 3000) {
+                if (startTime - rawCaptions.current[i].data.end > 3000) {
                     break;
                 }
             }
             
-            for (let i = word.index + 1; i < rawCaptions.length; i++) {
-                subtitle += rawCaptions[i].data.text.replace(/(?:\r\n|\r|\n)/g, ' ') + " ";
-                endAllTime = rawCaptions[i].data.end;
+            for (let i = word.index + 1; i < rawCaptions.current.length; i++) {
+                subtitle += rawCaptions.current[i].data.text.replace(/(?:\r\n|\r|\n)/g, ' ') + " ";
+                endAllTime = rawCaptions.current[i].data.end;
 
-                if (rawCaptions[i].data.start - endTime > 3000) {
+                if (rawCaptions.current[i].data.start - endTime > 3000) {
                     break;
                 }
             }
@@ -262,7 +276,7 @@ export default function Home() {
         // for (let i = 0; i < questionData.length; i++) {
         //     let subtitle = questionData[i].subtitle;
         //     let collocation = questionData[i].collocation;
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 1; i++) {
             let subtitle = `It could be some new kind of personal water
             purifier, or makeup that lasts as long as you want
             it to, or a revolutionary clothing material.`;
@@ -271,15 +285,15 @@ export default function Home() {
             generateQuestion(subtitle, collocation)
             .then(qData => {
                 qData.subtitle = subtitle;
-                // qData.startTime = Math.random() * 5 + 1;
-                // qData.endTime = Math.random() * 5 + 6;
-                qData.startTime = questionData[i].startTime / 1000;
-                qData.endTime = questionData[i].endTime / 1000;
+                qData.startTime = Math.random() * 5 + 1;
+                qData.endTime = Math.random() * 5 + 6;
+                // qData.startTime = questionData[i].startTime / 1000;
+                // qData.endTime = questionData[i].endTime / 1000;
 
                 questions.push(qData);
                 console.log(qData);
 
-                if (questionData.length === questions.length) {
+                if (1 === questions.length) {
                     setQuestion(questions);
                 }
                 // if (questionData) 
@@ -289,12 +303,18 @@ export default function Home() {
     };
 
     let questionEndCallback = () => {
-        forcePause = false;
-        onQuestions = false;
+        console.log("question end");
+        forcePause.current = false;
+        onQuestions.current = false;
+        console.log(onQuestions)
     };
 
     let clickCallback = (ifPaused) => {
-        forcePause = ifPaused;
+        forcePause.current = ifPaused;
+
+        if (!ifPaused) {
+            end.current = false;
+        }
     };
 
     useEffect(() => {
@@ -305,11 +325,11 @@ export default function Home() {
         fetch('file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt')
         .then(response => response.text())
         .then(async data => {
-            rawCaptions = parseSync(data).filter(n => n.type === "cue");
+            rawCaptions.current = parseSync(data).filter(n => n.type === "cue");
             // let phraseList = [];
 
-            // for (let i = 0; i < rawCaptions.length; i++) {
-            //     let words = tokenize.extract(rawCaptions[i].data.text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
+            // for (let i = 0; i < rawCaptions.current.length; i++) {
+            //     let words = tokenize.extract(rawCaptions.current[i].data.text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
             //     phraseList.push(words);
             //     let filteredWords = words.map(word => removeStopwords([word])[0]);
             //     let phrase = [];
@@ -351,8 +371,8 @@ export default function Home() {
 
             // let uniqueWords = new Set();
             
-            // for (let i = 0; i < rawCaptions.length; i++) {
-            //     let words = tokenize.extract(rawCaptions[i].data.text, { toLowercase: true, regex: [tokenize.words] });
+            // for (let i = 0; i < rawCaptions.current.length; i++) {
+            //     let words = tokenize.extract(rawCaptions.current[i].data.text, { toLowercase: true, regex: [tokenize.words] });
             //     words = removeStopwords(words);
 
             //     for (let word of words) {
@@ -386,24 +406,32 @@ export default function Home() {
         });
         heatmap.setData({min: 0, max: 0, data: []});
 
+        
+
+        return () => {
+            d3.select(".heatmap-canvas").remove();
+        };
+    }, []);
+
+    useEffect(() => {
         let oneeuroX = new OneEuroFilter(1 / 33, 0.0008, 0.001, 2);
         let oneeuroY = new OneEuroFilter(1 / 33, 0.0008, 0.001, 2);
-        let oneeuroFixationX = new OneEuroFilter(1 / 33, 0.0008, 0.001, 2);
-        let oneeuroFixationY = new OneEuroFilter(1 / 33, 0.0008, 0.001, 2);
-        let rbfchain = new RBFChain(0.01, 0.95, 0.3, 1.0);
+        let rbfchain = new RBFChain(0.01, 0.95, 0.175, 1.0);
+        let rbfchainFrame = new RBFChain(0.01, 0.95, 0.665, 1.0);
         let lastTime = null, currentTime = null, dt = null;
         let timeout = null;
+        let transition = false;
         let userCenterRadius = 60 * Math.tan(2.5 * Math.PI/180) * 0.393701 * 127 / 2;
 
-        ipcRenderer.on('fixation-pos', (event, arg) => {
-            let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
-            let y = oneeuroFixationY.filter(arg.y, arg.timestamp);
+        // ipcRenderer.on('fixation-pos', (event, arg) => {
+        //     let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
+        //     let y = oneeuroFixationY.filter(arg.y, arg.timestamp);
 
-            d3.select("#fixationCursor")
-            .style("width", userCenterRadius * 2 + "px")
-            .style("height", userCenterRadius * 2 + "px")
-            .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
-        });
+        //     d3.select("#fixationCursor")
+        //     .style("width", userCenterRadius * 2 + "px")
+        //     .style("height", userCenterRadius * 2 + "px")
+        //     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
+        // });
 
         ipcRenderer.on('gaze-pos', (event, arg) => {
             currentTime = new Date().getTime();
@@ -411,7 +439,6 @@ export default function Home() {
             lastTime = currentTime;            
 
             if (dt) {
-                
                 let x = oneeuroX.filter(arg.x, currentTime);
                 let y = oneeuroY.filter(arg.y - 0, currentTime);
                 let nodes = d3.selectAll(".vjs-text-track-cue div span").nodes();
@@ -424,9 +451,11 @@ export default function Home() {
                     .style("height", userCenterRadius * 2 + "px")
                     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
 
-                    let input_data = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))
-                    let probability = rbfchain.add_element(input_data)
+                    let input_data = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                    let probability = rbfchain.add_element(input_data);
                     let is_fixation = probability >= rbfchain.delta;
+                    let probabilityFrame = rbfchainFrame.add_element(input_data);
+                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.delta;
 
                     // d3.select("body")
                     // .append("div")
@@ -440,54 +469,119 @@ export default function Home() {
                     // .style("pointer-events", "none")
                     // .style("background-color", is_fixation ? "red" : "green")
                     // .style("z-index", 999)
+                    
+                    if (is_fixationFrame) {
+                        let definitions = d3.selectAll("#definitionsContainer div").nodes();
+                        let definitionInterest = null;
 
-                    if (is_fixation) {
-                        let bbox = cursor.node().getBoundingClientRect();
-                        let circle = {x: bbox.x + userCenterRadius, y: bbox.y + userCenterRadius, r: userCenterRadius};
+                        for (let definition of definitions) {
+                            let definitionBBox = definition.getBoundingClientRect();
+                            let definitionArea = definitionBBox.x <= x && x <= definitionBBox.x + definitionBBox.width && definitionBBox.y <= y && y <= definitionBBox.y + definitionBBox.height;
 
-                        for (let wordNode of nodes) {
-                            d3.select(wordNode).style("background-color", null);
-                            let wordBbox = wordNode.getBoundingClientRect();
-                            let text = tokenize.extract(d3.select(wordNode).text(), { toLowercase: true, regex: [tokenize.words] });
-                            
-                            if (text instanceof Array && rectCircleColliding(circle, wordBbox)) {
-                                let d = Math.pow(wordBbox.x + wordBbox.width / 2 - circle.x, 2) + Math.pow(wordBbox.y + wordBbox.height / 2 - circle.y, 2);
-                                let wordIndex = 0;
+                            if (definitionArea) {
+                                definitionInterest = d3.select(definition).attr("collocation");
+                                break;
+                            }
+                        }
 
-                                for (let word of text) {                                    
-                                    if (complexityMap.has(word)) {
-                                        let score = (1 / nodes.length) * Math.log10(2) * Math.sqrt(dt) * (1 / (d + 1)) * (complexityMap.get(word) / 5) * 1000;
+                        if (definitionInterest) {
+                            let words = JSON.parse(definitionInterest);
+                            let wordIndex = 0;
 
-                                        if (wordScores.has(word)) {
-                                            if (wordScores.get(word).has(index)) {
-                                                wordScores.get(word).get(index).score.push(score)
-                                            } else {
-                                                wordScores.get(word).set(index, {wordIndex: wordIndex, score: [score]});
-                                            }
+                            for (let word of words) {
+                                if (complexityMap.has(word)) {
+                                    let score = (1 / words.length) * Math.log10(2) * Math.sqrt(dt) * (complexityMap.get(word) / 5) * 1000;
+
+                                    if (definitionScores.current.has(word)) {
+                                        if (definitionScores.current.get(word).has(index.current)) {
+                                            definitionScores.current.get(word).get(index.current).score.push(score)
                                         } else {
-                                            wordScores.set(word, new Map().set(index, {wordIndex: wordIndex, score: [score]}));
+                                            definitionScores.current.get(word).set(index.current, {wordIndex: wordIndex, score: [score]});
                                         }
+                                    } else {
+                                        definitionScores.current.set(word, new Map().set(index.current, {wordIndex: wordIndex, score: [score]}));
                                     }
-                                    wordIndex++;
+                                }
+                                wordIndex++;
+                            }
+                        }
+                    }
+
+                    if (is_fixation || is_fixationFrame) {
+                        if (is_fixation)
+                            d3.select("#fixationCursor")
+                            .style("width", userCenterRadius * 2 + "px")
+                            .style("height", userCenterRadius * 2 + "px")
+                            .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
+
+                        if (index.current > -1) {
+                            let bbox = cursor.node().getBoundingClientRect();
+                            let circle = {x: bbox.x + userCenterRadius, y: bbox.y + userCenterRadius, r: userCenterRadius};
+                            
+                            let player = d3.select("video").node();
+                            let playerBBox = player.getBoundingClientRect();
+                            let playerArea = playerBBox.x <= x && x <= playerBBox.x + playerBBox.width && playerBBox.y <= y && y <= playerBBox.y + playerBBox.height;
+
+                            for (let wordNode of nodes) {
+                                d3.select(wordNode).style("background-color", null);
+                                let wordBbox = wordNode.getBoundingClientRect();
+                                let text = tokenize.extract(d3.select(wordNode).text(), { toLowercase: true, regex: [tokenize.words] });
+
+                                if (text instanceof Array && playerArea && is_fixation) {
+                                    let wordIndex = 0;
+
+                                    for (let word of text) { 
+                                        if (complexityMap.has(word)) {
+                                            let frameScore = Math.log10(nodes.length + 1) * Math.sqrt(dt) * (complexityMap.get(word) / 5) * 1000;
+
+                                            if (frameScores.current.has(word)) {
+                                                if (frameScores.current.get(word).has(index.current)) {
+                                                    frameScores.current.get(word).get(index.current).score.push(frameScore)
+                                                } else {
+                                                    frameScores.current.get(word).set(index.current, {wordIndex: wordIndex, score: [frameScore]});
+                                                }
+                                            } else {
+                                                frameScores.current.set(word, new Map().set(index.current, {wordIndex: wordIndex, score: [frameScore]}));
+                                            }
+                                        }
+                                        wordIndex++;
+                                    }
+                                }
+                                
+                                if (text instanceof Array && is_fixationFrame && rectCircleColliding(circle, wordBbox)) {
+                                    let d = Math.pow(wordBbox.x + wordBbox.width / 2 - circle.x, 2) + Math.pow(wordBbox.y + wordBbox.height / 2 - circle.y, 2);
+                                    let wordIndex = 0;
+
+                                    for (let word of text) {                                    
+                                        if (complexityMap.has(word)) {
+                                            let score = (1 / nodes.length) * Math.log10(2) * Math.sqrt(dt) * (1 / (d + 1)) * (complexityMap.get(word) / 5) * 1000;
+
+                                            if (wordScores.current.has(word)) {
+                                                if (wordScores.current.get(word).has(index.current)) {
+                                                    wordScores.current.get(word).get(index.current).score.push(score)
+                                                } else {
+                                                    wordScores.current.get(word).set(index.current, {wordIndex: wordIndex, score: [score]});
+                                                }
+                                            } else {
+                                                wordScores.current.set(word, new Map().set(index.current, {wordIndex: wordIndex, score: [score]}));
+                                            }
+                                        }
+                                        wordIndex++;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    let player = d3.select("video").node();
                     let definitionsContainer = d3.select("#definitionsContainer").node();
-                    let playerBBox = player.getBoundingClientRect();
                     let definitionsBBox = definitionsContainer.getBoundingClientRect();
-                    let inAreaOfInterest = 
-                    // (playerBBox.x <= x && x <= playerBBox.x + playerBBox.width && playerBBox.y <= y && y <= playerBBox.y + playerBBox.height) &&
-                    !(window.outerWidth * 0.95 <= x || definitionsBBox.x <= x);
+                    let inAreaOfInterest = !(window.outerWidth * 0.95 <= x || definitionsBBox.x <= x);
 
-                    if (!end && !onQuestions) {
-                        if (inAreaOfInterest && document.hasFocus() && pause && !forcePause) {
+                    if (!end.current && !onQuestions.current) {
+                        if (inAreaOfInterest && document.hasFocus() && paused && !forcePause.current) {
                             if (!timeout) {
-                                timeout = setInterval(() => {
-                                    let caption = rawCaptions[index];
-                                    pause = false;
+                                timeout = setTimeout(() => {
+                                    let caption = rawCaptions.current[index.current];
         
                                     d3.select("#definitionsContainer")
                                     .transition()
@@ -500,18 +594,32 @@ export default function Home() {
                                         setVideoTime(-1);
                                     }
                                     setPaused(false);
+                                    timeout = null;
                                 }, 500);
                             }
-                        } else if (((!inAreaOfInterest || !document.hasFocus()) && !pause) || (forcePause && !pause)) {
-                            clearInterval(timeout);
+                        } else if (((!inAreaOfInterest || !document.hasFocus()) && !paused) || (forcePause.current && !paused)) {
+                            clearTimeout(timeout);
                             timeout = null;
                             setPaused(true);
-                            pause = true;
     
-                            if (!forcePause && document.hasFocus()) {
+                            if (!forcePause.current && document.hasFocus()) {
                                 d3.select("#definitionsContainer")
                                 .transition()
                                 .style("right", "0%");
+                            }
+                        } else if (forcePause.current && document.hasFocus() && !transition) {
+                            transition = true;
+
+                            if (inAreaOfInterest) {
+                                d3.select("#definitionsContainer")
+                                .transition()
+                                .style("right", "-20%")
+                                .on("end", () => transition = false);
+                            } else {
+                                d3.select("#definitionsContainer")
+                                .transition()
+                                .style("right", "0%")
+                                .on("end", () => transition = false);
                             }
                         }
                     }
@@ -521,11 +629,11 @@ export default function Home() {
 
                     //     if (text instanceof Array) {
                     //         for (let word of text) {
-                    //             if (wordScores.has(word) && wordScores.get(word).has(index)) {
-                    //                 let score = wordScores.get(word).get(index).reduce((a, b) => a + b, 0);
+                    //             if (wordScores.current.has(word) && wordScores.current.get(word).has(index.current)) {
+                    //                 let score = wordScores.current.get(word).get(index.current).reduce((a, b) => a + b, 0);
                     //                 let totalScores = [];
 
-                    //                 for (let [_, value1] of wordScores) {
+                    //                 for (let [_, value1] of wordScores.current) {
                     //                     for (let [_, value] of value1) {
                     //                         totalScores.push(value.reduce((a, b) => a + b, 0));
                     //                     }
@@ -544,15 +652,16 @@ export default function Home() {
                     clearInterval(timeout);
                     timeout = null;
                     setPaused(true);
-                    pause = true;
                 }
             }
         });
-
+        
         return () => {
-            d3.select(".heatmap-canvas").remove();
-        };
-    }, []);
+            clearInterval(timeout);
+            timeout = null;
+            ipcRenderer.removeAllListeners();
+        }
+    }, [paused]);
 
     let trim = (start, end) => {
         let src = videojs("video").src().split("#")[0];

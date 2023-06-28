@@ -38,6 +38,10 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
 
                     correct = true;
                     submittedAnswers.clear();
+                } else {
+                    d3.select(".additional")
+                    .transition()
+                    .style("opacity", "1")
                 }
             } else {
                 d3.select(ref.current)
@@ -53,12 +57,17 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
         if (index < question.length - 1) {
             setIndex(index + 1);
             d3.selectAll(".bottom, .top")
+            .transition()
             .style("opacity", "0")
             .style("pointer-events", "none");
 
             d3.selectAll(".choice")
             .style("background-color", "white")
             .style("color", "black");
+
+            d3.select(".additional")
+            .transition()
+            .style("opacity", "0");
         } else {
             d3.select(".questionContainer")
             .transition()
@@ -81,7 +90,7 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
         let startTimes = [], endTimes = [];
         let subtitles = [];
         
-        d3.selectAll(".bottom, .top")
+        d3.selectAll(".bottom, .top, .additional")
         .style("opacity", "0")
         .style("pointer-events", "none");
 
@@ -192,6 +201,9 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
                     <div ref={refD} className={"choice"} onClick={() => checkChoice("D", refD)}>
                         {choiceD[index]}
                     </div>
+                </div>
+                <div className="additional">
+                    More than one answer is correct
                 </div>
 
                 <div className={"bottom"}>

@@ -40,9 +40,10 @@
   "main": "main.js",
   "scripts": {
     "prod": "cross-env NODE_ENV=production webpack --mode production --config webpack.build.config.js && electron --noDevServer .",
-    "start": "cross-env NODE_ENV=development webpack serve --hot --host 0.0.0.0 --config=./webpack.dev.config.js --mode development",
+    "dev": "cross-env NODE_ENV=development webpack serve --hot --host 0.0.0.0 --config=./webpack.dev.config.js --mode development",
     "build": "cross-env NODE_ENV=production webpack --config webpack.build.config.js --mode production",
     "package": "npm run build",
+    "start": "concurrently -k \"cd .\\Tobii Server\\ && TobiiServer.exe\" \"npm run dev\"",
     "postpackage": "electron-packager ./ --out=./builds"
   },
   "dependencies": {
@@ -64,6 +65,7 @@
     "@babel/preset-env": "^7.22.5",
     "@babel/preset-react": "^7.22.5",
     "babel-loader": "^9.1.2",
+    "concurrently": "^8.2.0",
     "cross-env": "^7.0.3",
     "css-loader": "^6.8.1",
     "electron": "^25.1.1",

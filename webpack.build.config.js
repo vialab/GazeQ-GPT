@@ -33,10 +33,7 @@ module.exports = {
         use: [{ loader: 'file-loader?name=font/[name]__[hash:base64:5].[ext]' }],
         include: defaultInclude
       },
-      {
-        test: /\.mp4?$/,
-        loader: 'file-loader'
-      }
+      { test: /\.(mp4)$/, use: ['url-loader', 'file-loader'] },
     ]
   },
   target: 'electron-renderer',
