@@ -1,0 +1,163 @@
+.questionContainer {
+    width: 0%;
+    padding: 0px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.questionContainer .questionForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 25vw;
+    height: 100%;
+    background-color: white;
+    border-radius: 10px;
+    padding: 10px;
+    user-select: none;
+    overflow: hidden;
+    color: white;
+    background-color: rgba(57, 57, 58, 0.5);
+    backdrop-filter: saturate(180%) blur(5px);
+    box-shadow: inset 0 0px 20px 50px hsla(0, 0%, 100%, 0.1);
+}
+
+.questionContainer .question {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.questionContainer .choices {
+    display: grid;
+    overflow: hidden;
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    grid-column-gap: 5px;
+    grid-row-gap: 5px;
+    width: 100%;
+    justify-content: center;
+    align-content: center;
+}
+
+.questionContainer .choices .choice {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.round {
+    border: 2px solid #fff;
+    width: 80px;
+    height: 80px;
+    border-radius: 100%;
+    margin: 20px;
+    position: relative;
+    background: transparent;
+    cursor: pointer;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#cta {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arrow {
+    margin-left: 0px;
+    width: 20px;
+    height: 30px;
+    background-size: cover;
+    left: 30%;
+}
+
+.next {
+    background-image: url(data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHN0eWxlPi5zdDB7ZmlsbDojZmZmfTwvc3R5bGU+PHBhdGggY2xhc3M9InN0MCIgZD0iTTMxOS4xIDIxN2MyMC4yIDIwLjIgMTkuOSA1My4yLS42IDczLjdzLTUzLjUgMjAuOC03My43LjZsLTE5MC0xOTBjLTIwLjEtMjAuMi0xOS44LTUzLjIuNy03My43UzEwOSA2LjggMTI5LjEgMjdsMTkwIDE5MHoiLz48cGF0aCBjbGFzcz0ic3QwIiBkPSJNMzE5LjEgMjkwLjVjMjAuMi0yMC4yIDE5LjktNTMuMi0uNi03My43cy01My41LTIwLjgtNzMuNy0uNmwtMTkwIDE5MGMtMjAuMiAyMC4yLTE5LjkgNTMuMi42IDczLjdzNTMuNSAyMC44IDczLjcuNmwxOTAtMTkweiIvPjwvc3ZnPg==);
+}
+
+@keyframes bounceAlpha {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    25% {
+        opacity: 0;
+        transform: translateX(100%) scale(0.5);
+    }
+    26% {
+        opacity: 0;
+        transform: translateX(-100%) scale(0.5);
+    }
+    55% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.round.animated .arrow {
+    animation-name: bounceAlpha;
+    animation-duration: 1.4s;
+    animation-iteration-count: 1;
+    animation-timing-function: linear;
+}
+
+.round.animated .arrow.primera {
+    animation-name: bounceAlpha;
+    animation-duration: 1.4s;
+    animation-delay: 0.1s;
+    animation-iteration-count: 1;
+    animation-timing-function: linear;
+}
+
+.top, .bottom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+    height: auto;
+    margin: 20px;
+    position: absolute;
+    bottom: 0;
+}
+
+.top {
+    top: 0;
+    bottom: auto;
+    text-align: center;
+}
+
+.top p {
+    margin: 0;
+}
+
+.review {
+    border: #fff solid 2px;
+    padding: 10px;
+    text-align: center;
+    border-radius: 10px;
+    color: #fff;
+}
+
+.review:hover div {
+    color: black;
+}
+
+.review:hover {
+    background: white;
+    cursor: pointer;
+}

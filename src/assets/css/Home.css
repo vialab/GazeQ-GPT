@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');
+
+
+html,
+body {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    background: #FFFFFC;
+    font-family: "Raleway", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#root, main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    --gradient-from: 0 62 107;
+    --gradient-to: 242 112 35;
+    background: linear-gradient(to top, rgba(255, 255, 252) 0, hsla(0, 0%, 100%, 0) 100%), linear-gradient(135deg, rgb(var(--gradient-from, 85 85 85) / 0.5) 0%, rgb(var(--gradient-to, 85 85 85) / 0.5) 150%);
+}
+
+main canvas {
+    pointer-events: none;
+}
+
+#container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    position: fixed;
+    gap: 20px;
+}
+
+#gazeCursor, #fixationCursor {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+    pointer-events: none;
+    box-shadow: 0 0 50px 0px #fff, -10px 0 80px 0px #f0f, 10px 0 80px 0px #0ff;
+    z-index: 999;
+}
+
+#fixationCursor {
+    width: 25px;
+    height: 25px;
+    border: black solid 1px;
+    box-shadow: none;
+}
+
+#definitionsContainer {
+    width: 20%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+    position: absolute;
+    top: 0;
+    right: -20%;
+    background-color: rgba(255, 255, 255, .5);
+    backdrop-filter: saturate(180%) blur(5px);
+    box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
+    pointer-events: none;
+}
+
+#definitionsContainer div {
+    width: 90%;
+    padding: 10px;
+    border: 1px solid rgba(119, 119, 119, 0.425);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, .5);
+    backdrop-filter: saturate(180%) blur(5px);
+    box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
+}

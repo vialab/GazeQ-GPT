@@ -1,0 +1,148 @@
+
+@import "../../../node_modules/video.js/dist/video-js.css";
+@import "../../../node_modules/@videojs/themes/dist/fantasy/index.css";
+
+.video-js.vjs-theme-fantasy {
+    width: 70% !important;
+    height: auto!important;
+    aspect-ratio: 16/9 !important;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.video-js.vjs-theme-fantasy {
+    --vjs-theme-fantasy--primary: #f27023;
+    --vjs-theme-fantasy--secondary: #fff;
+    background-color: #fff;
+}
+
+.vjs-subs-caps-button, .vjs-picture-in-picture-control {
+    display: none !important;
+}
+
+.vjs-theme-fantasy .vjs-volume-panel {
+    order: 0;
+}
+
+.vjs-theme-fantasy .vjs-play-progress {
+    background-color: var(--vjs-theme-fantasy--secondary)
+}
+
+.video-js .vjs-load-progress {
+    background: rgb(242, 112, 35);
+}
+
+.video-js .vjs-load-progress div {
+    background: transparent;
+}
+
+.video-js .vjs-control-bar {
+    flex-wrap: wrap;
+    background-color: transparent;
+}
+
+.vjs-gradient {
+    left: 0px;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.45) 40%, rgba(0, 0, 0, 0));
+    bottom: 0px;
+    height: 10em;
+}
+
+.video-js .vjs-progress-holder {
+    display: flex;
+    align-items: center;
+    height: 0.1em;
+}
+
+.video-js .vjs-progress-holder .vjs-play-progress, .video-js .vjs-progress-holder:hover {
+    height: 0.3em;
+}
+
+.video-js .vjs-current-time, .video-js .vjs-duration, .vjs-time-divider {
+    display: block;
+    font-size: 1.5em;
+    z-index: 1;
+}
+
+.vjs-time-divider {
+    padding: 0 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.vjs-theme-fantasy .vjs-big-play-button {
+    outline: none;
+    color: var(--vjs-theme-fantasy--secondary);
+}
+
+.video-js .vjs-big-play-button .vjs-icon-placeholder:before {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.vjs-theme-fantasy.vjs-big-play-button:focus, .vjs-theme-fantasy:hover .vjs-big-play-button {
+    color: var(--vjs-theme-fantasy--primary);
+}
+
+.vjs-theme-fantasy .vjs-play-control .vjs-icon-placeholder:before, .vjs-theme-fantasy .vjs-play-control:hover .vjs-icon-placeholder:before {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    top: 0;
+    left: 0;
+}
+
+.vjs-theme-fantasy .vjs-progress-control {
+    font-size: 14px;
+    width: 100%;
+    height: 0;
+    order: -1;
+}
+
+.video-js .vjs-fullscreen-control {
+    position: relative;
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 3px;
+    width: 30px;
+    height: 25px;
+    margin: auto;
+    margin-right: 15px;
+}
+
+.video-js .vjs-fullscreen-control .vjs-icon-placeholder:before {
+    top: initial;
+    bottom: 0;
+    content: "";
+    width: 10px;
+    height: 7px;
+    background: rgb(255, 255, 255);
+    border-top-right-radius: 2px;
+}
+
+.video-js .vjs-fullscreen-control[title="Exit Fullscreen"] {
+    background: rgb(255, 255, 255);
+}
+
+.video-js .vjs-fullscreen-control[title="Exit Fullscreen"] .vjs-icon-placeholder:before {
+    content: "";
+    top: 0;
+    bottom: initial;
+    left: initial;
+    right: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 2px;
+    background: var(--vjs-theme-fantasy--primary);
+}
+
+.vjs-text-track-cue div {
+    background-color: rgba(0, 0, 0, 0.7)!important;
+}
