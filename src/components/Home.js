@@ -11,9 +11,6 @@ import { ipcRenderer } from "electron";
 import { generateQuestion, getComplexity, getPhrase, parsePhrase } from "../js/OpenAIUtils";
 import OneEuroFilter from "../js/oneeuro.js";
 import "../assets/css/Home.css";
-import * as complexityData from "../assets/processedSubtitles/1.json";
-import * as phraseDefinitions from "../assets/processedSubtitles/9.json";
-import Header from "./Header";
 import Player from "./Player";
 import QuestionForm from "./QuestionForm";
 import videojs from "video.js";
@@ -63,16 +60,59 @@ function reviver(key, value) {
     return value;
 }
 
-let complexityMap = JSON.parse(JSON.stringify(complexityData), reviver);
-let phrases = JSON.parse(JSON.stringify(phraseDefinitions), reviver);
+function getCollocation(text, phrases) {
+    let words = tokenize.extract(text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
+    let uniquePhrases = new Set();
 
-export default function Home() {
+    for (let i = 0; i < words.length - 1; i++) {
+        let phrase = [words[i]];
+        let wordPhrase = [words[i]];
+        let ifStop = removeStopwords([words[i]])[0];
+        
+        if (!ifStop) {
+            continue;
+        }
+
+        for (let j = i; j < words.length - 1; j++) {
+            phrase.push(words[j + 1]);
+            wordPhrase.push(words[j + 1]);
+            let ifStop = removeStopwords([phrase[1]])[0];
+
+            if (!ifStop) {
+                phrase = [phrase[0] + " " + phrase[1]];
+                continue;
+            }
+            phrase = [phrase[0] + " " + phrase[1]];
+
+            if (phrases.has(phrase[0]) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
+                let add = true;
+
+                for (let p of uniquePhrases) {
+                    if (phrase[0].includes(p.join(" "))) {
+                        uniquePhrases.delete(p);
+                        break;
+                    }
+
+                    if (p.join(" ").includes(phrase[0])) {
+                        add = false;
+                        break;
+                    }
+                }
+                if (add) {
+                    uniquePhrases.add([...wordPhrase]);
+                }
+            }
+        }
+    }
+    return uniquePhrases;
+}
+
+export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, endCallback }) {
     let [ questionData, setQuestion ] = useState("");
     let [ paused, setPaused ] = React.useState(true);
     let [ videoTime, setVideoTime ] = React.useState(-1);
-    let [ src, setSrc ] = React.useState("file:///src/assets/videos/The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.mp4");
-    let [ track, setTrack ] = React.useState("file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt");
-    let [ reload, setReload ] = React.useState(false);
+    let [ src, setSrc ] = React.useState(srcInit);
+    let [ track, setTrack ] = React.useState(trackInit);
 
     let wordScores = useRef(new Map());
     let frameScores = useRef(new Map());
@@ -80,53 +120,8 @@ export default function Home() {
     let index = useRef(-1);
     let rawCaptions = useRef([]);
     let forcePause = useRef(true), end = useRef(false), onQuestions = useRef(false);
-
-    function getCollocation(text) {
-        let words = tokenize.extract(text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
-        let uniquePhrases = new Set();
-
-        for (let i = 0; i < words.length - 1; i++) {
-            let phrase = [words[i]];
-            let wordPhrase = [words[i]];
-            let ifStop = removeStopwords([words[i]])[0];
-            
-            if (!ifStop) {
-                continue;
-            }
-
-            for (let j = i; j < words.length - 1; j++) {
-                phrase.push(words[j + 1]);
-                wordPhrase.push(words[j + 1]);
-                let ifStop = removeStopwords([phrase[1]])[0];
-
-                if (!ifStop) {
-                    phrase = [phrase[0] + " " + phrase[1]];
-                    continue;
-                }
-                phrase = [phrase[0] + " " + phrase[1]];
-
-                if (phrases.has(phrase[0]) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
-                    let add = true;
-
-                    for (let p of uniquePhrases) {
-                        if (phrase[0].includes(p.join(" "))) {
-                            uniquePhrases.delete(p);
-                            break;
-                        }
-
-                        if (p.join(" ").includes(phrase[0])) {
-                            add = false;
-                            break;
-                        }
-                    }
-                    if (add) {
-                        uniquePhrases.add([...wordPhrase]);
-                    }
-                }
-            }
-        }
-        return uniquePhrases;
-    }
+    let complexityMap = JSON.parse(JSON.stringify(complexityData), reviver);
+    let phrases = JSON.parse(JSON.stringify(phraseDefinitions), reviver);
     
     let timerCallback = (t) => {
         index.current = -1;
@@ -134,6 +129,7 @@ export default function Home() {
         if (t > 0) {
             forcePause.current = false;
             end.current = false;
+            setPaused(false);
         }
 
         for (let i = 0; i < rawCaptions.current.length; i++) {
@@ -151,35 +147,23 @@ export default function Home() {
         if (index.current >= 0 && rawCaptions.current[index.current]) {
             // let filteredWords = words.map(word => removeStopwords([word])[0]);
             let subTitle = rawCaptions.current[index.current].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
-            let uniquePhrases = getCollocation(rawCaptions.current[index.current].data.text);
+            let uniquePhrases = getCollocation(rawCaptions.current[index.current].data.text, phrases);
 
             d3.select("#definitionsContainer")
             .selectAll("div")
             .remove();
-            console.log(uniquePhrases);
             
             for (let phrase of uniquePhrases) {
-
                 d3.select("#definitionsContainer")
                 .append("div")
                 .attr("collocation", JSON.stringify(phrase))
-                .html("<b>" + phrase.join(" ") + "</b>" + ": " + phrases.get(phrase.join(" ")).definitionPhrase.definition.toLowerCase())
+                .html("<b>" + phrase.join(" ") + "</b>" + "<span><p>" + phrases.get(phrase.join(" ")).definitionPhrase.definition.toLowerCase() + "</p></span>")
                 .style("text-align", "center")
             }
         }
     };
 
     let playerEndCallback = () => {
-        // d3.select("#definitionsContainer")
-        // .transition()
-        // .duration(500)
-        // .style("opacity", 0)
-        // .style("right", "-20%")
-        // .on("end", () => {
-        //     d3.select("#definitionsContainer")
-        //     .style("opacity", 0)
-        //     .style("right", "-20%")
-        // });
         end.current = true;
         forcePause.current = true;
         onQuestions.current = true;
@@ -202,9 +186,9 @@ export default function Home() {
         let topWords = sortScores;
         let questions = [];
         let collocationQs = [];
+        let questionData = [];
         let questionIndex = new Set();
         let questionTime = new Set();
-        let questionData = [];
 
         for (let i = 0; i < topWords.length; i++) {
             let word = topWords[i];
@@ -245,7 +229,7 @@ export default function Home() {
                 }
             }
 
-            let collocations = getCollocation(subtitle);
+            let collocations = getCollocation(subtitle, phrases);
             let collocation = word.word;
             // let occurence = 0;
 
@@ -303,10 +287,12 @@ export default function Home() {
     };
 
     let questionEndCallback = () => {
-        console.log("question end");
         forcePause.current = false;
         onQuestions.current = false;
-        console.log(onQuestions)
+
+        if (endCallback instanceof Function) {
+            endCallback();
+        }
     };
 
     let clickCallback = (ifPaused) => {
@@ -314,15 +300,44 @@ export default function Home() {
 
         if (!ifPaused) {
             end.current = false;
+            setPaused(false);
         }
     };
 
+    
+    let trim = (start, end) => {
+        let src = videojs("video").src().split("#")[0];
+
+        setSrc(src + "#t=" + start + "," + end);
+        videojs("video").load();
+    };
+
+    let showDefinitions = (callback) => {
+        d3.select("#definitionsContainer")
+        .transition()
+        .style("right", "0%")
+        .on("end", () => {
+            if (callback instanceof Function) {
+                callback();
+            }
+        });
+    }
+
+    let hideDefinitions = (callback) => {
+        d3.select("#definitionsContainer")
+        .transition()
+        .style("right", "-20%")
+        .on("end", () => {
+            if (callback instanceof Function) {
+                callback();
+            }
+        });
+    }
+
     useEffect(() => {
-        // let processedWords = 0;
-        // let finishedWords = 0;
         // playerEndCallback();
 
-        fetch('file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt')
+        fetch(track)
         .then(response => response.text())
         .then(async data => {
             rawCaptions.current = parseSync(data).filter(n => n.type === "cue");
@@ -370,6 +385,9 @@ export default function Home() {
             // }
 
             // let uniqueWords = new Set();
+            // let newComplexity = new Map();
+            // let processedWords = 0;
+            // let finishedWords = 0;
             
             // for (let i = 0; i < rawCaptions.current.length; i++) {
             //     let words = tokenize.extract(rawCaptions.current[i].data.text, { toLowercase: true, regex: [tokenize.words] });
@@ -385,28 +403,22 @@ export default function Home() {
 
             //     getComplexity(word)
             //     .then((score) => {
-            //         if (typeof score === "number") {
-            //             finishedWords += 1;
-            //             complexityMap.set(word, score);
-    
-            //             if (processedWords === finishedWords) {
-            //                 console.log(JSON.stringify(complexityMap, replacer));
-            //                 console.log(JSON.parse(JSON.stringify(complexityMap, replacer), reviver));
-            //             }
-            //         } else {
-            //             console.log(score);
+            //         finishedWords += 1;
+            //         newComplexity.set(word, score);
+            //         console.log(finishedWords)
+
+            //         if (processedWords === finishedWords) {
+            //             console.log(JSON.stringify(newComplexity, replacer));
+            //             console.log(JSON.parse(JSON.stringify(newComplexity, replacer), reviver));
             //         }
             //     });
             // }
         });
-
         let heatmap = h337.create({
             container: d3.select("main").node(),
             radius: 60,
         });
         heatmap.setData({min: 0, max: 0, data: []});
-
-        
 
         return () => {
             d3.select(".heatmap-canvas").remove();
@@ -422,6 +434,7 @@ export default function Home() {
         let timeout = null;
         let transition = false;
         let userCenterRadius = 60 * Math.tan(2.5 * Math.PI/180) * 0.393701 * 127 / 2;
+        let definitionTimeout = null, currentDefinition = null;
 
         // ipcRenderer.on('fixation-pos', (event, arg) => {
         //     let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
@@ -433,7 +446,7 @@ export default function Home() {
         //     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
         // });
 
-        ipcRenderer.on('gaze-pos', (event, arg) => {
+        let test = (event, arg) => {
             currentTime = new Date().getTime();
             dt = currentTime - lastTime;
             lastTime = currentTime;            
@@ -472,19 +485,57 @@ export default function Home() {
                     
                     if (is_fixationFrame) {
                         let definitions = d3.selectAll("#definitionsContainer div").nodes();
-                        let definitionInterest = null;
+                        let bbox = cursor.node().getBoundingClientRect();
+                        let circle = {x: bbox.x + userCenterRadius, y: bbox.y + userCenterRadius, r: 0};
+                        let definitionContainer = null;
 
                         for (let definition of definitions) {
                             let definitionBBox = definition.getBoundingClientRect();
-                            let definitionArea = definitionBBox.x <= x && x <= definitionBBox.x + definitionBBox.width && definitionBBox.y <= y && y <= definitionBBox.y + definitionBBox.height;
 
-                            if (definitionArea) {
-                                definitionInterest = d3.select(definition).attr("collocation");
+                            if (rectCircleColliding(circle, definitionBBox)) {
+                                definitionContainer = definition;
                                 break;
                             }
                         }
 
-                        if (definitionInterest) {
+                        if (definitionContainer) {
+                            if (currentDefinition !== definitionContainer) {
+                                clearTimeout(definitionTimeout);
+                                definitionTimeout = null;
+                                currentDefinition = definitionContainer;
+                            }
+
+                            if (d3.select(definitionContainer).select("span").style("max-height").startsWith("0") && !definitionTimeout) {
+                                definitionTimeout = setTimeout(() => {
+                                    let height = d3.select(definitionContainer).select("span").select("p").node().getBoundingClientRect().height;
+
+                                    d3.select("#definitionsContainer")
+                                    .selectAll("div")
+                                    .transition()
+                                    .style("gap", "0px");
+
+                                    d3.select("#definitionsContainer")
+                                    .selectAll("div span")
+                                    .transition()
+                                    .style("max-height", "0px");
+
+                                    d3.select(definitionContainer)
+                                    .transition()
+                                    .style("gap", "10px");
+
+                                    d3.select(definitionContainer)
+                                    .select("span")
+                                    .transition()
+                                    .style("max-height", height + "px")
+                                    .on("end", () => {
+                                        definitionTimeout = null;
+                                    });
+                                }, 500); 
+                            }
+                        }
+
+                        if (definitionContainer) {
+                            let definitionInterest = d3.select(definitionContainer).attr("collocation");
                             let words = JSON.parse(definitionInterest);
                             let wordIndex = 0;
 
@@ -575,17 +626,19 @@ export default function Home() {
 
                     let definitionsContainer = d3.select("#definitionsContainer").node();
                     let definitionsBBox = definitionsContainer.getBoundingClientRect();
-                    let inAreaOfInterest = !(window.outerWidth * 0.95 <= x || definitionsBBox.x <= x);
+                    let inAreaOfInterest = !(window.innerWidth * 0.95 <= x || definitionsBBox.x <= x);
 
                     if (!end.current && !onQuestions.current) {
                         if (inAreaOfInterest && document.hasFocus() && paused && !forcePause.current) {
                             if (!timeout) {
                                 timeout = setTimeout(() => {
                                     let caption = rawCaptions.current[index.current];
-        
-                                    d3.select("#definitionsContainer")
-                                    .transition()
-                                    .style("right", "-20%");
+                                    
+                                    if (!transition) {
+                                        transition = true;
+
+                                        hideDefinitions(() => transition = false);
+                                    }
         
                                     if (caption) {
                                         let startTime = caption.data.start / 1000;
@@ -602,24 +655,19 @@ export default function Home() {
                             timeout = null;
                             setPaused(true);
     
-                            if (!forcePause.current && document.hasFocus()) {
-                                d3.select("#definitionsContainer")
-                                .transition()
-                                .style("right", "0%");
+                            if (!forcePause.current && document.hasFocus() && !transition) {
+                                transition = true;
+
+                                showDefinitions(() => transition = false);
                             }
                         } else if (forcePause.current && document.hasFocus() && !transition) {
+                            // console.log("Transition")
                             transition = true;
 
                             if (inAreaOfInterest) {
-                                d3.select("#definitionsContainer")
-                                .transition()
-                                .style("right", "-20%")
-                                .on("end", () => transition = false);
+                                hideDefinitions(() => transition = false);
                             } else {
-                                d3.select("#definitionsContainer")
-                                .transition()
-                                .style("right", "0%")
-                                .on("end", () => transition = false);
+                                showDefinitions(() => transition = false);
                             }
                         }
                     }
@@ -654,28 +702,35 @@ export default function Home() {
                     setPaused(true);
                 }
             }
+        }
+        ipcRenderer.on('gaze-pos', test);
+
+        document.addEventListener("mousemove", (e) => {
+            x.current = e.clientX;
+            y.current = e.clientY;
         });
+
+        let mouseInterval = setInterval(() => {
+            test(null, {x: x.current, y: y.current});
+        }, 1000 / 33);
         
         return () => {
             clearInterval(timeout);
+            clearInterval(mouseInterval);
             timeout = null;
             ipcRenderer.removeAllListeners();
+            d3.select(document).on("mousemove", null);
         }
     }, [paused]);
 
-    let trim = (start, end) => {
-        let src = videojs("video").src().split("#")[0];
-
-        setSrc(src)
-        setSrc(src + "#t=" + start + "," + end);
-        setReload(!reload);
-        console.log(start + "," + end);
-        videojs("video").load();
-    }
+    let x = useRef(0), y = useRef(0);
+    useEffect(() => {
+        setSrc(srcInit);
+        setTrack(trackInit);
+    }, [srcInit, trackInit]);
 
     return (
-        <main>  
-            <Header />
+        <>
             <div id={"container"}>
                 <Player 
                     clickCallback={clickCallback}
@@ -685,14 +740,12 @@ export default function Home() {
                     time={videoTime}
                     src={src}
                     track={track}
-                    reload={reload}
                 />
 
                 <QuestionForm questionData={questionData} endCallback={questionEndCallback} reviewCallback={trim} />
             </div>
+            
             <div id={"definitionsContainer"}></div>
-            <div id={"gazeCursor"}></div>
-            <div id={"fixationCursor"}></div>
-        </main>  
+        </>
     );
 }

@@ -109,7 +109,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
     }, []);
 
     useEffect(() => {
-        let player = videojs.getAllPlayers()[0]
+        let player = videojs.getAllPlayers()[0];
         
         if (player) {
             if (paused) {
@@ -123,25 +123,24 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
         }
     }, [paused]);
 
+    useEffect(() => {
+        let player = videojs.getAllPlayers()[0];
+
+        if (player) {
+            player.src({src, type: "video/mp4"});
+            player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
+        }
+    }, [src, track]);
+
     return (
-        <>  
-            <video
-                src={src}
-                controls
-                width="100%"
-                height="100%"
-                id="video"
-                className="video-js vjs-theme-fantasy"
-                style={{objectFit: "cover"}}
-            >
-                <track
-                    src={track}
-                    kind="subtitles"
-                    srcLang="en"
-                    label="English"
-                    default
-                ></track>
-            </video>
-        </>
+        <video
+            src={src}
+            controls
+            width="100%"
+            height="100%"
+            id="video"
+            className="video-js vjs-theme-fantasy"
+            style={{objectFit: "cover"}}
+        />
     )
 }

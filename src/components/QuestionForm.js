@@ -69,18 +69,37 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
             .transition()
             .style("opacity", "0");
         } else {
-            d3.select(".questionContainer")
-            .transition()
-            .duration(1000)
-            .style("width", "0%")
-            .style("padding", "0");
-
+            closeQuestionContainer();
             endCallback();
         }
     }
 
     let trim = () => {
         reviewCallback(startTime[index], endTime[index]);
+    }
+
+    let closeQuestionContainer = () => {
+        d3.select("#container")
+        .transition()
+        .duration(1000)
+        .style("gap", "0px")
+
+        d3.select(".questionContainer")
+        .transition()
+        .duration(1000)
+        .style("width", "0%");
+    }
+
+    let openQuestionContainer = () => {
+        d3.select("#container")
+        .transition()
+        .duration(1000)
+        .style("gap", "20px")
+
+        d3.select(".questionContainer")
+        .transition()
+        .duration(1000)
+        .style("width", "25%");
     }
 
     useEffect(() => {
@@ -97,11 +116,6 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
         d3.selectAll(".choice")
         .style("background-color", "white")
         .style("color", "black");
-
-        d3.select(".questionContainer")
-        .transition()
-        .duration(1000)
-        .style("width", "0%");
 
         let leave = true;
 
@@ -147,10 +161,9 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
         };
 
         if (questions.length > 0) {
-            d3.select(".questionContainer")
-            .transition()
-            .duration(1000)
-            .style("width", "25%")
+            openQuestionContainer();
+        } else {
+            closeQuestionContainer();
         }
 
         setQuestion(questions);

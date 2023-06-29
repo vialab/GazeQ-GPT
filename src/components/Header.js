@@ -3,11 +3,11 @@ import * as React from "react";
 import * as d3 from "d3";
 import "../assets/css/Header.css";
 
-export default function Header() {
+export default function Header({ children }) {
     useEffect(() => {
         let path1 = "M 493.75 95.3125 C 493.75 120.2875 459.8125 139.3844 394.375 151.8719 C 358.0938 158.8187 305.5938 165.625 259.375 165.625 C 178.4688 165.625 125.875 161.7719 83.7813 143.125 C 58.4688 131.875 25 109.9375 25 95.3125 C 25 76.0469 41.5 55.7687 83.3125 43.0563 S 194.125 25 259.375 25 C 348.4375 25 416.5938 39.9063 456.25 61.8719 C 473.875 71.8 493.75 83.1906 493.75 95.3125 Z";
-        let path2 = "M 514 101.5 C 506.5 125.8 448 140.2 409 151 C 341.5 170.8 296.5 167.65 245.5 164.05 C 167.5 157.75 169 157.3 112 144.7 C 61 131.65 49 125.8 41.5 103.3 C 32.5 80.8 31 56.05 85 39.4 S 181 23.2 271 24.1 C 359.5 24.55 421 36.7 464.5 49.3 C 512.5 65.05 503.5 73.6 512.5 87.55 Z"
-        let path3 = "M 481 102.4 C 460 133 433 137.05 386.5 148.75 C 314.5 169 311.5 165.85 250 169.9 C 167.5 169.45 139 170.35 77.5 153.7 C 31 131.2 40 130.75 31 104.65 C 32.5 80.8 59.5 59.2 118 42.1 S 202 24.1 314.5 19.15 C 410.5 17.8 445 32.2 464.5 49.3 C 482.5 69.1 485.5 68.2 485.5 86.2 Z"
+        let path2 = "M 514 101.5 C 506.5 125.8 448 140.2 409 151 C 341.5 170.8 296.5 167.65 245.5 164.05 C 167.5 157.75 169 157.3 112 144.7 C 61 131.65 49 125.8 41.5 103.3 C 32.5 80.8 31 56.05 85 39.4 S 181 23.2 271 24.1 C 359.5 24.55 421 36.7 464.5 49.3 C 512.5 65.05 503.5 73.6 512.5 87.55 Z";
+        let path3 = "M 481 102.4 C 460 133 433 137.05 386.5 148.75 C 314.5 169 311.5 165.85 250 169.9 C 167.5 169.45 139 170.35 77.5 153.7 C 31 131.2 40 130.75 31 104.65 C 32.5 80.8 59.5 59.2 118 42.1 S 202 24.1 314.5 19.15 C 410.5 17.8 445 32.2 464.5 49.3 C 482.5 69.1 485.5 68.2 485.5 86.2 Z";
         let path = d3.select(".background").select("path");
 
         d3.select(".background")
@@ -15,7 +15,7 @@ export default function Header() {
             d3.select(".graphic")
             .transition()
             .attrTween("transform", () => {
-                return d3.interpolate(d3.select(".graphic").attr("transform"), "scale(1.05)")
+                return d3.interpolate(d3.select(".graphic").attr("transform"), "scale(1.05)");
             });
 
             function animate() {
@@ -59,22 +59,14 @@ export default function Header() {
             d3.select(".graphic")
             .transition()
             .attrTween("transform", () => {
-                return d3.interpolate(d3.select(".graphic").attr("transform"), "scale(1)")
+                return d3.interpolate(d3.select(".graphic").attr("transform"), "scale(1)");
             });
         });
 
         return () => {
             d3.select(".background").on("mouseenter mouseleave", null);
         }
-    }, [])
-
-    let toggleGaze = () => {
-        d3.select("#gazeCursor")
-        .style("display", d3.select("#gazeCursor").style("display") === "none" ? "block" : "none");
-
-        d3.select("#fixationCursor")
-        .style("display", d3.select("#fixationCursor").style("display") === "none" ? "block" : "none");
-    }
+    }, []);
     
     return (
         <header id={"header"}>
@@ -97,10 +89,12 @@ export default function Header() {
                     </g>
                 </g>
             </svg>
-
-            <div className="headerlinks" onClick={toggleGaze}>
-                Toggle Gaze
-            </div>
+            { 
+                children instanceof Array ? children.map((child, index) => {
+                    return React.cloneElement(child, { className: "headerlinks", key: index });
+                }) : 
+                React.cloneElement(children, { className: "headerlinks" })
+            }
         </header>
     )
 }

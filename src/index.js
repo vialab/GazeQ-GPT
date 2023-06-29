@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client';
-import Home from './components/Home.js'
+import App from './components/App.js'
 
 // process.env.OPENAI_API_KEY = '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';
 let r = document.createElement('div')
@@ -10,4 +10,4 @@ document.body.appendChild(r)
 
 const container = document.getElementById('root');
 const root = createRoot(container); // createRoot(container!) if you use TypeScript
-root.render(<Home />);
+root.render(<App />);

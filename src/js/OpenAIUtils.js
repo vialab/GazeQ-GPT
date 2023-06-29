@@ -7,22 +7,22 @@ export function getComplexity(word) {
     let complexityMessages = [{
         role: "system",
         content: `You are an expert on NLP. You analyze the word's complexity using a scale of 1 to 5, with 1 being the least complex and five being the most complex.
-        
-        Here is some information to analyze the word's complexity:
+
+Here is some information to analyze the word's complexity:
+
+1. Words having multiple meanings are more complex.
     
-        1. Words having multiple meanings are more complex.
-            
-        2. The word's higher cognitive load or demand is more complex. Consider that the person is learning the language as a second language.
-            
-        3. Higher acquisition difficulty of the word is more complex. Consider that the person is learning language as a second language.
-            
-        4. Rarer words are more complex.`
+2. The word's higher cognitive load or demand is more complex. Consider that the person is learning the language as a second language.
+    
+3. Higher acquisition difficulty of the word is more complex. Consider that the person is learning language as a second language.
+    
+4. Rarer words are more complex.`
         },
         {
             role: "user",
             content: `Word: ${word}
 
-            Give me the complexity (1-5) of the word.`
+Give me the complexity (1-5) of the word.`
         },
         {
             role: "assistant",
@@ -65,20 +65,29 @@ export function getComplexity(word) {
     // .then(data => {
     //     if (!data.error && data.choices[0].message.function_call) {
     //         let score = Number(JSON.parse(data.choices[0].message.function_call.arguments).complexity);
-    //         return (score < 1 || score > 5) ? getComplexity(word) : score;
+
+    //         if (score < 1 || score > 5) {
+    //             console.log(word, score)
+    //             throw new Error("Error getting complexity");
+    //         }
+    //         return score;
     //     } else {
+    //         console.log(data.error)
     //         throw new Error("Error getting complexity");
     //     }
     // })
     // .catch(error => {
     //     return new Promise((resolve, reject) => {
+    //         console.log(word)
     //         setTimeout(() => {
     //             resolve(getComplexity(word));
     //         }, 15000);
     //     });
     // });
 
-    return 0.5;
+    return new Promise((resolve, reject) => {
+        return resolve(0.5);
+    })
 }
 
 export function generateQuestion(text, word) {
@@ -99,19 +108,19 @@ export function generateQuestion(text, word) {
                 {
                     role: "user",
                     content: `Text:
-                    ${text}
-        
-                    Create a multiple-choice question about the text given with four choices. Give the correct answer at the end of the question.
-        
-                    Here are the criteria for the question:
+${text}
 
-                    1. The question should be third-person. 
-        
-                    2. There must only be one correct answer
+Create a multiple-choice question about the text given with four choices. Give the correct answer at the end of the question.
 
-                    3. The correct answer must contain the word/phrase: '${word}'. 
-                    
-                    4. Three incorrect answers that does not involve the text.
+Here are the criteria for the question:
+
+1. The question should be third-person. 
+
+2. There must only be one correct answer
+
+3. The correct answer must contain the word/phrase: '${word}'. 
+
+4. Three incorrect answers that does not involve the text.
                     `,
                 },
                 {
@@ -214,8 +223,8 @@ export function getPhrase(term1, term2) {
                 {
                     role: "user",
                     content: `"${term1} ${term2}" is a phrase
-                    A) True
-                    B) False`,
+A) True
+B) False`,
                 },
             ],
             functions: [
@@ -308,21 +317,23 @@ export function getPhrase(term1, term2) {
     let rand = Math.random();
 
     return new Promise((resolve, reject) => {
-        resolve(`{
-        "definitionTerm1": ${rand < 0.5 ? `{
-            "term": "${term1}",
-            "definition": "${term1} is a ${term1}."
-        }` : `{}`},
-        "definitionTerm2": ${rand < 0.5 ? `{
-            "term": "${term2}",
-            "definition": "${term2} is a ${term2}."
-        }` : `{}`},
-        "definitionPhrase": ${rand < 0.5 ? `{
-            "phrase": "${term1} ${term2}",
-            "definition": "${term1} is a ${term1}. ${term2} is a ${term2}."
-        }` : `{}`},
-        "example": [${rand < 0.5 ? `"${term1} ${term2} is a ${term1} ${term2}."` : ""}]
-        }`);
+        resolve({
+            "arguments": `{
+                "definitionTerm1": ${rand < 0.5 ? `{
+                    "term": "${term1}",
+                    "definition": "${term1} is a ${term1}."
+                }` : `{}`},
+                "definitionTerm2": ${rand < 0.5 ? `{
+                    "term": "${term2}",
+                    "definition": "${term2} is a ${term2}."
+                }` : `{}`},
+                "definitionPhrase": ${rand < 0.5 ? `{
+                    "phrase": "${term1} ${term2}",
+                    "definition": "${term1} is a ${term1}. ${term2} is a ${term2}."
+                }` : `{}`},
+                "example": [${rand < 0.5 ? `"${term1} ${term2} is a ${term1} ${term2}."` : ""}]
+            }`
+        });
     });
 }
 

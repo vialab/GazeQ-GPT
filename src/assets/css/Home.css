@@ -38,7 +38,6 @@ main canvas {
     justify-content: center;
     align-items: stretch;
     position: fixed;
-    gap: 20px;
 }
 
 #gazeCursor, #fixationCursor {
@@ -71,7 +70,7 @@ main canvas {
     gap: 20px;
     position: absolute;
     top: 0;
-    right: -20%;
+    right: 0%;
     background-color: rgba(255, 255, 255, .5);
     backdrop-filter: saturate(180%) blur(5px);
     box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
@@ -86,4 +85,18 @@ main canvas {
     background-color: rgba(255, 255, 255, .5);
     backdrop-filter: saturate(180%) blur(5px);
     box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    position: sticky;
+}
+
+#definitionsContainer span {
+    max-height: 0px;
+    overflow: hidden;
+}
+
+#definitionsContainer span p {
+    margin: 0;
 }
