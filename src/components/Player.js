@@ -68,8 +68,8 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
             });
 
             player.on("timeupdate", () => {
-                // timerCallback(player.currentTime());
-                time = player.currentTime();
+                if (timerCallback instanceof Function)
+                    timerCallback(player.currentTime());
             });
 
             player.on("ended", () => {
@@ -127,8 +127,10 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
         let player = videojs.getAllPlayers()[0];
 
         if (player) {
-            player.src({src, type: "video/mp4"});
+            player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
+            player.pause();
+            player.currentTime(37);
         }
     }, [src, track]);
 

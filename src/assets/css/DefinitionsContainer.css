@@ -1,0 +1,73 @@
+#definitionsContainer {
+    width: 20%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    right: 0%;
+    background-color: rgba(255, 255, 255, .5);
+    backdrop-filter: saturate(180%) blur(5px);
+    box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
+    z-index: 2;
+}
+
+#definitionsContainer #collocationsContainer, #definitionsContainer #moreInfoContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+    position: absolute;
+    width: 100%;
+    will-change: opacity;
+}
+
+.collocation, .collocationInfo {
+    width: 90%;
+    padding: 10px;
+    border: 1px solid rgba(119, 119, 119, 0.425);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, .5);
+    backdrop-filter: saturate(180%) blur(5px);
+    box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    position: sticky;
+    margin: auto;
+    will-change: transform;
+}
+
+.collocationInfo {
+    gap: 10px;
+}
+
+.collocation span {
+    max-height: 0px;
+    overflow: hidden;
+}
+
+.collocation span p, .collocationInfo span p {
+    margin: 0;
+}
+
+#definitionsContainer .top, #definitionsContainer .bottom {
+    margin: 0;
+    will-change: opacity;
+}
+
+#definitionsContainer #moreInfo, #definitionsContainer #prev {
+    margin: 0;
+    border-color: rgba(57, 57, 58);
+    color: rgba(57, 57, 58, .5);
+    filter: brightness(0) saturate(100%) invert(19%) sepia(2%) saturate(449%) hue-rotate(202deg) brightness(96%) contrast(86%);
+    transform: rotate(90deg) scale(0.8);
+}
+
+#definitionsContainer #prev {
+    transform: rotate(-90deg) scale(0.8);
+}

@@ -11,9 +11,11 @@ import { ipcRenderer } from "electron";
 import { generateQuestion, getComplexity, getPhrase, parsePhrase } from "../js/OpenAIUtils";
 import OneEuroFilter from "../js/oneeuro.js";
 import "../assets/css/Home.css";
+
 import Player from "./Player";
 import QuestionForm from "./QuestionForm";
 import videojs from "video.js";
+import DefinitionsContainer from "./DefinitionsContainer";
 
 function isTooLight(hexcolor){
     var r = parseInt(hexcolor.substr(0,2),16);
@@ -40,6 +42,14 @@ function rectCircleColliding(circle, rect) {
     return dx * dx + dy * dy <= circle.r * circle.r;
 }
 
+function ptInCircle(pt, circle) {
+
+    const lhs = Math.pow(circle.x - pt.x, 2) + Math.pow(circle.y - pt.y, 2);
+    const rhs = Math.pow(circle.r, 2);
+
+    return lhs < rhs ? -1 : (lhs === rhs ? 0 : 1);
+}
+
 function replacer(key, value) {
     if (value instanceof Map) {
         return {
@@ -60,7 +70,7 @@ function reviver(key, value) {
     return value;
 }
 
-function getCollocation(text, phrases) {
+function getCollocation(text, phrases, secondary = false) {
     let words = tokenize.extract(text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
     let uniquePhrases = new Set();
 
@@ -84,22 +94,31 @@ function getCollocation(text, phrases) {
             }
             phrase = [phrase[0] + " " + phrase[1]];
 
-            if (phrases.has(phrase[0]) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
+            if (phrase[0] !== text && phrases.has(phrase[0]) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
                 let add = true;
-
+                
                 for (let p of uniquePhrases) {
-                    if (phrase[0].includes(p.join(" "))) {
-                        uniquePhrases.delete(p);
-                        break;
-                    }
+                    if (!secondary)
 
-                    if (p.join(" ").includes(phrase[0])) {
-                        add = false;
-                        break;
-                    }
+                        if (phrase[0].includes(p.join(" "))) {
+                            uniquePhrases.delete(p);
+                            break;
+                        }
+
+                    if (!secondary)
+                        if (p.join(" ").includes(phrase[0])) {
+                            add = false;
+                            break;
+                        }
                 }
+
                 if (add) {
                     uniquePhrases.add([...wordPhrase]);
+
+                    if (secondary) {
+                        i += j - i + 1;
+                        break;
+                    }
                 }
             }
         }
@@ -107,12 +126,17 @@ function getCollocation(text, phrases) {
     return uniquePhrases;
 }
 
-export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, endCallback }) {
+export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, endCallback, mouseEnabled }) {
     let [ questionData, setQuestion ] = useState("");
     let [ paused, setPaused ] = React.useState(true);
     let [ videoTime, setVideoTime ] = React.useState(-1);
     let [ src, setSrc ] = React.useState(srcInit);
     let [ track, setTrack ] = React.useState(trackInit);
+    let [ collocations, setCollocations ] = React.useState(new Map());
+    let [ showDefinitionContainer, setShowDefinitionContainer ] = React.useState(false);
+    let [ showDefinition, setShowDefinition ] = React.useState(false);
+    let [ showMoreInfo, setShowMoreInfo ] = React.useState(false);
+    let [ onPrev, setOnPrev ] = React.useState(false);
 
     let wordScores = useRef(new Map());
     let frameScores = useRef(new Map());
@@ -122,19 +146,19 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let forcePause = useRef(true), end = useRef(false), onQuestions = useRef(false);
     let complexityMap = JSON.parse(JSON.stringify(complexityData), reviver);
     let phrases = JSON.parse(JSON.stringify(phraseDefinitions), reviver);
+    let x = useRef(0), y = useRef(0);
     
     let timerCallback = (t) => {
+        let prevIndex = index.current;
         index.current = -1;
 
         if (t > 0) {
-            forcePause.current = false;
             end.current = false;
-            setPaused(false);
         }
 
         for (let i = 0; i < rawCaptions.current.length; i++) {
             let startTime = rawCaptions.current[i].data.start;
-            let endTime = rawCaptions.current[i].data.end;
+            let endTime = rawCaptions.current[i].data.end + 500;
 
             if (t * 1000 >= startTime && t * 1000 <= endTime) {
                 index.current = i;
@@ -144,23 +168,55 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
         }
 
-        if (index.current >= 0 && rawCaptions.current[index.current]) {
-            // let filteredWords = words.map(word => removeStopwords([word])[0]);
-            let subTitle = rawCaptions.current[index.current].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
-            let uniquePhrases = getCollocation(rawCaptions.current[index.current].data.text, phrases);
+        let checkOverlap = (uniquePhrases, secondary) => {            
+            for (let i = 0; i < uniquePhrases.length; i++) {
+                let prevPhrase = uniquePhrases[i - 1];
+                let phrase = uniquePhrases[i];
+                let nextPhrase = uniquePhrases[i + 1];
 
-            d3.select("#definitionsContainer")
-            .selectAll("div")
-            .remove();
-            
-            for (let phrase of uniquePhrases) {
-                d3.select("#definitionsContainer")
-                .append("div")
-                .attr("collocation", JSON.stringify(phrase))
-                .html("<b>" + phrase.join(" ") + "</b>" + "<span><p>" + phrases.get(phrase.join(" ")).definitionPhrase.definition.toLowerCase() + "</p></span>")
-                .style("text-align", "center")
+                if (prevPhrase && nextPhrase) {
+                    if ((prevPhrase.join(" ") + " " + nextPhrase.join(" ")).includes(phrase.join(" "))) {
+                        uniquePhrases.splice(i, 1);
+                        i--;
+                    }
+                }
             }
+            return uniquePhrases;
         }
+
+        if (prevIndex !== index.current && index.current >= 0 && rawCaptions.current[index.current]) {
+            // let filteredWords = words.map(word => removeStopwords([word])[0]);
+            // let subTitle = rawCaptions.current[index.current].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
+            let uniquePhrases = checkOverlap([...getCollocation(rawCaptions.current[index.current].data.text, phrases)]);
+            let definitionsList = new Map();
+            
+            for (let i = 0; i < uniquePhrases.length; i++) {
+                let phrase = uniquePhrases[i];
+                let definitions = phrases.get(phrase.join(" "));
+                let uniqueSecondPhrases = [...getCollocation(phrase.join(" "), phrases, true)];
+                let additional = new Map();
+                let skipTerm1 = false, skipTerm2 = false;
+
+                for (let secondPhrase of uniqueSecondPhrases) {
+                    let secondDefinitions = phrases.get(secondPhrase.join(" "));
+                    additional.set(secondPhrase.join(" "), secondDefinitions);
+
+                    if (!skipTerm1 && secondPhrase.includes(definitions.definitionTerm1.term)) {
+                        skipTerm1 = true;
+                    }
+
+                    if (!skipTerm2 && secondPhrase.includes(definitions.definitionTerm2.term)) {
+                        skipTerm2 = true;
+                    }
+                }
+                definitionsList.set(phrase.join(" "), {"collocation": phrase, "definitions": definitions, "additional": additional, "skipTerm1": skipTerm1, "skipTerm2": skipTerm2});
+            }
+            setCollocations(definitionsList);
+        } else if (index.current < 0) {
+            setCollocations(new Map());
+        }
+        setShowDefinition(null);
+        setShowMoreInfo(false);
     };
 
     let playerEndCallback = () => {
@@ -168,9 +224,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         forcePause.current = true;
         onQuestions.current = true;
 
-        d3.select("#definitionsContainer")
-        .transition()
-        .style("right", "-20%");
+        setShowDefinitionContainer(false);
+        setShowMoreInfo(false);
+        setShowDefinition(null);
 
         let sortScores = [];
 
@@ -312,28 +368,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         videojs("video").load();
     };
 
-    let showDefinitions = (callback) => {
-        d3.select("#definitionsContainer")
-        .transition()
-        .style("right", "0%")
-        .on("end", () => {
-            if (callback instanceof Function) {
-                callback();
-            }
-        });
-    }
-
-    let hideDefinitions = (callback) => {
-        d3.select("#definitionsContainer")
-        .transition()
-        .style("right", "-20%")
-        .on("end", () => {
-            if (callback instanceof Function) {
-                callback();
-            }
-        });
-    }
-
     useEffect(() => {
         // playerEndCallback();
 
@@ -432,9 +466,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         let rbfchainFrame = new RBFChain(0.01, 0.95, 0.665, 1.0);
         let lastTime = null, currentTime = null, dt = null;
         let timeout = null;
-        let transition = false;
         let userCenterRadius = 60 * Math.tan(2.5 * Math.PI/180) * 0.393701 * 127 / 2;
-        let definitionTimeout = null, currentDefinition = null;
 
         // ipcRenderer.on('fixation-pos', (event, arg) => {
         //     let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
@@ -484,7 +516,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     // .style("z-index", 999)
                     
                     if (is_fixationFrame) {
-                        let definitions = d3.selectAll("#definitionsContainer div").nodes();
+                        let definitions = d3.selectAll("#definitionsContainer .collocation").nodes();
                         let bbox = cursor.node().getBoundingClientRect();
                         let circle = {x: bbox.x + userCenterRadius, y: bbox.y + userCenterRadius, r: 0};
                         let definitionContainer = null;
@@ -498,41 +530,13 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             }
                         }
 
-                        if (definitionContainer) {
-                            if (currentDefinition !== definitionContainer) {
-                                clearTimeout(definitionTimeout);
-                                definitionTimeout = null;
-                                currentDefinition = definitionContainer;
-                            }
-
-                            if (d3.select(definitionContainer).select("span").style("max-height").startsWith("0") && !definitionTimeout) {
-                                definitionTimeout = setTimeout(() => {
-                                    let height = d3.select(definitionContainer).select("span").select("p").node().getBoundingClientRect().height;
-
-                                    d3.select("#definitionsContainer")
-                                    .selectAll("div")
-                                    .transition()
-                                    .style("gap", "0px");
-
-                                    d3.select("#definitionsContainer")
-                                    .selectAll("div span")
-                                    .transition()
-                                    .style("max-height", "0px");
-
-                                    d3.select(definitionContainer)
-                                    .transition()
-                                    .style("gap", "10px");
-
-                                    d3.select(definitionContainer)
-                                    .select("span")
-                                    .transition()
-                                    .style("max-height", height + "px")
-                                    .on("end", () => {
-                                        definitionTimeout = null;
-                                    });
-                                }, 500); 
-                            }
+                        if (definitionContainer && d3.select(definitionContainer).select("span").style("max-height").startsWith("0")) {
+                            setShowDefinition(d3.select(definitionContainer).attr("collocation"));
+                        } else {
+                            setShowDefinition(null);
                         }
+                        setShowMoreInfo(false);
+                        setOnPrev(false);
 
                         if (definitionContainer) {
                             let definitionInterest = d3.select(definitionContainer).attr("collocation");
@@ -556,10 +560,20 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                 wordIndex++;
                             }
                         }
+                        let moreInfobbox = d3.select("#moreInfo").node().getBoundingClientRect();
+                        let prevBBox = d3.select("#prev").node().getBoundingClientRect();
+
+                        if (ptInCircle({x: x, y: y}, {x: moreInfobbox.x + moreInfobbox.width / 2, y: moreInfobbox.y + moreInfobbox.height / 2, r: moreInfobbox.width / 2}) <= 0) {
+                            setShowMoreInfo(true);
+                            setOnPrev(false);
+                        } else if (ptInCircle({x: x, y: y}, {x: prevBBox.x + prevBBox.width / 2, y: prevBBox.y + prevBBox.height / 2, r: prevBBox.width / 2}) <= 0) {
+                            setOnPrev(true);
+                            setShowMoreInfo(false);
+                        }
                     }
 
                     if (is_fixation || is_fixationFrame) {
-                        if (is_fixation)
+                        if (is_fixation) {}
                             d3.select("#fixationCursor")
                             .style("width", userCenterRadius * 2 + "px")
                             .style("height", userCenterRadius * 2 + "px")
@@ -633,12 +647,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             if (!timeout) {
                                 timeout = setTimeout(() => {
                                     let caption = rawCaptions.current[index.current];
-                                    
-                                    if (!transition) {
-                                        transition = true;
-
-                                        hideDefinitions(() => transition = false);
-                                    }
+                                    setShowDefinitionContainer(false);
+                                    setShowDefinition(null);
+                                    setShowMoreInfo(false);
         
                                     if (caption) {
                                         let startTime = caption.data.start / 1000;
@@ -650,24 +661,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                     timeout = null;
                                 }, 500);
                             }
-                        } else if (((!inAreaOfInterest || !document.hasFocus()) && !paused) || (forcePause.current && !paused)) {
+                        } else if (((!inAreaOfInterest || !document.hasFocus())) || (forcePause.current)) {
                             clearTimeout(timeout);
                             timeout = null;
                             setPaused(true);
     
-                            if (!forcePause.current && document.hasFocus() && !transition) {
-                                transition = true;
-
-                                showDefinitions(() => transition = false);
-                            }
-                        } else if (forcePause.current && document.hasFocus() && !transition) {
-                            // console.log("Transition")
-                            transition = true;
-
-                            if (inAreaOfInterest) {
-                                hideDefinitions(() => transition = false);
+                            if (document.hasFocus() && !inAreaOfInterest) {
+                                setShowDefinitionContainer(true);
                             } else {
-                                showDefinitions(() => transition = false);
+                                setShowDefinitionContainer(false);
+                                setShowDefinition(null);
+                                setShowMoreInfo(false);
                             }
                         }
                     }
@@ -711,7 +715,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         });
 
         let mouseInterval = setInterval(() => {
-            test(null, {x: x.current, y: y.current});
+            if (mouseEnabled)
+                test(null, {x: x.current, y: y.current});
         }, 1000 / 33);
         
         return () => {
@@ -721,9 +726,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             ipcRenderer.removeAllListeners();
             d3.select(document).on("mousemove", null);
         }
-    }, [paused]);
+    }, [paused, mouseEnabled]);
 
-    let x = useRef(0), y = useRef(0);
     useEffect(() => {
         setSrc(srcInit);
         setTrack(trackInit);
@@ -745,7 +749,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 <QuestionForm questionData={questionData} endCallback={questionEndCallback} reviewCallback={trim} />
             </div>
             
-            <div id={"definitionsContainer"}></div>
+            <DefinitionsContainer collocations={collocations} show={showDefinitionContainer} showDefinition={showDefinition} showMoreInfo={showMoreInfo} onPrev={onPrev} />
         </>
     );
 }

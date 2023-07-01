@@ -9,7 +9,6 @@ import * as phraseDefinitions1 from "../assets/processedSubtitles/Definitions_1.
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
 import * as phraseDefinitions2 from "../assets/processedSubtitles/Definitions_2.json";
 
-
 let videoList = [
     { 
         video: "file:///src/assets/videos/The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.mp4",
@@ -34,6 +33,7 @@ export default function App() {
     let [ track, setTrack ] = React.useState(videoList[index.current].track);
     let [ complexityData, setComplexityData ] = React.useState(videoList[index.current].complexityData);
     let [ phraseDefinitions, setPhraseDefinitions ] = React.useState(videoList[index.current].phraseDefinitions);
+    let [ enableMouse, setEnableMouse ] = React.useState(true);
     
     let toggleGaze = () => {
         if (gazeRef.current)
@@ -45,9 +45,31 @@ export default function App() {
             .style("display", d3.select(fixationRef.current).style("display") === "none" ? "block" : "none");
     };
 
+    let toggleMouse = () => {
+        setEnableMouse(!enableMouse);
+
+        if (enableMouse) {
+            if (gazeRef.current)
+                d3.select(gazeRef.current)
+                .style("width", "40px")
+                .style("height", "40px")
+                .style("transform", "translate(0, 0)");
+
+            if (fixationRef.current)
+                d3.select(fixationRef.current)
+                .style("width", "40px")
+                .style("height", "40px")
+                .style("transform", "translate(0, 0)");
+        }
+    };
+
     let startStudy = () => {
         setState("study");
         index.current = 0;
+        setSrc(videoList[index.current].video);
+        setTrack(videoList[index.current].track);
+        setComplexityData(videoList[index.current].complexityData);
+        setPhraseDefinitions(videoList[index.current].phraseDefinitions);
         videojs("video").load();
 
         d3.select(".questionContainer")
@@ -75,6 +97,9 @@ export default function App() {
                     <div onClick={toggleGaze}>
                         Toggle Gaze
                     </div>
+                    <div onClick={toggleMouse}>
+                        Toggle Mouse
+                    </div>
                     <div onClick={startStudy}>
                         Start Study
                     </div>
@@ -88,6 +113,7 @@ export default function App() {
                 srcInit={ state === "study" ? src : videoList[index.current].video }
                 trackInit={ state === "study" ? track : videoList[index.current].track }
                 endCallback={ state === "study" ? endVideoCallback : null }
+                mouseEnabled={ enableMouse }
             />
             <div id={"gazeCursor"} ref={gazeRef}></div>
             <div id={"fixationCursor"} ref={fixationRef}></div>

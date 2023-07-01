@@ -123,6 +123,14 @@
     animation-timing-function: linear;
 }
 
+.round.animated.infinite .arrow {
+    animation-iteration-count: infinite;
+}
+
+.round.animated.infinite .arrow.primera {
+    animation-iteration-count: infinite;
+}
+
 .top, .bottom {
     display: flex;
     justify-content: center;
