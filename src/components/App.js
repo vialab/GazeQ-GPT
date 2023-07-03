@@ -34,6 +34,7 @@ export default function App() {
     let [ complexityData, setComplexityData ] = React.useState(videoList[index.current].complexityData);
     let [ phraseDefinitions, setPhraseDefinitions ] = React.useState(videoList[index.current].phraseDefinitions);
     let [ enableMouse, setEnableMouse ] = React.useState(true);
+    let [ toggleDefinitions, setToggleDefinitions ] = React.useState(false);
     
     let toggleGaze = () => {
         if (gazeRef.current)
@@ -63,6 +64,10 @@ export default function App() {
         }
     };
 
+    let toggleDefinitionContainer = () => {
+        setToggleDefinitions(!toggleDefinitions);
+    };
+
     let startStudy = () => {
         setState("study");
         index.current = 0;
@@ -70,6 +75,10 @@ export default function App() {
         setTrack(videoList[index.current].track);
         setComplexityData(videoList[index.current].complexityData);
         setPhraseDefinitions(videoList[index.current].phraseDefinitions);
+        setToggleDefinitions(true);
+
+        if (enableMouse)
+            toggleMouse();
         videojs("video").load();
 
         d3.select(".questionContainer")
@@ -100,6 +109,9 @@ export default function App() {
                     <div onClick={toggleMouse}>
                         Toggle Mouse
                     </div>
+                    <div onClick={toggleDefinitionContainer}>
+                        Toggle Definitions
+                    </div>
                     <div onClick={startStudy}>
                         Start Study
                     </div>
@@ -114,6 +126,7 @@ export default function App() {
                 trackInit={ state === "study" ? track : videoList[index.current].track }
                 endCallback={ state === "study" ? endVideoCallback : null }
                 mouseEnabled={ enableMouse }
+                toggleDefinitions={ toggleDefinitions }
             />
             <div id={"gazeCursor"} ref={gazeRef}></div>
             <div id={"fixationCursor"} ref={fixationRef}></div>

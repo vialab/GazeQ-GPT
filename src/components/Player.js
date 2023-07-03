@@ -25,7 +25,7 @@ class Gradient extends Component {
 
 videojs.registerComponent('Gradient', Gradient);
 
-export default function Player({clickCallback, timerCallback, endCallback, paused, time, src, track}) {
+export default function Player({clickCallback, timerCallback, endCallback, paused, time, src, track, toggleDefinitions}) {
     useEffect(() => {
         if (videojs.getAllPlayers().length === 0) {
             let player = videojs("video", {
@@ -129,10 +129,20 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            player.pause();
-            player.currentTime(37);
+            // player.currentTime(91)
         }
     }, [src, track]);
+
+    useEffect(() => {
+        let player = videojs.getAllPlayers()[0];
+
+        if (player) {
+            d3.select(player.el_)
+            .transition()
+            .duration(1000)
+            .style("margin-right", toggleDefinitions ? "0%" : "20%");
+        }
+    }, [toggleDefinitions]);
 
     return (
         <video
@@ -142,7 +152,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
             height="100%"
             id="video"
             className="video-js vjs-theme-fantasy"
-            style={{objectFit: "cover"}}
+            style={{objectFit: "cover", marginRight: toggleDefinitions ? "0%" : "20%"}}
         />
     )
 }

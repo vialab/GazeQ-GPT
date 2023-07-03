@@ -314,7 +314,7 @@ B) False`,
     // })
     // .catch(error => console.log("error", error));
 
-    let rand = Math.random();
+    let rand = Math.random() * -1;
 
     return new Promise((resolve, reject) => {
         resolve({
@@ -362,7 +362,7 @@ export async function parsePhrase(text) {
             if (phraseData) {
                 let data = JSON5.parse(phraseData.arguments);
 
-                let mapExample = data.example.map(example => typeof example === "string" && example.includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
+                let mapExample = data.example.map(example => typeof example === "string" && example.toLowerCase().includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
                 
                 if (Object.keys(data.definitionTerm1).length > 0 && 
                     Object.keys(data.definitionTerm2).length > 0 && 

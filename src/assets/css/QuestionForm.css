@@ -34,11 +34,12 @@
 .questionContainer .choices {
     display: grid;
     overflow: hidden;
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-column-gap: 5px;
     grid-row-gap: 5px;
     width: 100%;
+    height: min-content;
     justify-content: center;
     align-content: center;
 }
@@ -55,6 +56,8 @@
     padding: 1rem;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
+    word-wrap: break-word;
+    white-space: break-spaces;
 }
 
 .round {

@@ -16,14 +16,14 @@
 }
 
 #header .headerlinks {
-    height: 100%;
+    /* height: 100%; */
     position: relative;
     z-index: 0;
     cursor: pointer;
     display: flex;
     align-items: center;
     user-select: none;
-    font-size: 0.9em;
+    font-size: 0.8em;
 }
 
 #header .headerlinks:hover {
@@ -42,6 +42,7 @@
     opacity: 0;
     transition: all 0.3s;
     z-index: 1;
+    pointer-events: none;
 }
 
 #header .headerlinks:after {

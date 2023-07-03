@@ -43,10 +43,16 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                 .style("max-height", height + "px")
                 .on("end", () => {
                     definitionTimeout.current = null;
-
-                    d3.select(bottom.current)
-                    .transition()
-                    .style("opacity", "1");
+                    
+                    if (collocations.get(definition.current).definitions.definitionTerm1) {
+                        d3.select(bottom.current)
+                        .transition()
+                        .style("opacity", "1");
+                    } else {
+                        d3.select(bottom.current)
+                        .transition()
+                        .style("opacity", "0");
+                    }
                 });
             },  transition.current ? 1000 : 500);
         } else {
@@ -95,16 +101,16 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                     definition.current = null;
                     definitionMore.current = null;
                 }
-                
-                d3.selectAll([bottom.current, top.current])
-                .transition()
-                .style("opacity", "0");
             }
+            
+            d3.selectAll([bottom.current, top.current])
+            .transition()
+            .style("opacity", "0");
         }
     }, [show]);
     
     useEffect(() => {
-        if (definition.current && showMoreInfo && !definitionMore.current) {
+        if (definition.current && showMoreInfo && !definitionMore.current && collocations.get(definition.current).definitions.definitionTerm1) {
             let ref = definitionRefs.current.get(definition.current);
             let opacity = d3.select(ref.current).style("opacity");
             let bbox = ref.current.getBoundingClientRect();
@@ -146,7 +152,8 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
             let transform = d3.select(ref.current).style("transform");
 
             d3.selectAll(".collocation")
-            .transition(1000)
+            .transition()
+            .duration(1000)
             .style("opacity", "1");
 
             d3.select(ref.current)
@@ -156,7 +163,8 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
 
             d3.select("#moreInfoContainer")
             .transition()
-            .style("opacity", "0");
+            .style("opacity", "0")
+            .on("end", () => setMoreInfo(null));
 
             definitionMore.current = null;
 
@@ -170,6 +178,21 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
         }
     }, [onPrev]);
 
+    useEffect(() => {
+        d3.selectAll([bottom.current, top.current])
+        .transition()
+        .style("opacity", "0");
+
+        d3.select("#moreInfoContainer")
+        .transition()
+        .style("opacity", "0");
+
+        setMoreInfo(null);
+        definitionMore.current = null;
+        definition.current = null;
+
+    }, [collocations]);
+
     return (
         <div id="definitionsContainer" ref={definitionsContainer} >
             <div id="collocationsContainer">
@@ -180,6 +203,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                     return (
                         <div className="collocation" style={{ textAlign: "center" }} collocation={JSON.stringify(collocation["collocation"])} key={JSON.stringify(collocation["collocation"])} ref={ref}>
                             <b> { collocation["collocation"].join(" ") } </b>
+                            <> Complexity: { Math.round(collocation["definitions"].complexity * 10) / 10 } </>
                             <span><p> { collocation["definitions"].definitionPhrase.definition.toLowerCase() } </p></span>
                         </div>
                     );
@@ -191,24 +215,26 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                         <hr style={{width: "90%", border: "1px solid rgba(57, 57, 58, 0.5)", margin: "0"}}/>
 
                         { !moreInfo["skipTerm1"] ?
-                            <div className="collocationInfo" style={{ textAlign: "center" }} key={moreInfo["definitions"].definitionTerm1.term}>
+                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["definitions"].definitionTerm1.collocation)} key={moreInfo["definitions"].definitionTerm1.term}>
                                 <b> { moreInfo["definitions"].definitionTerm1.term } </b>
+                                <> Complexity: { Math.round(moreInfo["definitions"].definitionTerm1.complexity * 10) / 10 } </>
                                 <span><p> { moreInfo["definitions"].definitionTerm1.definition.toLowerCase() } </p></span>
                             </div>
                         : null }
 
                         { !moreInfo["skipTerm2"] ?
-                            <div className="collocationInfo" style={{ textAlign: "center" }} key={moreInfo["definitions"].definitionTerm2.term}>
+                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["definitions"].definitionTerm2.collocation)} key={moreInfo["definitions"].definitionTerm2.term}>
                                 <b> { moreInfo["definitions"].definitionTerm2.term } </b>
+                                <> Complexity: { Math.round(moreInfo["definitions"].definitionTerm2.complexity * 10) / 10 } </>
                                 <span><p> { moreInfo["definitions"].definitionTerm2.definition.toLowerCase() } </p></span>
                             </div>
                         : null }
 
                         { [...moreInfo["additional"].entries()].map(([_, additional], index) => {
-
                             return (
-                                <div className="collocationInfo" style={{ textAlign: "center" }} key={additional.definitionPhrase.phrase}>
+                                <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(additional["collocation"])} key={additional.definitionPhrase.phrase}>
                                     <b> { additional.definitionPhrase.phrase } </b>
+                                    <> Complexity: { Math.round(additional.complexity * 10) / 10 } </>
                                     <span><p> { additional.definitionPhrase.definition.toLowerCase() } </p></span>
                                 </div>
                             )
