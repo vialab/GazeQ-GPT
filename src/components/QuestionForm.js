@@ -19,25 +19,25 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
     let refC = React.useRef();
     let refD = React.useRef();
     let correct = false;
-    let submittedAnswers = new Set();
+    let submittedAnswers = React.useRef(new Set());
 
     let checkChoice = (choice, ref) => {
         if (!correct) {
             if (answer[index].includes(choice) || answer[index].map((a) => a.toLowerCase()).includes(d3.select(ref.current).text().toLowerCase())) {
-                submittedAnswers.add(choice);
+                submittedAnswers.current.add(choice);
                 
                 d3.select(ref.current)
                 .style("background-color", "rgba(41, 197, 115, 0.5)")
                 .style("color", "white");
                 
-                if (submittedAnswers.size === answer[index].length) {
+                if (submittedAnswers.current.size === answer[index].length) {
                     d3.selectAll(".bottom, .top")
                     .transition()
                     .style("opacity", "1")
                     .style("pointer-events", "all");
 
                     correct = true;
-                    submittedAnswers.clear();
+                    submittedAnswers.current.clear();
                 } else {
                     d3.select(".additional")
                     .transition()

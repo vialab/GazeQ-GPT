@@ -25,7 +25,7 @@ let videoList = [
 ];
 
 export default function App() {
-    let index = useRef(1);
+    let index = useRef(0);
     let gazeRef = useRef(null), fixationRef = useRef(null);
 
     let [ state, setState ] = React.useState("home");

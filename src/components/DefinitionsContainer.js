@@ -187,6 +187,14 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
         .transition()
         .style("opacity", "0");
 
+        d3.selectAll(".collocation")
+        .style("gap", "0px")
+        .style("opacity", "1");
+
+        d3.selectAll(".collocation")
+        .select("span")
+        .style("max-height", "0px");
+
         setMoreInfo(null);
         definitionMore.current = null;
         definition.current = null;
@@ -202,7 +210,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
 
                     return (
                         <div className="collocation" style={{ textAlign: "center" }} collocation={JSON.stringify(collocation["collocation"])} key={JSON.stringify(collocation["collocation"])} ref={ref}>
-                            <b> { collocation["collocation"].join(" ") } </b>
+                            <b> { collocation["subtitle"] } </b>
                             <> Complexity: { Math.round(collocation["definitions"].complexity * 10) / 10 } </>
                             <span><p> { collocation["definitions"].definitionPhrase.definition.toLowerCase() } </p></span>
                         </div>
@@ -220,7 +228,13 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                                 <> Complexity: { Math.round(moreInfo["definitions"].definitionTerm1.complexity * 10) / 10 } </>
                                 <span><p> { moreInfo["definitions"].definitionTerm1.definition.toLowerCase() } </p></span>
                             </div>
-                        : null }
+                        : 
+                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm1"].collocation)} key={moreInfo["skipTerm1"].definitionPhrase.phrase}>
+                                <b> { moreInfo["skipTerm1"].definitionPhrase.phrase } </b>
+                                <> Complexity: { Math.round(moreInfo["skipTerm1"].complexity * 10) / 10 } </>
+                                <span><p> { moreInfo["skipTerm1"].definitionPhrase.definition.toLowerCase() } </p></span>
+                            </div>
+                        }
 
                         { !moreInfo["skipTerm2"] ?
                             <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["definitions"].definitionTerm2.collocation)} key={moreInfo["definitions"].definitionTerm2.term}>
@@ -228,7 +242,13 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                                 <> Complexity: { Math.round(moreInfo["definitions"].definitionTerm2.complexity * 10) / 10 } </>
                                 <span><p> { moreInfo["definitions"].definitionTerm2.definition.toLowerCase() } </p></span>
                             </div>
-                        : null }
+                        : moreInfo["skipTerm2"] === true ? null :
+                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm2"].collocation)} key={moreInfo["skipTerm2"].definitionPhrase.phrase}>
+                                <b> { moreInfo["skipTerm2"].definitionPhrase.phrase } </b>
+                                <> Complexity: { Math.round(moreInfo["skipTerm2"].complexity * 10) / 10 } </>
+                                <span><p> { moreInfo["skipTerm2"].definitionPhrase.definition.toLowerCase() } </p></span>
+                            </div>
+                        }
 
                         { [...moreInfo["additional"].entries()].map(([_, additional], index) => {
                             return (

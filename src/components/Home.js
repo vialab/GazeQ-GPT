@@ -85,7 +85,7 @@ function reviver(key, value) {
     return value;
 }
 
-function getCollocation(text, phrases, complexityMap, secondary = false, additionalPhrases = new Map()) {
+function getCollocation(text, phrases, complexityMap, secondary = false, additionalPhrases = new Map(), checkComplexity = true) {
     let words = tokenize.extract(text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
     let uniquePhrases = new Set();
 
@@ -120,15 +120,12 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
             if (phrase[0] !== text.toLowerCase() && (phrases.has(phrase[0]) || (secondary && additionalPhrases.has(phrase[0]))) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
                 let add = true;
 
-                if (Math.round(complexity * 10) / 10 <= 1.5) {
+                if (Math.round(complexity * 10) / 10 && checkComplexity) {
                     add = false;
-                    console.log("removed: " + wordPhrase.join(" "), complexity);
-                    break;
                 }
 
                 if (add) {
                     uniquePhrases.add([...wordPhrase]);
-
                     // if (secondary) {
                     //     i += j - i + 1;
                     //     break;
@@ -139,8 +136,10 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
     }
 
     if (uniquePhrases.size === 1 && !secondary) {
-        let checkSecondary = getCollocation(text, phrases, complexityMap, true);
+        let checkSecondary = getCollocation(text, phrases, complexityMap, true, additionalPhrases, checkComplexity);
         return (checkSecondary.size > 0 ? checkSecondary : uniquePhrases)
+    } else if (uniquePhrases.size === 0 && checkComplexity > 0) {
+        return getCollocation(text, phrases, complexityMap, secondary, additionalPhrases, false);
     } else {
         return uniquePhrases;
     }
@@ -183,15 +182,18 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             let cutIndex = 0;
 
             loop: for (let j = 0; j < tPhrase.length; j++) {
-                let cutPrevPhrase = prevPhrase.slice(prevPhrase.length - 1 - j, prevPhrase.length).join(" ");
-                let cutNextPhrase = nextPhrase.slice(0, j + 1).join(" ");
+                let cutPrevPhrase = prevPhrase.slice(prevPhrase.length - 1 - j, prevPhrase.length);
+                let cutNextPhrase = nextPhrase.slice(0, j + 1);
                 
                 for (let i = 0; i < cutPrevPhrase.length; i++) {
                     if (cutPrevPhrase[i] !== cutNextPhrase[i]) {
                         continue loop;
                     }
                 }
-                cutIndex = j + 1;
+
+                if (text.includes(prevPhrase.slice(0, prevPhrase.length - j).join(" ") + " " + nextPhrase.slice(j + 1, nextPhrase.length).join(" "))) {
+                    cutIndex = j + 1;
+                }
             }
             return cutIndex;
         }
@@ -259,6 +261,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     i = secondIndex;
                     firstBlock = secondBlock;
                 }
+                partial = false;
             }
             first = false;
 
@@ -347,27 +350,34 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             let startIndex = 0;
             // console.clear()
             
-            let slicePhrase = (phrase, ifSlice = false) => {
-                console.log(phrase)
+            let slicePhrase = (phrase, subTitle, map, startIndex, ifSlice = false) => {
                 let slice = subTitle.search(phrase.join(" "));
                 let slideSubtitle = ifSlice ? phrase.join(" ") : subTitle.slice(startIndex, slice);
                 let chunkWords = tokenize.extract(slideSubtitle, { toLowercase: true, regex: [tokenize.words] });
                 startIndex = slice + phrase.join(" ").length;
 
                 if (chunkWords) {
+                    let phraseDefinition = phrases.get(subTitle);
+
                     for (let word of chunkWords) {
-                        if (complexityMap.get(word) > 3 && additionalPhrases.current.get(word)) {
+                        if (complexityMap.get(word) > (map === definitionsList ? 3 : 2) && additionalPhrases.current.get(word)) {
                             let d = additionalPhrases.current.get(word);
                             d.complexity = complexityMap.get(word);
 
-                            definitionsList.set(word, {
+                            if (phraseDefinition && (phraseDefinition.definitionTerm1.term.toLowerCase().includes(word) || phraseDefinition.definitionTerm2.term.toLowerCase().includes(word)))
+                                continue;
+
+                            map.set(word, {
+                                "subtitle": word,
                                 "collocation": [word],
                                 "definitions": d,
-                                "additional": null
+                                "additional": null,
+                                ...d
                             });
                         }
                     }
                 }
+                return startIndex;
             }
             
             for (let i = 0; i < uniquePhrases.length; i++) {
@@ -384,10 +394,11 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 let additional = new Map();
                 let skipTerm1 = false, skipTerm2 = false;
                 // console.log(phrase)
-                slicePhrase(phrase);
+                startIndex = slicePhrase(phrase, subTitle, definitionsList, startIndex);
 
                 if ((definitions.definitionTerm1.term + " " + definitions.definitionTerm2.term).toLowerCase() !== definitions.definitionPhrase.phrase.toLowerCase()) {
                     let uniqueSecondPhrases = checkOverlap([...getCollocation(phrase.join(" "), phrases, complexityMap, true, additionalPhrases.current)], phrase.join(" "));
+                    let secondStartIndex = 0;
 
                     for (let secondPhrase of uniqueSecondPhrases) {
                         let secondDefinitions = phrases.get(secondPhrase.join(" ")) || additionalPhrases.current.get(secondPhrase.join(" "));
@@ -395,19 +406,41 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                         secondDefinitions.complexity = secondComplexity;
                         secondDefinitions.collocation = secondPhrase;
                         additional.set(secondPhrase.join(" "), secondDefinitions);
+
+                        secondStartIndex = slicePhrase(secondPhrase, phrase.join(" "), additional, secondStartIndex);
                         
-                        if (!skipTerm1 && secondPhrase.join(" ").includes(definitions.definitionTerm1.term)) {
-                            skipTerm1 = true;
+                        if (!skipTerm1 && secondPhrase.join(" ").includes(definitions.definitionTerm1.term.toLowerCase())) {
+                            skipTerm1 = secondDefinitions;
+                            additional.delete(secondPhrase.join(" "));
                         }
 
-                        if (!skipTerm2 && secondPhrase.join(" ").includes(definitions.definitionTerm2.term)) {
-                            skipTerm2 = true;
+                        if (!skipTerm2 && secondPhrase.join(" ").includes(definitions.definitionTerm2.term.toLowerCase())) {
+                            skipTerm2 = secondDefinitions;
+                            additional.delete(secondPhrase.join(" "));
                         }
                     }
+                    
+                    if (uniqueSecondPhrases.length > 0) {
+                        slicePhrase([phrase.join(" ").slice(secondStartIndex)], phrase.join(" "), additional, secondStartIndex, true);
+                    } else {
+                        slicePhrase(phrase, phrase.join(" "), additional, secondStartIndex, true);
+                    }
                 }
-                definitionsList.set(phrase.join(" "), {"collocation": phrase, "definitions": definitions, "additional": additional, "skipTerm1": skipTerm1, "skipTerm2": skipTerm2});
+                
+                if (skipTerm1 && skipTerm2 && skipTerm1.definitionPhrase.phrase.toLowerCase() === skipTerm1.definitionPhrase.phrase.toLowerCase()) {
+                    skipTerm2 = true;
+                }
+                
+                let slice = subTitle.search(phrase.join(" "));
+                let sliceSubtitle = rawCaptions.current[delayIndex.current].data.text.slice(slice, slice + phrase.join(" ").length);
+                definitionsList.set(phrase.join(" "), {"subtitle": sliceSubtitle, "collocation": phrase, "definitions": definitions, "additional": additional, "skipTerm1": skipTerm1, "skipTerm2": skipTerm2});
             }
-            slicePhrase([subTitle.slice(startIndex + uniquePhrases[uniquePhrases.length - 1].length)], true);
+
+            if (uniquePhrases.length > 0) {
+                slicePhrase([subTitle.slice(startIndex + uniquePhrases[uniquePhrases.length - 1].length)], subTitle, definitionsList, startIndex, true);
+            } else {
+                slicePhrase([subTitle], subTitle, definitionsList, startIndex, true);
+            }
             setCollocations(definitionsList);
         } else if (delayIndex.current < 0) {
             setCollocations(new Map());
@@ -556,7 +589,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     d3.select("#video")
                     .transition()
                     .duration(1000)
-                    .styleTween("margin-right", () => d3.interpolate(d3.select("#video").style("margin-right"), toggleDefinitions ? "20%" : "0%"))
+                    .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), toggleDefinitions ? "translateX(-15%)" : "translateX(0%)"))
                     .on("end", () => {
                         setShowMoreInfo(false);
                         setShowDefinition(null);
@@ -579,7 +612,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         d3.select("#video")
         .transition()
         .duration(1000)
-        .styleTween("margin-right", () => d3.interpolate(d3.select("#video").style("margin-right"), toggleDefinitions ? "0%" : "20%"));
+        .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), toggleDefinitions ? "translateX(0%)" : "translateX(-15%)"));
 
         if (endCallbackRef.current instanceof Function) {
             endCallbackRef.current();
@@ -742,10 +775,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 if (
                     (collocation.toLowerCase().includes(name) && (name.startsWith(" ") || name.endsWith(" "))) ||
                     (name.includes(term1) && (term1.startsWith(" ") || term1.endsWith(" "))) ||
-                    (name.includes(term2) && (term1.startsWith(" ") || term1.endsWith(" ")))
+                    (name.includes(term2) && (term2.startsWith(" ") || term2.endsWith(" ")))
                 ) {
                     phrases.delete(collocation);
-                    continue loop;
                 }
             }
             additionalPhrases.current.set(definition.definitionTerm1.term, { definitionPhrase: {phrase: definition.definitionTerm1.term, definition: definition.definitionTerm1.definition}});
@@ -760,7 +792,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         let rbfchainFrame = new RBFChain(0.01, 0.95, 0.665, 1.0);
         let lastTime = null, currentTime = null, dt = null;
         let timeout = null;
-        let userCenterRadius = 60 * Math.tan(2.5 * Math.PI/180) * 0.393701 * 127 / 2;
+        let userCenterRadius = 30 * Math.tan(4 * Math.PI/180) * 0.393701 * 127 / 2;
 
         // ipcRenderer.on('fixation-pos', (event, arg) => {
         //     let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
@@ -823,7 +855,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     
                     if (is_fixationFrame) {
                         let definitions = d3.selectAll("#definitionsContainer .collocation").nodes();
-                        let circle = {x: x, y: y, r: 10};
+                        let circle = {x: x, y: y, r: 5};
                         let definitionContainer = null;
 
                         for (let definition of definitions) {
@@ -870,10 +902,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                         let moreInfobbox = d3.select("#moreInfo").node().getBoundingClientRect();
                         let prevBBox = d3.select("#prev").node().getBoundingClientRect();
 
-                        if (ptInCircle({x: x, y: y, r: userCenterRadius / 2}, {x: moreInfobbox.x + moreInfobbox.width / 2, y: moreInfobbox.y + moreInfobbox.height / 2, r: moreInfobbox.width / 2}) <= 0) {
+                        if (ptInCircle({x: x, y: y, r: userCenterRadius}, {x: moreInfobbox.x + moreInfobbox.width / 2, y: moreInfobbox.y + moreInfobbox.height / 2, r: moreInfobbox.width / 2}) <= 0) {
                             setShowMoreInfo(true);
                             setOnPrev(false);
-                        } else if (ptInCircle({x: x, y: y, r: userCenterRadius}, {x: prevBBox.x + prevBBox.width / 2, y: prevBBox.y + prevBBox.height / 2, r: prevBBox.width / 2}) <= 0) {
+                        } else if (ptInCircle({x: x, y: y, r: userCenterRadius * 2}, {x: prevBBox.x + prevBBox.width / 2, y: prevBBox.y + prevBBox.height / 2, r: prevBBox.width / 2}) <= 0) {
                             setOnPrev(true);
                             setShowMoreInfo(false);
                         }
@@ -926,7 +958,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     let definitionsBBox = definitionsContainer.getBoundingClientRect();
                     let inAreaOfInterest = !(window.innerWidth * 0.95 <= x || definitionsBBox.x <= x);
 
-                    if (!end.current && !onQuestions.current && definitionToggle.current) {
+                    if (!end.current && !onQuestions.current) {
                         if (inAreaOfInterest && document.hasFocus() && paused && !forcePause.current) {
                             if (!timeout) {
                                 timeout = setTimeout(() => {

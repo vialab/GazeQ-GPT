@@ -129,7 +129,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            // player.currentTime(91)
+            player.currentTime(29)
         }
     }, [src, track]);
 
@@ -140,7 +140,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
             d3.select(player.el_)
             .transition()
             .duration(1000)
-            .style("margin-right", toggleDefinitions ? "0%" : "20%");
+            .styleTween("transform", () => d3.interpolate(d3.select(player.el_).style("transform"), toggleDefinitions ? "translateX(0%)" : "translateX(-15%)"));
         }
     }, [toggleDefinitions]);
 
@@ -152,7 +152,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
             height="100%"
             id="video"
             className="video-js vjs-theme-fantasy"
-            style={{objectFit: "cover", marginRight: toggleDefinitions ? "0%" : "20%"}}
+            style={{objectFit: "cover"}}
         />
     )
 }

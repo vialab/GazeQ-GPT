@@ -374,7 +374,7 @@ export async function parsePhrase(text) {
                     (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase()
                 ) {
                     phrase = [phrase[0] + " " + phrase[1]];
-                    phrases.set(phrase[0], data);
+                    phrases.set(phrase[0].toLowerCase(), data);
 
                     // i += j - i;
                 } else {
