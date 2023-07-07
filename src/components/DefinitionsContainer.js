@@ -102,7 +102,6 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                     definitionMore.current = null;
                 }
             }
-            
             d3.selectAll([bottom.current, top.current])
             .transition()
             .style("opacity", "0");
@@ -230,7 +229,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                             </div>
                         : 
                             <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm1"].collocation)} key={moreInfo["skipTerm1"].definitionPhrase.phrase}>
-                                <b> { moreInfo["skipTerm1"].definitionPhrase.phrase } </b>
+                                <b> { moreInfo["skipTerm1"].subtitle } </b>
                                 <> Complexity: { Math.round(moreInfo["skipTerm1"].complexity * 10) / 10 } </>
                                 <span><p> { moreInfo["skipTerm1"].definitionPhrase.definition.toLowerCase() } </p></span>
                             </div>
@@ -244,7 +243,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                             </div>
                         : moreInfo["skipTerm2"] === true ? null :
                             <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm2"].collocation)} key={moreInfo["skipTerm2"].definitionPhrase.phrase}>
-                                <b> { moreInfo["skipTerm2"].definitionPhrase.phrase } </b>
+                                <b> { moreInfo["skipTerm2"].subtitle } </b>
                                 <> Complexity: { Math.round(moreInfo["skipTerm2"].complexity * 10) / 10 } </>
                                 <span><p> { moreInfo["skipTerm2"].definitionPhrase.definition.toLowerCase() } </p></span>
                             </div>
@@ -253,7 +252,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                         { [...moreInfo["additional"].entries()].map(([_, additional], index) => {
                             return (
                                 <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(additional["collocation"])} key={additional.definitionPhrase.phrase}>
-                                    <b> { additional.definitionPhrase.phrase } </b>
+                                    <b> { additional.subtitle } </b>
                                     <> Complexity: { Math.round(additional.complexity * 10) / 10 } </>
                                     <span><p> { additional.definitionPhrase.definition.toLowerCase() } </p></span>
                                 </div>

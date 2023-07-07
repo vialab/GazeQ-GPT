@@ -120,8 +120,10 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
             if (phrase[0] !== text.toLowerCase() && (phrases.has(phrase[0]) || (secondary && additionalPhrases.has(phrase[0]))) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
                 let add = true;
 
-                if (Math.round(complexity * 10) / 10 && checkComplexity) {
+                if (Math.round(complexity * 10) / 10 <= 1  && checkComplexity) {
+                    console.log("Removed", wordPhrase, complexity);
                     add = false;
+                    break;
                 }
 
                 if (add) {
@@ -145,7 +147,7 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
     }
 }
 
-export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, endCallback, mouseEnabled, toggleDefinitions }) {
+export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, endCallback, mouseEnabled, toggleDefinitions, showDefinitions }) {
     let [ questionData, setQuestion ] = useState("");
     let [ paused, setPaused ] = React.useState(true);
     let [ videoTime, setVideoTime ] = React.useState(-1);
@@ -171,11 +173,11 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let endCallbackRef = useRef(endCallback);
     
     let checkOverlap = (uniquePhrases, text) => {
+        // console.log([...uniquePhrases]);
         if (uniquePhrases.length <= 1) {
             return uniquePhrases;
         }
         let newPhrases = [];
-        let newUniquePhrases = new Set();
 
         let getCutIndex = (prevPhrase, nextPhrase) => {
             let tPhrase = (nextPhrase.length < prevPhrase.length) ? nextPhrase : prevPhrase;
@@ -184,6 +186,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             loop: for (let j = 0; j < tPhrase.length; j++) {
                 let cutPrevPhrase = prevPhrase.slice(prevPhrase.length - 1 - j, prevPhrase.length);
                 let cutNextPhrase = nextPhrase.slice(0, j + 1);
+
+                // console.log(cutPrevPhrase, cutNextPhrase);
                 
                 for (let i = 0; i < cutPrevPhrase.length; i++) {
                     if (cutPrevPhrase[i] !== cutNextPhrase[i]) {
@@ -191,7 +195,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     }
                 }
 
-                if (text.includes(prevPhrase.slice(0, prevPhrase.length - j).join(" ") + " " + nextPhrase.slice(j + 1, nextPhrase.length).join(" "))) {
+                if (text.toLowerCase().replace("-", " ").includes((prevPhrase.join(" ") + " " + nextPhrase.slice(j + 1, nextPhrase.length).join(" ")).trim())) {
                     cutIndex = j + 1;
                 }
             }
@@ -204,115 +208,199 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             for (let j = index + 1; j < uniquePhrases.length; j++) {
                 if (uniquePhrases[j].join(" ").startsWith(uniquePhrases[index].join(" "))) {
                     firstBlock.push(uniquePhrases[j]);
+                    index++;
                 } else {
-                    index = j - 1;
                     break;
                 }
             }
             return [firstBlock, index];
         }
-        let [firstBlock, firstIndex] = getBlock(0);
-        let partial = false, first = true;
+        let firstBlockIndex = 0, secondBlockIndex = 0;
 
-        for (let i = firstIndex + 1; i < uniquePhrases.length; i++) {
-            let [secondBlock, secondIndex] = getBlock(i);
-            let optimalPhrase = null;
-            let cutIndex = 0;
-            let firstPhrase, secondPhrase;
-            secondBlock.reverse();
+        main: while (secondBlockIndex < uniquePhrases.length) {
+            let [firstBlock, firstIndex] = getBlock(firstBlockIndex);
+            let startFirstIndex = 0, startSecondIndex = 0;
+            let [secondBlock, secondIndex] = getBlock(firstIndex + 1);
+            let optimalIndex = 0, noOverlap = false;
 
-            loop: for (firstPhrase of firstBlock.reverse()) {
-                for (secondPhrase of secondBlock) {
-                    cutIndex = getCutIndex(firstPhrase, secondPhrase);
+            // console.log("Block", firstBlock, secondBlock);
+            // console.log("BlockIndex", firstIndex, secondIndex);
 
-                    if (cutIndex === secondPhrase.length) {
-                        // if (!optimalPhrase)
-                            optimalPhrase = partial ? secondPhrase : firstPhrase;
-                        break loop;
-                    } else if (cutIndex === firstPhrase.length) {
-                        // if (!optimalPhrase)
-                            optimalPhrase = partial ? firstPhrase: secondPhrase;
-                            break loop;
-                    } else if (cutIndex === 0) {
-                        if (!firstPhrase.join(" ").includes(secondPhrase.join(" "))) {
-                            optimalPhrase = firstPhrase;
-                            break loop;
-                        } else {
-                            optimalPhrase = firstPhrase;
-                            partial = false;
+            if (firstIndex + 1 < uniquePhrases.length) {
+                for (let i = 0; i < firstBlock.length; i++) {                    
+                    // console.log("Check", firstBlock[i], secondBlock[0]);
+
+                    if (
+                        firstBlock[i].join(" ").endsWith(secondBlock[0].join(" "))
+                    ) {
+                        if (newPhrases.length > 0) {
+                            let cutIndex = getCutIndex(newPhrases[newPhrases.length - 1], firstBlock[i]);
+    
+                            if (cutIndex > 0) {
+                                uniquePhrases.splice(firstIndex - firstBlock.length, firstBlock.length);
+                                
+                                // console.log("Changed Post3", [...uniquePhrases]);
+                                // console.log(secondBlockIndex - firstBlock.length);
+                                if (secondBlockIndex - firstBlock.length + 1 === uniquePhrases.length && startSecondIndex === 0) {
+                                    newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
+                                }
+                                continue main;
+                            }
                         }
-                    } else {
-                        optimalPhrase = firstPhrase;
+
+                        uniquePhrases.splice(firstIndex + 1, secondBlock.length);
+                        // console.log("Changed Post1", [...uniquePhrases]);
+
+                        if (secondBlockIndex === uniquePhrases.length && startSecondIndex === 0) {
+                            newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
+                        }
+                        continue main;
+                    }
+                }
+            } else {
+                return [uniquePhrases[uniquePhrases.length - 1]];
+            }
+
+            // console.log("Check2", secondIndex, uniquePhrases.length);
+            if (secondIndex + 1 < uniquePhrases.length) {
+                let [thirdBlock, thirdIndex] = getBlock(secondIndex + 1);
+
+                // console.log("Block2", thirdBlock);
+
+                if (thirdBlock.length > 0) {
+                    for (let i = 0; i < secondBlock.length; i++) {
+                        
+                        // console.log("Check2", secondBlock[i], thirdBlock[0]);
+                        // console.log("Check", prevCutIndex, nextCutIndex);
+
+                        if (thirdBlock.length > 0 && thirdIndex !== uniquePhrases.length && 
+                            secondBlock[i].join(" ").endsWith(thirdBlock[0].join(" "))
+                        ) {
+                            for (let j = 0; j < firstBlock.length; j++) {
+                                let cutIndex = getCutIndex(firstBlock[j], secondBlock[i]);
+                                
+                                if (cutIndex === 0 && thirdIndex + thirdBlock.length === uniquePhrases.length) {
+                                    break;
+                                }
+
+                                if (cutIndex === 1) {
+                                    uniquePhrases.splice(firstIndex + 1, secondBlock.length);
+                                    // console.log("Changed Post2", [...uniquePhrases]);
+                                    continue main;
+                                }
+                            }
+                        }
                     }
                 }
             }
-            partial = cutIndex > 0 && cutIndex < optimalPhrase.length;
-            i = secondIndex;
-            firstBlock = secondBlock.reverse();
 
-            if (first && partial) {
-                let firstComplexity = firstPhrase.map(word => complexityMap.get(word) || 0).reduce((a, b) => a + b, 0);
-                let secondComplexity = secondPhrase.map(word => complexityMap.get(word) || 0).reduce((a, b) => a + b, 0);
 
-                if (firstComplexity < secondComplexity) {
-                    optimalPhrase = []
+            // console.log(firstBlock, secondBlock);
+            
+            while (startFirstIndex < firstBlock.length && startSecondIndex < secondBlock.length) {
+                let firstPhrase = firstBlock[startFirstIndex];
+                let secondPhrase = secondBlock[startSecondIndex];
+
+                // console.log(firstPhrase, secondPhrase);
+                let cutIndex = getCutIndex(firstPhrase, secondPhrase);
+                // console.log(cutIndex);
+
+                if (cutIndex === 0) {
+                    optimalIndex = startFirstIndex;
+                    startFirstIndex++;
+                    noOverlap = true;
+                } else
+                if (firstPhrase.join(" ").endsWith(secondPhrase.join(" ")) && !noOverlap) {
+                    optimalIndex = startFirstIndex;
+                    startSecondIndex++;
+
+                    // if (startSecondIndex === secondBlock.length) {
+                    //     optimalIndex = firstBlock.length - 1;
+                    // }
                 } else {
-                    [secondBlock, secondIndex] = getBlock(secondIndex + 1);
-                    i = secondIndex;
-                    firstBlock = secondBlock;
+                    if (optimalIndex > 0 && !noOverlap)
+                        optimalIndex--;
+                    startFirstIndex++;
                 }
-                partial = false;
             }
-            first = false;
+            // console.log(startFirstIndex, startSecondIndex);
+            // console.log(firstBlock[optimalIndex]);
 
-            if (optimalPhrase && optimalPhrase.length > 0 && !newUniquePhrases.has(optimalPhrase.join(" "))) {
-                newPhrases.push(optimalPhrase);
-                newUniquePhrases.add(optimalPhrase.join(" "));
+            if (startFirstIndex === firstBlock.length - 1 && startSecondIndex === secondBlock.length) {
+                uniquePhrases.splice(firstIndex + 1, secondBlock.length);
+                // console.log("Changed", [...uniquePhrases]);
+                secondBlockIndex = firstIndex + 1;
+
+                // console.log(optimalIndex);
+                if (secondBlockIndex === uniquePhrases.length) {
+                    newPhrases.push(firstBlock[optimalIndex]);
+                }
+            } else {
+                firstBlockIndex = firstIndex + 1;
+                secondBlockIndex = secondIndex + 1;
+                newPhrases.push(firstBlock[optimalIndex]);
             }
-            
-            if (secondIndex === uniquePhrases.length - 1) {
-                newPhrases.push(secondPhrase);
+
+            if (secondBlockIndex === uniquePhrases.length && startSecondIndex === 0) {
+                newPhrases.push(secondBlock[secondBlock.length - 1]);
             }
         }
 
-        for (let i = 1; i < newPhrases.length - 1; i++) {
-            let prevPhrase = [...newPhrases[i - 1]];
-            let currPhrase = [...newPhrases[i]];
-            let nextPhrase = [...newPhrases[i + 1]];
+        let change = true;
 
-            let cutIndex = getCutIndex(prevPhrase, currPhrase);
-            let cutIndex2 = getCutIndex(currPhrase, nextPhrase);
-            
-            if (cutIndex + cutIndex2 >= currPhrase.length) {
-                newPhrases.splice(i, 1);
-                i--;
-                continue;
+        while (change) {
+            change = false;
+
+            for (let i = 1; i < newPhrases.length - 1; i++) {
+                let prevPhrase = [...newPhrases[i - 1]];
+                let currPhrase = [...newPhrases[i]];
+                let nextPhrase = [...newPhrases[i + 1]];
+    
+                let cutIndex = getCutIndex(prevPhrase, currPhrase);
+                let cutIndex2 = getCutIndex(currPhrase, nextPhrase);
+                
+                currPhrase.splice(0, cutIndex);
+                currPhrase.splice(currPhrase.length - cutIndex2, cutIndex2);
+                
+                if (text.toLowerCase().includes(prevPhrase.join(" ") + " " + currPhrase.join(" ") + " " + nextPhrase.join(" ")) && 
+                    currPhrase.map(word => complexityMap.get(word) || 0).filter(x => x > 0).length === 0
+                ) {
+                    change = true;
+                    newPhrases.splice(i, 1);
+                }
             }
-            currPhrase.splice(0, cutIndex);
-            currPhrase.splice(currPhrase.length - cutIndex2, cutIndex2);
             
-            if (text.toLowerCase().includes(prevPhrase.join(" ") + " " + currPhrase.join(" ") + " " + nextPhrase.join(" ")) && 
-                currPhrase.map(word => complexityMap.get(word) || 0).filter(x => x > 0).length === 0
-            ) {
-                newPhrases.splice(i, 1);
-                i--;
+            for (let i = 1; i < newPhrases.length - 1; i++) {
+                let prevPhrase = [...newPhrases[i - 1]];
+                let currPhrase = [...newPhrases[i]];
+                let nextPhrase = [...newPhrases[i + 1]];
+
+                let cutIndex = getCutIndex(prevPhrase, currPhrase);
+                let cutIndex2 = getCutIndex(currPhrase, nextPhrase);
+
+                // console.log(prevPhrase, currPhrase, nextPhrase);
+                // console.log(cutIndex, cutIndex2);
+                
+                if (cutIndex + cutIndex2 >= currPhrase.length) {
+                    newPhrases.splice(i, 1);
+                    change = true;
+                }
+            }
+
+            
+            for (let i = 0; i < newPhrases.length - 1; i++) {
+                let firstPhrase = newPhrases[i];
+                let secondPhrase = newPhrases[i + 1];
+
+                if (firstPhrase.join(" ").includes(secondPhrase.join(" "))) {
+                    newPhrases.splice(i + 1, 1);
+                    change = true;
+                    // i--;
+                }
             }
         }
-        
-        for (let i = 0; i < newPhrases.length - 1; i++) {
-            let firstPhrase = newPhrases[i];
-            let secondPhrase = newPhrases[i + 1];
 
-            if (firstPhrase.join(" ").includes(secondPhrase.join(" "))) {
-                newPhrases.splice(i + 1, 1);
-                i--;
-            }
-            //  else if (secondPhrase.join(" ").includes(firstPhrase.join(" "))) {
-            //     newPhrases.splice(i, 1);
-            //     i--;
-            // }
-        }
-        
+        // console.log(newPhrases);
         return newPhrases;
     }
     
@@ -346,27 +434,46 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             // let filteredWords = words.map(word => removeStopwords([word])[0]);
             let subTitle = rawCaptions.current[delayIndex.current].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
             let uniquePhrases = checkOverlap([...getCollocation(rawCaptions.current[delayIndex.current].data.text, phrases, complexityMap)], rawCaptions.current[delayIndex.current].data.text.replace(/(?:\r\n|\r|\n)/g, ' '));
+            
+            if (uniquePhrases.length === 1) {
+                let newUniquePhrases = checkOverlap([...getCollocation(uniquePhrases[0].join(" "), phrases, complexityMap, true)], rawCaptions.current[delayIndex.current].data.text.replace(/(?:\r\n|\r|\n)/g, ' '));
+                
+                if (newUniquePhrases.length > 1) {
+                    uniquePhrases = newUniquePhrases;
+                }
+            }
+            
             let definitionsList = new Map();
             let startIndex = 0;
             // console.clear()
             
             let slicePhrase = (phrase, subTitle, map, startIndex, ifSlice = false) => {
-                let slice = subTitle.search(phrase.join(" "));
+                let slice = subTitle.search(phrase.join(" ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
                 let slideSubtitle = ifSlice ? phrase.join(" ") : subTitle.slice(startIndex, slice);
                 let chunkWords = tokenize.extract(slideSubtitle, { toLowercase: true, regex: [tokenize.words] });
                 startIndex = slice + phrase.join(" ").length;
+                let averageComplexity = uniquePhrases.map(phrase => phrase.map(word => complexityMap.get(word) || 0).reduce((a, b) => a + b, 0) / phrase.length).reduce((a, b) => a + b, 0) / uniquePhrases.length;
 
                 if (chunkWords) {
                     let phraseDefinition = phrases.get(subTitle);
+                    let setWords = new Map()
 
                     for (let word of chunkWords) {
-                        if (complexityMap.get(word) > (map === definitionsList ? 3 : 2) && additionalPhrases.current.get(word)) {
+                        if (complexityMap.get(word) > (map === definitionsList ? (uniquePhrases.length === 0 ? 0 : averageComplexity) : 2) && additionalPhrases.current.get(word)) {
                             let d = additionalPhrases.current.get(word);
                             d.complexity = complexityMap.get(word);
 
                             if (phraseDefinition && (phraseDefinition.definitionTerm1.term.toLowerCase().includes(word) || phraseDefinition.definitionTerm2.term.toLowerCase().includes(word)))
                                 continue;
 
+                            setWords.set(word, d);
+                        }
+                    }
+
+                    let minComplexity = setWords.size > 0 ? 2 : 0;
+
+                    for (let [word, d] of setWords) {
+                        if (d.complexity > minComplexity) {
                             map.set(word, {
                                 "subtitle": word,
                                 "collocation": [word],
@@ -382,6 +489,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             
             for (let i = 0; i < uniquePhrases.length; i++) {
                 let phrase = uniquePhrases[i];
+                let slice = subTitle.search(phrase.join(" ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                let sliceSubtitle = rawCaptions.current[delayIndex.current].data.text.slice(slice, slice + phrase.join(" ").length);
                 let definitions = phrases.get(phrase.join(" "));
                 let complexity = phrase.map(word => complexityMap.get(word) || 0).reduce((a, b) => a + b, 0) / phrase.length;
                 definitions.complexity = complexity;
@@ -403,8 +512,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     for (let secondPhrase of uniqueSecondPhrases) {
                         let secondDefinitions = phrases.get(secondPhrase.join(" ")) || additionalPhrases.current.get(secondPhrase.join(" "));
                         let secondComplexity = secondPhrase.map(word => complexityMap.get(word) || 0).reduce((a, b) => a + b, 0) / secondPhrase.length;
+                        let secondSlice = phrase.join(" ").search(secondPhrase.join(" ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                        let secondSliceSubtitle = sliceSubtitle.slice(secondSlice, secondSlice + secondPhrase.join(" ").length);
+                        
                         secondDefinitions.complexity = secondComplexity;
                         secondDefinitions.collocation = secondPhrase;
+                        secondDefinitions.subtitle = secondSliceSubtitle;
                         additional.set(secondPhrase.join(" "), secondDefinitions);
 
                         secondStartIndex = slicePhrase(secondPhrase, phrase.join(" "), additional, secondStartIndex);
@@ -427,17 +540,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     }
                 }
                 
-                if (skipTerm1 && skipTerm2 && skipTerm1.definitionPhrase.phrase.toLowerCase() === skipTerm1.definitionPhrase.phrase.toLowerCase()) {
+                if (skipTerm1 && skipTerm2 && skipTerm1.definitionPhrase.phrase.toLowerCase() === skipTerm2.definitionPhrase.phrase.toLowerCase()) {
                     skipTerm2 = true;
                 }
-                
-                let slice = subTitle.search(phrase.join(" "));
-                let sliceSubtitle = rawCaptions.current[delayIndex.current].data.text.slice(slice, slice + phrase.join(" ").length);
                 definitionsList.set(phrase.join(" "), {"subtitle": sliceSubtitle, "collocation": phrase, "definitions": definitions, "additional": additional, "skipTerm1": skipTerm1, "skipTerm2": skipTerm2});
             }
 
             if (uniquePhrases.length > 0) {
-                slicePhrase([subTitle.slice(startIndex + uniquePhrases[uniquePhrases.length - 1].length)], subTitle, definitionsList, startIndex, true);
+                slicePhrase([subTitle.slice(startIndex)], subTitle, definitionsList, startIndex, true);
             } else {
                 slicePhrase([subTitle], subTitle, definitionsList, startIndex, true);
             }
@@ -693,7 +803,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             // let finishedWords = 0;
             
             // for (let i = 0; i < rawCaptions.current.length; i++) {
-            //     let words = tokenize.extract(rawCaptions.current[i].data.text, { toLowercase: true, regex: [tokenize.words] });
+            //     let words = tokenize.extract(rawCaptions.current[i].data.text.replace("-", " "), { toLowercase: true, regex: [tokenize.words] });
             //     words = removeStopwords(words);
 
             //     for (let word of words) {
@@ -732,20 +842,56 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         let names = new Set();
 
         for (let [collocation, definition] of phrases) {
-            if (
-                (definition.definitionTerm1.definition.includes("given name") || 
-                definition.definitionTerm1.definition.includes("surname")) &&
-                definition.definitionTerm1.term.length > 2
+            if ((
+                definition.definitionTerm1.definition.includes("given name") || 
+                definition.definitionTerm1.definition.includes("common name") ||
+                definition.definitionTerm1.definition.includes("person's name") ||
+                definition.definitionTerm1.definition.includes("person named") ||
+                definition.definitionTerm1.definition.includes("name of a person") ||
+                definition.definitionTerm1.definition.includes("person with the name") ||
+                definition.definitionTerm1.definition.includes("last name") ||
+                definition.definitionTerm1.definition.includes("first name") ||
+                definition.definitionTerm1.definition.includes("surname"))
             ) {
-                names.add(definition.definitionTerm1.term.toLowerCase());
+                let nameWords = tokenize.extract(definition.definitionTerm1.term, { toLowercase: true, regex: [tokenize.words] });
+
+                for (let nameWord of nameWords) {
+                    if (nameWord.length > 2) {
+                        console.log(nameWord);
+                        names.add(nameWord);
+                    }
+                }
+                // if (definition.definitionTerm1.term.length > 2) {
+                //     names.add(definition.definitionTerm1.term.toLowerCase());
+                    
+                //     console.log(definition.definitionTerm1.term);
+                // }
             }
 
-            if (
-                (definition.definitionTerm2.definition.includes("given name") ||
-                definition.definitionTerm2.definition.includes("surname")) &&
-                definition.definitionTerm2.term.length > 2
+            if ((
+                definition.definitionTerm2.definition.includes("given name") || 
+                definition.definitionTerm2.definition.includes("common name") ||
+                definition.definitionTerm2.definition.includes("person's name") ||
+                definition.definitionTerm2.definition.includes("person named") ||
+                definition.definitionTerm2.definition.includes("name of a person") ||
+                definition.definitionTerm2.definition.includes("person with the name") ||
+                definition.definitionTerm2.definition.includes("last name") ||
+                definition.definitionTerm2.definition.includes("first name") ||
+                definition.definitionTerm2.definition.includes("surname"))
             ) {
-                names.add(definition.definitionTerm2.term.toLowerCase());
+                let nameWords = tokenize.extract(definition.definitionTerm2.term, { toLowercase: true, regex: [tokenize.words] });
+
+                for (let nameWord of nameWords) {
+                    if (nameWord.length > 2) {
+                        names.add(nameWord);
+                        console.log(nameWord);
+                    }
+                }
+                // if (definition.definitionTerm2.term.length > 2) {
+                //     names.add(definition.definitionTerm2.term.toLowerCase());
+                    
+                //     console.log(definition.definitionTerm2.term);
+                // }
             }
         }
         
@@ -759,25 +905,41 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
 
             for (let name of names) {
-                let startIndex = collocation.toLowerCase().search(name);
-                let endIndex = startIndex + name.length;
-                name = startIndex === 0 ? name + " " : name;
-                name = endIndex === collocation.length ? " " + name : name;
+                // let startIndex = collocation.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                // let endIndex = startIndex + name.length;
+                // name = startIndex === 0 ? name + " " : name;
+                // name = endIndex === collocation.length ? " " + name : name;
 
-                startIndex = definition.definitionTerm1.term.toLowerCase().search(name);
-                let term1 = startIndex === 0 ? definition.definitionTerm1.term.toLowerCase() + " " : definition.definitionTerm1.term.toLowerCase();
-                term1 = startIndex + name.length === definition.definitionTerm1.term.length ? term1 + " " : term1;
+                // startIndex = definition.definitionTerm1.term.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                // let term1 = startIndex === 0 ? definition.definitionTerm1.term.toLowerCase() + " " : definition.definitionTerm1.term.toLowerCase();
+                // term1 = startIndex + name.length === definition.definitionTerm1.term.length ? term1 + " " : term1;
 
-                startIndex = definition.definitionTerm2.term.toLowerCase().search(name);
-                let term2 = startIndex === 0 ? definition.definitionTerm2.term.toLowerCase() + " " : definition.definitionTerm2.term.toLowerCase();
-                term2 = startIndex + name.length === definition.definitionTerm2.term.length ? term2 + " " : term2;
-
+                // startIndex = definition.definitionTerm2.term.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                // let term2 = startIndex === 0 ? definition.definitionTerm2.term.toLowerCase() + " " : definition.definitionTerm2.term.toLowerCase();
+                // term2 = startIndex + name.length === definition.definitionTerm2.term.length ? term2 + " " : term2;
+                let c = phrases.get(collocation);
                 if (
-                    (collocation.toLowerCase().includes(name) && (name.startsWith(" ") || name.endsWith(" "))) ||
-                    (name.includes(term1) && (term1.startsWith(" ") || term1.endsWith(" "))) ||
-                    (name.includes(term2) && (term2.startsWith(" ") || term2.endsWith(" ")))
+                    // (collocation.toLowerCase().includes(name) && 
+                    // (c.definitionPhrase.definition.includes("person's name") ||
+                    // c.definitionPhrase.definition.includes("person with the name") ||
+                    // c.definitionPhrase.definition.includes("surname")))
+                    (definition.definitionTerm1.term.toLowerCase().includes(name) ||
+                    definition.definitionPhrase.phrase.toLowerCase().includes(name) ||
+                    definition.definitionTerm2.term.toLowerCase().includes(name)) &&
+                    (c.definitionPhrase.definition.toLowerCase().includes("person named") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("person with the name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("name of a person") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("person's name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("given name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("surname") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("last name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("first name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes(name))
+
                 ) {
+                    console.log("removed:", collocation, phrases.get(collocation), name)
                     phrases.delete(collocation);
+                    continue loop;
                 }
             }
             additionalPhrases.current.set(definition.definitionTerm1.term, { definitionPhrase: {phrase: definition.definitionTerm1.term, definition: definition.definitionTerm1.definition}});
@@ -958,7 +1120,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     let definitionsBBox = definitionsContainer.getBoundingClientRect();
                     let inAreaOfInterest = !(window.innerWidth * 0.95 <= x || definitionsBBox.x <= x);
 
-                    if (!end.current && !onQuestions.current) {
+                    if (!end.current && !onQuestions.current && showDefinitions) {
                         if (inAreaOfInterest && document.hasFocus() && paused && !forcePause.current) {
                             if (!timeout) {
                                 timeout = setTimeout(() => {
@@ -1028,7 +1190,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 }
             }
         }
-        ipcRenderer.on('gaze-pos', test);
+        if (!mouseEnabled)
+            ipcRenderer.on('gaze-pos', test);
 
         document.addEventListener("mousemove", (e) => {
             x.current = e.clientX;
@@ -1047,7 +1210,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             ipcRenderer.removeAllListeners();
             d3.select(document).on("mousemove", null);
         }
-    }, [paused, mouseEnabled]);
+    }, [paused, mouseEnabled, showDefinitions]);
 
     useEffect(() => {
         setSrc(srcInit);
@@ -1055,9 +1218,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     }, [srcInit, trackInit]);
 
     useEffect(() => {
-        definitionToggle.current = toggleDefinitions;
-        setShowDefinitionContainer(!toggleDefinitions);
-    }, [toggleDefinitions]);
+        if (showDefinitions) {
+            definitionToggle.current = toggleDefinitions;
+            setShowDefinitionContainer(!toggleDefinitions);
+        } else {
+            definitionToggle.current = false;
+            setShowDefinitionContainer(false);
+        }
+    }, [toggleDefinitions, showDefinitions]);
 
     useEffect(() => {
         endCallbackRef.current = endCallback;

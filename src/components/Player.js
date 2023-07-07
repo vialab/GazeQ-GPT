@@ -129,7 +129,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            player.currentTime(29)
+            // player.currentTime(78)
         }
     }, [src, track]);
 
