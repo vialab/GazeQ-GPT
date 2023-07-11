@@ -12,7 +12,7 @@
 .video-js.vjs-theme-fantasy {
     --vjs-theme-fantasy--primary: #f27023;
     --vjs-theme-fantasy--secondary: #fff;
-    background-color: #fff;
+    background-color: transparent;
 }
 
 .vjs-subs-caps-button, .vjs-picture-in-picture-control {
@@ -76,6 +76,7 @@
 .vjs-theme-fantasy .vjs-big-play-button {
     outline: none;
     color: var(--vjs-theme-fantasy--secondary);
+    background-color: transparent !important;
 }
 
 .video-js .vjs-big-play-button .vjs-icon-placeholder:before {
@@ -144,4 +145,9 @@
 
 .vjs-text-track-cue div {
     background-color: rgba(0, 0, 0, 0.7)!important;
+}
+
+span.highlight {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
 }

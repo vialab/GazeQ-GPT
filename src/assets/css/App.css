@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Comfortaa');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 .overlay {
     position: fixed;
@@ -75,11 +74,81 @@
     transform: rotate(180deg) scale(0.85);
 }
 
+.contentContainer .modalButton.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    border-color: rgb(184, 64, 94);
+    transition: border-color 1s ease-in-out, opacity 1s ease-in-out;
+}
+
+.contentContainer .modalButton.disabled.enable {
+    border-color: white;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.contentContainer .modalButton.disabled::before {
+    width: 100%;
+    top: 50%;
+    left: 0em;
+    content: "";
+    height: .2em;
+    border-radius: 3px;
+    background: rgb(184, 64, 94);
+    position: absolute;
+    transform: rotate(-45deg);
+}
+
+.contentContainer .modalButton.disabled::after {
+    width: 100%;
+    top: 50%;
+    left: 0em;
+    content: "";
+    height: .2em;
+    border-radius: 3px;
+    background: rgb(184, 64, 94);
+    position: absolute;
+    transform: rotate(45deg);
+}
+
+.contentContainer .modalButton.cancel {
+    border-color: #b8405e;
+}
+
+.contentContainer .modalButton.confirm {
+    border-color: #2eb086;
+}
+
+.contentContainer .modalButton.disabled.enable::before,
+.contentContainer .modalButton.disabled.enable::after {
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
 .contentContainer .settings {
     display: grid;
     grid-template-columns: 250px 250px;
-    grid-template-rows: 80px;
+    /* grid-template-rows: 80px; */
     white-space: nowrap;
+}
+
+.contentContainer h3 {
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: #E58F65;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.contentContainer .settingsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+}
+
+.contentContainer .settingsContainer p {
+    margin: 0;
 }
 
 .contentContainer .settings div {
@@ -104,19 +173,24 @@
     appearance: none;
     background-clip: content-box;
     background-color: transparent;
-    border: 2px solid white;
+    border: 1px solid white;
     border-radius: 50%;
     width: 20px;
     height: 20px;
     outline: none;
     pointer-events: all;
     margin: 10px;
+    display: none;
 }
 
 .contentContainer .settings input[type=radio]:checked {
-    background-color: white;
-    border: 2px solid white;
-    padding: 4px;
+    background-color: #E58F65;
+    border: 1px solid #E58F65;
+    padding: 5px;
+}
+
+.contentContainer .settings input[type=radio]:checked~label {
+    border: 1px solid #E58F65;
 }
 
 .contentContainer .settings svg {
@@ -126,7 +200,7 @@
 
 .contentContainer .settingsContainer {
     text-align: center;
-    border: 2px solid white;
+    border: 1px solid white;
     border-radius: 10px;
 }
 
@@ -197,10 +271,6 @@
 }
 
 .checkmark {
-    width: 63px;
-    height: 63px;
-    border-radius: 50%;
-    display: block;
     stroke-width: 2;
     stroke: #fff;
     stroke-miterlimit: 10;
@@ -211,11 +281,7 @@
     stroke-dashoffset: 0;
 }
 
-.checkmark:hover {
-    cursor: pointer;
-}
-
-.checkmark:hover .checkmark__check {
+.modalButton:hover .checkmark .checkmark__check {
     animation: stroke 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
 }
 
@@ -259,10 +325,97 @@
     transition: all .3s ease-in;
 }
 
-.close-container:hover .leftright {
+.modalButton:hover .close-container .leftright {
     transform: rotate(-45deg);
 }
 
-.close-container:hover .rightleft {
+.modalButton:hover .close-container .rightleft {
     transform: rotate(45deg);
+}
+
+.calibrateScreen {
+    width: 100%;
+    height: 60vh;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    position: relative;
+}
+
+.calibrateScreen span {
+    width: 30px;
+    height: 30px;
+    display: block;
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background-color: #f0f0f0;
+}
+
+.check {
+    position: relative;
+    color: white;
+    width: 1.2em;
+    height: 1.2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+.check::before {
+    width: 1.2em;
+    top: 0.5em;
+    left: 0em;
+    content: "";
+    height: .2em;
+    border-radius: 3px;
+    background: rgb(184, 64, 94);
+    position: absolute;
+    transform: rotate(-45deg);
+    transition: transform .5s ease-in-out, width .5s ease-in-out, top .5s ease-in-out, left .5s ease-in-out, background .5s ease-in-out;
+}
+
+.check::after {
+    content: "";
+    height: .2em;
+    width: 1.2em;
+    border-radius: 3px;
+    background: rgb(184, 64, 94);
+    position: absolute;
+    left: 0em;
+    transform: rotate(45deg);
+    transition: transform .5s ease-in-out, background .5s ease-in-out;
+}
+
+.check.checked::before {
+    width: .7em;
+    top: .75em;
+    left: -0.25em;
+    transform: rotate(45deg);
+    background: rgb(46, 176, 134);
+}
+
+.check.checked::after {
+    transform: rotate(-55deg);
+    background: rgb(46, 176, 134);
+}
+
+.checklistItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.studyInfo {
+    width: 30px;
+    height: 30px;
+    border: 1px solid white;
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-radius: 50%;
+    margin: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

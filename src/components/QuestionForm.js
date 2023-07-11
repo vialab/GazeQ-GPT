@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../assets/css/QuestionForm.css"
 import * as d3 from "d3";
 
-export default function QuestionForm({ questionData, endCallback, reviewCallback }) {
+export default function QuestionForm({ questionData, questionCallback, endCallback, reviewCallback }) {
     let [ question, setQuestion ] = useState([]);
     let [ choiceA, setchoiceA ] = useState([]);
     let [ choiceB, setchoiceB ] = useState([]);
@@ -37,7 +37,6 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
                     .style("pointer-events", "all");
 
                     correct = true;
-                    submittedAnswers.current.clear();
                 } else {
                     d3.select(".additional")
                     .transition()
@@ -68,10 +67,15 @@ export default function QuestionForm({ questionData, endCallback, reviewCallback
             d3.select(".additional")
             .transition()
             .style("opacity", "0");
+
+            questionCallback(question[index], [...submittedAnswers.current]);
         } else {
             closeQuestionContainer();
+            
+            questionCallback(question[index], [...submittedAnswers.current]);
             endCallback();
         }
+        submittedAnswers.current.clear();
     }
 
     let trim = () => {

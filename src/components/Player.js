@@ -25,7 +25,7 @@ class Gradient extends Component {
 
 videojs.registerComponent('Gradient', Gradient);
 
-export default function Player({clickCallback, timerCallback, endCallback, paused, time, src, track, toggleDefinitions}) {
+export default function Player({clickCallback, timerCallback, textTrackChangeCallback, endCallback, paused, time, src, track, toggleDefinitions}) {
     useEffect(() => {
         if (videojs.getAllPlayers().length === 0) {
             let player = videojs("video", {
@@ -46,22 +46,6 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
 
             player.getChild("ControlBar").addChild("Gradient", {}, 0);
 
-            player.on("playerresize", (e) => {
-                const config = { childList: true, subtree: true };
-
-                const callback = (mutationList, observer) => {
-                    for (const mutation of mutationList) {
-                        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-                            player.trigger("texttrackchange");
-                            observer.disconnect();
-                            return;
-                        }
-                    }
-                };
-                const observer = new MutationObserver(callback);
-                observer.observe(d3.select(".vjs-text-track-display").node(), config);
-            });
-
             player.on("click", (e) => {
                 if (clickCallback instanceof Function)
                     clickCallback(player.paused());
@@ -76,17 +60,20 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
                 if (endCallback instanceof Function)
                     endCallback();
             });
+        }
+    }, []);
 
-            player.on("texttrackchange", function () {
-                if (timerCallback instanceof Function)
-                    timerCallback(player.currentTime());
-                
+    useEffect(() => {
+        let player = videojs.getAllPlayers()[0];
+
+        if (player) {
+            player.on("texttrackchange", function () {                
                 if (d3.select(".vjs-text-track-cue").empty()) {
                     return;
                 }
                 let text = d3.select(".vjs-text-track-cue").select("div").text();
                 d3.select(".vjs-text-track-cue").select("div").text("");
-                d3.selectAll(".vjs-text-track-cue div span").style("background-color", null);
+                // d3.selectAll(".vjs-text-track-cue div span").style("background-color", null);
                 let lines = text.split("\n");
 
                 for (let i = 0; i < lines.length; i++) {
@@ -102,11 +89,38 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
                         .select("div")
                         .html(d3.select(".vjs-text-track-cue").select("div").html() + " ");
                     }
-                    d3.select(".vjs-text-track-cue").select("div").append("span").text("\n");
+                    if (i < lines.length - 1)
+                        d3.select(".vjs-text-track-cue").select("div").append("span").text("\n");
                 }
+
+                // if (textTrackChangeCallback instanceof Function)
+                //     textTrackChangeCallback();
+            });
+            let timeout = null;
+
+            player.on("playerresize", (e) => {
+                const config = { childList: true, subtree: true };
+
+                const callback = (mutationList, observer) => {
+                    for (const mutation of mutationList) {
+                        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+                            player.trigger("texttrackchange");
+                            clearTimeout(timeout);
+
+                            timeout = setTimeout(() => {
+                                if (textTrackChangeCallback instanceof Function)
+                                    textTrackChangeCallback();
+                            }, 500);
+                            observer.disconnect();
+                            return;
+                        }
+                    }
+                };
+                const observer = new MutationObserver(callback);
+                observer.observe(d3.select(".vjs-text-track-display").node(), config);
             });
         }
-    }, []);
+    }, [textTrackChangeCallback]);
 
     useEffect(() => {
         let player = videojs.getAllPlayers()[0];
@@ -129,7 +143,7 @@ export default function Player({clickCallback, timerCallback, endCallback, pause
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            // player.currentTime(78)
+            player.currentTime(0)
         }
     }, [src, track]);
 
