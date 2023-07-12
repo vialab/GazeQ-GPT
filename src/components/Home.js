@@ -153,7 +153,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let [ videoTime, setVideoTime ] = React.useState(-1);
     let [ src, setSrc ] = React.useState(srcInit);
     let [ track, setTrack ] = React.useState(trackInit);
-    let [ collocations, setCollocations ] = React.useState(new Map());
+    let [ collocations, setCollocations ] = React.useState(null);
     let [ showDefinitionContainer, setShowDefinitionContainer ] = React.useState(!toggleDefinitions);
     let [ showDefinition, setShowDefinition ] = React.useState(false);
     let [ showMoreInfo, setShowMoreInfo ] = React.useState(false);
@@ -174,7 +174,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let endCallbackRef = useRef(endCallback);
     let llmRef = useRef(llm);
     let ifRecord = useRef(record);
-    let subtitleNodesRef = useRef([]);
     let headDistancesRef = useRef(40);
 
     let eyeGazeRecordData = useRef([]);
@@ -567,8 +566,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 slicePhrase([subTitle], subTitle, definitionsList, startIndex, true);
             }
             setCollocations(definitionsList);
+            console.log("done", t);
         } else if (delayIndex.current < 0) {
-            setCollocations(new Map());
+            setCollocations(null);
+            console.log("canceled", t);
         }
         setShowDefinition(null);
         setShowMoreInfo(false);
@@ -636,6 +637,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 startAllTime = rawCaptions.current[i].data.end + 10;
 
                 if (startTime - startAllTime > 3000) {
+                    startAllTime = rawCaptions.current[i].data.start;
                     break;
                 }
             }
@@ -645,11 +647,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 endAllTime = rawCaptions.current[i].data.start - 10;
 
                 if (endAllTime - endTime > 3000) {
+                    endAllTime = rawCaptions.current[i].data.end + 10;
                     break;
                 }
             }
-            console.log(startTime, endTime)
             console.log(startAllTime, endAllTime)
+            console.log(subtitle);
 
             let collocation = word.word;
             // let collocations = getCollocation(subtitle, phrases);
@@ -881,7 +884,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
         if (!record) {
             scoresRecordData.current = {wordScores: [...wordScores.current], frameScores: [...frameScores.current], definitionScores: [...definitionScores.current]}
-            recordCallback({eyeData: [...eyeGazeRecordData.current], questionData: [...questionRecordData.current], definitionData: [...definitionRecordData.current], scoresData: {...scoresRecordData.current}});
+            
+            if (recordCallback instanceof Function)
+                recordCallback({eyeData: [...eyeGazeRecordData.current], questionData: [...questionRecordData.current], definitionData: [...definitionRecordData.current], scoresData: {...scoresRecordData.current}});
+            
             eyeGazeRecordData.current = [];
             questionRecordData.current = [];
             definitionRecordData.current = [];
@@ -931,14 +937,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let [ textTrackChangeCallback, setTextTrackChangeCallback] = React.useState(null);
 
     useEffect(() => {
+        console.log("Collocations", collocations)
         if (!showDefinitions) {
             setTextTrackChangeCallback(null);
             return;
+        } else if (!collocations) {
+            return;
         }
-        let callback = () => {
-            subtitleNodesRef.current = [];
+        let collocationValues = [...collocations.values()];
 
-            [...collocations.values()].forEach((d, i) => {
+        let callback = () => {
+            collocationValues.forEach((d, i) => {
                 let collocation = d.collocation;
                 let index = 0;
                 let subtitleNodes = [];
@@ -980,7 +989,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     }
                     
                     for (let subtitleNode of subtitleNodes) {
-
                         d3.select(collocationContainer)
                         .classed("highlight", true)
                         .append(() => subtitleNode)
@@ -997,7 +1005,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         setTextTrackChangeCallback(() => () => {
             callback();
         });
-        callback();
     }, [collocations, showDefinitions]);
 
     useEffect(() => {

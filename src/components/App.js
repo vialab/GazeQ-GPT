@@ -81,32 +81,32 @@ export default function App() {
     let postTaskContent = useRef([]);
     
     let toggleGaze = () => {
-        if (gazeRef.current)
-            d3.select(gazeRef.current)
-            .style("display", d3.select(gazeRef.current).style("display") === "none" ? "block" : "none");
+        d3.select(gazeRef.current)
+        .style("display", d3.select(gazeRef.current).style("display") === "none" ? "block" : "none");
 
-        if (fixationRef.current)
-            d3.select(fixationRef.current)
-            .style("display", d3.select(fixationRef.current).style("display") === "none" ? "block" : "none");
+        d3.select(fixationRef.current)
+        .style("display", d3.select(fixationRef.current).style("display") === "none" ? "block" : "none");
     };
 
-    let toggleMouse = () => {
-        setEnableMouse(!enableMouse);
+    let toggleMouseRef = React.useRef(null);
 
-        if (enableMouse) {
-            if (gazeRef.current)
+    useEffect(() => {
+        toggleMouseRef.current = () => {
+            setEnableMouse(!enableMouse);
+    
+            if (enableMouse) {
                 d3.select(gazeRef.current)
                 .style("width", "40px")
                 .style("height", "40px")
                 .style("transform", "translate(0, 0)");
 
-            if (fixationRef.current)
                 d3.select(fixationRef.current)
                 .style("width", "40px")
                 .style("height", "40px")
                 .style("transform", "translate(0, 0)");
-        }
-    };
+            }
+        };
+    }, [ enableMouse ]);
 
     let toggleDefinitionContainer = () => {
         setToggleDefinitions(!toggleDefinitions);
@@ -132,8 +132,8 @@ export default function App() {
         if (d3.select(gazeRef.current).style("display") !== "none")
             toggleGaze();
 
-        // if (enableMouse)
-        //     toggleMouse();
+        if (enableMouse)
+            toggleMouseRef.current();
         videojs("video").load();
         setModalIsOpen(true);
 
@@ -551,7 +551,6 @@ export default function App() {
                         }
                     </div>
                 </button>
-
                 
                 let prevButton = <button className={"round modalButton prevButton"+ (content[modalContentIndex].confirm ? " cancel" : "")} onClick={prevContent} key={"prev" + modalContentIndex}>
                     <div id={"cta"}>
@@ -609,7 +608,7 @@ export default function App() {
         if (state === "study" && !onSettings.current) {
             let settingContent = <>
                 <h3>Settings</h3>
-                <div style={{ width: "min-content", display: "flex", "gap": "20px", flexDirection: "column" }}>
+                <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
                     <div className="field">
                         <input id="pid" name="pid" required defaultValue="test"/>
                         <label htmlFor="pid">Participant ID</label>
@@ -663,6 +662,13 @@ export default function App() {
                                 <label htmlFor="llmSecond">LLM Qs Second</label>
                             </div>
                         </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "20px" }}> 
+                        <p>Toggle Gaze</p>
+                        <label className="switch"><input type="checkbox" defaultChecked={d3.select(gazeRef.current).style("display") !== "none"} onChange={toggleGaze}/><span className="slider sliderRound"></span></label>
+                        <p>Enable Mouse</p>
+                        <label className="switch"><input type="checkbox" defaultChecked={enableMouse} onChange={() => toggleMouseRef.current()}/><span className="slider sliderRound"></span></label>
                     </div>
                 </div>
             </>
@@ -728,7 +734,6 @@ export default function App() {
 
             d3.select(document).on("keydown", (e) => {
                 if (e.key === "y" && e.ctrlKey && !onSettings.current) {
-                    onSettings.current = true;
                     setModalIsOpen(true);
                     
                     if (d3.select(".contentContainer").node()) {
@@ -737,10 +742,12 @@ export default function App() {
                         .duration(500)
                         .style("opacity", "0")
                         .on("end", () => {
+                            onSettings.current = true;
                             setModalContent(settingContent);
                             setModalBottomContent(bottomContent);
                         });
                     } else {
+                        onSettings.current = true;
                         setModalContent(settingContent);
                         setModalBottomContent(bottomContent);
                     }
@@ -767,7 +774,7 @@ export default function App() {
                     <div onClick={toggleGaze}>
                         Toggle Gaze
                     </div>
-                    <div onClick={toggleMouse}>
+                    <div onClick={() => toggleMouseRef.current()}>
                         Toggle Mouse
                     </div>
                     <div onClick={toggleDefinitionContainer}>

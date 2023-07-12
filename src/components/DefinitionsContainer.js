@@ -3,7 +3,6 @@ import * as d3 from "d3";
 import "../assets/css/DefinitionsContainer.css";
 
 export default function DefinitionsContainer({ collocations, show, showDefinition, showMoreInfo, onPrev, definitionCallback }) {
-    let transition = useRef(false);
     let definitionsContainer = useRef(null);
     let bottom = useRef(null), top = useRef(null);
     let definitionRefs = useRef(new Map());
@@ -31,20 +30,24 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                 d3.select(definitionsContainer.current)
                 .selectAll(".collocation")
                 .transition()
+                .duration(400)
                 .style("gap", "0px");
 
                 d3.select(definitionsContainer.current)
                 .selectAll(".collocation > span")
                 .transition()
+                .duration(400)
                 .style("max-height", "0px");
 
                 d3.select(ref)
                 .transition()
+                .duration(400)
                 .style("gap", "10px")
 
                 d3.select(ref)
                 .select("span")
                 .transition()
+                .duration(400)
                 .style("max-height", height + "px")
                 .on("end", () => {
                     definitionTimeout.current = null;
@@ -61,7 +64,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                     if (definitionCallbackRef.current instanceof Function) 
                         definitionCallbackRef.current(definition.current, collocations.get(definition.current), ref, "collocation");
                 });
-            },  transition.current ? 1000 : 500);
+            }, 300);
         } else {
             clearTimeout(definitionTimeout.current);
             definitionTimeout.current = null;
@@ -73,50 +76,46 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
     }, [definitionCallback])
 
     useEffect(() => {
-        if (!transition.current) {
-            transition.current = true;
+        d3.select("#moreInfoContainer")
+        .transition()
+        .style("opacity", "0");
 
-            d3.select("#moreInfoContainer")
+        if (show) {
+            d3.select(definitionsContainer.current)
             .transition()
-            .style("opacity", "0");
+            .duration(500)
+            .style("right", "0%");
+        } else {
+            d3.selectAll(".collocation")
+            .transition()
+            .style("gap", "0px")
+            .style("opacity", "1");
 
-            if (show) {
-                d3.select(definitionsContainer.current)
-                .transition()
-                .style("right", "0%")
-                .on("end", () => transition.current = false);
-            } else {
-                d3.selectAll(".collocation")
+            d3.selectAll(".collocation")
+            .select("span")
+            .transition()
+            .style("max-height", "0px");
+
+            d3.select(definitionsContainer.current)
+            .transition()
+            .duration(500)
+            .style("right", "-20%");
+
+            if (definition.current) {
+                let ref = definitionRefs.current.get(definition.current);
+
+                d3.select(ref.current)
                 .transition()
                 .style("gap", "0px")
-                .style("opacity", "1");
+                .styleTween("transform", () => d3.interpolate(d3.select(ref.current).style("transform"), `translate(0px, 0px)`));
 
-                d3.selectAll(".collocation")
-                .select("span")
-                .transition()
-                .style("max-height", "0px");
-
-                d3.select(definitionsContainer.current)
-                .transition()
-                .style("right", "-20%")
-                .on("end", () => transition.current = false);
-
-                if (definition.current) {
-                    let ref = definitionRefs.current.get(definition.current);
-
-                    d3.select(ref.current)
-                    .transition()
-                    .style("gap", "0px")
-                    .styleTween("transform", () => d3.interpolate(d3.select(ref.current).style("transform"), `translate(0px, 0px)`));
-
-                    definition.current = null;
-                    definitionMore.current = null;
-                }
+                definition.current = null;
+                definitionMore.current = null;
             }
-            d3.selectAll([bottom.current, top.current])
-            .transition()
-            .style("opacity", "0");
         }
+        d3.selectAll([bottom.current, top.current])
+        .transition()
+        .style("opacity", "0");
     }, [show]);
     
     useEffect(() => {
@@ -140,8 +139,10 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
             let moreInfoContainer = ref.current;
 
             d3.select("#moreInfoContainer")
+            .style("top", `${topBBox.y + topBBox.height + bbox.height + 100}px`)
             .transition()
             .delay(500)
+            .duration(500)
             .style("opacity", "1")
             .style("top", `${topBBox.y + topBBox.height + bbox.height + 40}px`);
 
@@ -222,7 +223,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
     return (
         <div id="definitionsContainer" ref={definitionsContainer} >
             <div id="collocationsContainer">
-                { [...collocations.entries()].map(([_, collocation], index) => {
+                { collocations ? [...collocations.entries()].map(([_, collocation], index) => {
                     let ref = React.createRef();
                     definitionRefs.current.set(collocation["collocation"].join(" "), ref);
 
@@ -233,7 +234,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                             <span><p> { collocation["definitions"].definitionPhrase.definition.toLowerCase() } </p></span>
                         </div>
                     );
-                })}
+                }) : null}
             </div>
             <div id="moreInfoContainer">
                 {moreInfo ? 

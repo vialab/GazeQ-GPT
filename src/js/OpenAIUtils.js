@@ -91,25 +91,11 @@ Give me the complexity (1-5) of the word.`
 }
 
 export function generateQuestion(text, word) {
-    let requestOptions = {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + process.env.OPENAI_API_KEY,
-        },
-        body: JSON.stringify({
-            model: "gpt-3.5-turbo-16k-0613",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a professor making a multiple-choice test about a video.
-                    `
-                },
-                {
-                    role: "user",
-                    content: `Text:
-${text}
-
+    const messages = [
+        {
+            role: "system",
+            content: `You are a professor making a multiple-choice test about a video.
+            
 Create a multiple-choice question about the text given with four choices. Give the correct answer at the end of the question.
 
 Here are the criteria for the question:
@@ -118,16 +104,37 @@ Here are the criteria for the question:
 
 2. There must only be one correct answer
 
-3. The correct answer must contain the word/phrase: '${word}'. 
+3. The correct answer must contain the phrase: '${word}'. 
+            `
+        },
+        {
+            role: "user",
+            content: `Text:
+${text}`
+            ,
+        },
+        {
+            role: "assistant",
+            content: `Let's work this out in a step by step way to be sure we have the right answer.`
+        }
+    ];
 
-4. Three incorrect answers that does not involve the text.
-                    `,
-                },
-                {
-                    role: "assistant",
-                    content: `Let's work this out in a step by step way to be sure we have the right answer.`
-                }
-            ],
+    const explanationMessages = (choice, correct = false) => {
+        return [{
+            role: "user",
+            content: `Explain in two sentences why option "${choice}" is ${correct ? "correct" : "incorrect"}. Do not include the correct choice.`
+        }]
+    }
+
+    let requestOptions = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + process.env.OPENAI_API_KEY,
+        },
+        body: JSON.stringify({
+            model: "gpt-3.5-turbo-0613",
+            messages: messages,
             functions: [
                 {
                     "name": "displayQuestion",
@@ -169,39 +176,135 @@ Here are the criteria for the question:
         }),
     };
 
+    let requestOptions2 = (choice, questionData, correct = false) => {
+        let m = [...messages];
+        m.push(questionData);
+        m.push(...explanationMessages(choice, correct));
+
+        console.log(m);
+        return {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + process.env.OPENAI_API_KEY,
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo-0613",
+                messages: m,
+                functions: [
+                    {
+                        "name": "explainChoice",
+                        "description": "Exaplain why a choice is correct or incorrect.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "explanation": {
+                                    "type": "string",
+                                    "description": "Explanation of why the choice is correct or incorrect",
+                                },
+                            },
+                            "required": ["explanation"],
+                        },
+                    }
+                ],
+                function_call: {"name": "explainChoice"},
+            }),
+        };
+    }
+
     // return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
     // .then(response => response.json())
-    // .then(data => {
+    // .then(async data =>  {
     //     if (data.error) {
-    //         console.log(data.error);
-    //         return new Promise((resolve, reject) => {
-    //             setTimeout(() => {
-    //                 resolve(generateQuestion(text, word));
-    //             }, 15000);
-    //         });
+    //         throw new Error(data.error);
     //     }
     //     if (data.choices[0] && data.choices[0].message) {
-    //         console.log(data.choices[0].message.function_call);
-    //         return data.choices[0].message.function_call;
+    //         let questionData = JSON.parse(data.choices[0].message.function_call.arguments);
+    //         let parseQuestion = JSON.parse(data.choices[0].message.function_call.arguments);
+    //         let answers = parseQuestion.answer;
+    //         let correctAnswers = [];
+            
+    //         for (let answer of answers) {
+    //             if (answer === "A" || answer.toLowerCase() === parseQuestion.choiceA.toLowerCase()) {
+    //                 correctAnswers.push("A");
+    //             } else if (answer === "B" || answer.toLowerCase() === parseQuestion.choiceB.toLowerCase()) {
+    //                 correctAnswers.push("B");
+    //             } else if (answer === "C" || answer.toLowerCase() === parseQuestion.choiceC.toLowerCase()) {
+    //                 correctAnswers.push("C");
+    //             } else if (answer === "D" || answer.toLowerCase() === parseQuestion.choiceD.toLowerCase()) {
+    //                 correctAnswers.push("D");
+    //             }
+    //         }
+    //         let incorrectAnswers = ["A", "B", "C", "D"].filter(x => !correctAnswers.includes(x));
+    //         let explanationData = {};
+    //         let settleFetch = []
+
+    //         let fetchExplanation = async (answer, q, ifCorrect) => {
+    //             return fetch("https://api.openai.com/v1/chat/completions", requestOptions2(answer, q, ifCorrect))
+    //             .then(response => response.json())
+    //             .then(explainData => {
+    //                 if (explainData.choices[0] && explainData.choices[0].message) {
+    //                     let eData = JSON.parse(explainData.choices[0].message.function_call.arguments).explanation;
+    //                     explanationData[answer] = eData;
+    //                 } else {
+    //                     throw new Error("No explanation data found.");
+    //                 }
+    //                 console.log(explanationData);
+    //             }).catch(error => {
+    //                 console.log("error", error)
+                    
+    //                 return new Promise((resolve, reject) => {
+    //                     setTimeout(() => {
+    //                         resolve(fetchExplanation(answer, q, ifCorrect));
+    //                     }, 5000);
+    //                 });
+    //             });
+    //         }
+
+    //         for (let answer of correctAnswers) {
+    //             settleFetch.push(fetchExplanation(answer, data.choices[0].message, true));
+    //         }
+
+    //         for (let answer of incorrectAnswers) {
+    //             settleFetch.push(fetchExplanation(answer, data.choices[0].message, false));
+    //         }
+
+    //         return Promise.allSettled(settleFetch)
+    //         .then(() => {
+    //             questionData.explanation = explanationData;
+    //             return questionData;
+    //         })
     //     } else {
-    //         return new Promise((resolve, reject) => {
-    //             setTimeout(() => {
-    //                 resolve(generateQuestion(text, word));
-    //             }, 15000);
-    //         });
+    //         throw new Error("Error generating question");
     //     }
     // })
-    // .catch(error => console.log("error", error));
+    // .catch(error => {
+    //     console.log("error", error)
+        
+    //     return new Promise((resolve, reject) => {
+    //         setTimeout(() => {
+    //             resolve(generateQuestion(text, word));
+    //         }, 5000);
+    //     });
+    // });
 
     return new Promise((resolve, reject) => {
-        resolve({
-            "arguments": `{"question": "What is one way we study matter?",
-            "choiceA": "Through biology",
-            "choiceB": "Through psychology",
-            "choiceC": "Through chemistry",
-            "choiceD": "Through physics",
-            "answer": ["A","Through chemistry"]}`
-        });
+        resolve(JSON.parse(
+            `{
+                "question": "What is one way we study matter?",
+                "choiceA": "Through biology",
+                "choiceB": "Through psychology",
+                "choiceC": "Through chemistry",
+                "choiceD": "Through physics",
+                "explanation": {
+                    "A": "Biology is the study of living things, not matter.",
+                    "B": "Psychology is the study of the mind, not matter.",
+                    "C": "Correct! Chemistry is the study of matter.",
+                    "D": "Physics is the study of energy and matter, not just matter."
+                },
+                "answer": ["A","Through chemistry"]
+            }`
+        ));
     });
 }
 

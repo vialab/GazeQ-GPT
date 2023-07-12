@@ -22,7 +22,7 @@
     gap: 20px;
     position: absolute;
     width: 100%;
-    will-change: opacity;
+    will-change: opacity, top;
 }
 
 .collocation, .collocationInfo {
@@ -39,7 +39,7 @@
     flex-direction: column;
     position: sticky;
     margin: auto;
-    will-change: transform;
+    will-change: transform, gap;
 }
 
 .collocationInfo {
@@ -49,6 +49,7 @@
 .collocation span {
     max-height: 0px;
     overflow: hidden;
+    will-change: max-height;
 }
 
 .collocation span p, .collocationInfo span p {

@@ -67,6 +67,9 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
         let player = videojs.getAllPlayers()[0];
 
         if (player) {
+            if (textTrackChangeCallback instanceof Function)
+                    textTrackChangeCallback();
+                    
             player.on("texttrackchange", function () {                
                 if (d3.select(".vjs-text-track-cue").empty()) {
                     return;
@@ -77,7 +80,7 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
                 let lines = text.split("\n");
 
                 for (let i = 0; i < lines.length; i++) {
-                    const words = lines[i].split(" ");
+                    const words = lines[i].trim().split(" ");
                     
                     for (let word of words) {
                         d3.select(".vjs-text-track-cue")
@@ -93,10 +96,9 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
                         d3.select(".vjs-text-track-cue").select("div").append("span").text("\n");
                 }
 
-                // if (textTrackChangeCallback instanceof Function)
-                //     textTrackChangeCallback();
+                if (textTrackChangeCallback instanceof Function)
+                    textTrackChangeCallback();
             });
-            let timeout = null;
 
             player.on("playerresize", (e) => {
                 const config = { childList: true, subtree: true };
@@ -104,14 +106,11 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
                 const callback = (mutationList, observer) => {
                     for (const mutation of mutationList) {
                         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-                            player.trigger("texttrackchange");
-                            clearTimeout(timeout);
-
-                            timeout = setTimeout(() => {
-                                if (textTrackChangeCallback instanceof Function)
-                                    textTrackChangeCallback();
-                            }, 500);
                             observer.disconnect();
+                            player.trigger("texttrackchange");
+
+                            if (textTrackChangeCallback instanceof Function)
+                                textTrackChangeCallback();
                             return;
                         }
                     }
@@ -143,7 +142,7 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            player.currentTime(0)
+            // player.currentTime(0)
         }
     }, [src, track]);
 

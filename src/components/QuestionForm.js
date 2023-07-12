@@ -11,9 +11,11 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
     let [ answer, setAnswer ] = useState([]);
     let [ startTime, setStartTime ] = useState([]);
     let [ endTime, setEndTime ] = useState([]);
+    let [ explanation, setExplanation ] = useState([]);
     let [ subtitle, setSubtitles ] = useState([]);
     let [ index, setIndex ] = useState(0);
-    let [ src, setSrc ] = useState("");
+    let [ displayExplanation, setDisplayExplanation ] = useState(null);
+    
     let refA = React.useRef();
     let refB = React.useRef();
     let refC = React.useRef();
@@ -28,13 +30,17 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 
                 d3.select(ref.current)
                 .style("background-color", "rgba(41, 197, 115, 0.5)")
-                .style("color", "white");
+                .style("color", "white")
+                .style("pointer-events", "none");
                 
                 if (submittedAnswers.current.size === answer[index].length) {
-                    d3.selectAll(".bottom, .top")
+                    d3.selectAll(".bottom")
                     .transition()
                     .style("opacity", "1")
                     .style("pointer-events", "all");
+
+                    d3.selectAll([refA.current, refB.current, refC.current, refD.current])
+                    .style("pointer-events", "none");
 
                     correct = true;
                 } else {
@@ -47,6 +53,17 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 .style("background-color", "rgb(239, 35, 60, 0.5)")
                 .style("color", "white");
             }
+            
+            d3.selectAll(".top")
+            .transition()
+            .style("opacity", "0")
+            .on("end", () => {
+                setDisplayExplanation(explanation[index][choice]);
+
+                d3.selectAll(".top")
+                .transition()
+                .style("opacity", "1");
+            });
         }
     }
 
@@ -62,24 +79,31 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
             d3.selectAll(".choice")
             .style("background-color", "white")
-            .style("color", "black");
+            .style("color", "black")
+            .style("pointer-events", "all");
 
             d3.select(".additional")
             .transition()
             .style("opacity", "0");
 
-            questionCallback(question[index], [...submittedAnswers.current]);
+            if (questionCallback instanceof Function)
+                questionCallback(question[index], [...submittedAnswers.current]);
         } else {
             closeQuestionContainer();
             
-            questionCallback(question[index], [...submittedAnswers.current]);
-            endCallback();
+            if (questionCallback instanceof Function)
+                questionCallback(question[index], [...submittedAnswers.current]);
+            
+            if (endCallback instanceof Function)
+                endCallback();
         }
+        setDisplayExplanation(null);
         submittedAnswers.current.clear();
     }
 
     let trim = () => {
-        reviewCallback(startTime[index], endTime[index]);
+        if (reviewCallback instanceof Function)
+            reviewCallback(startTime[index], endTime[index]);
     }
 
     let closeQuestionContainer = () => {
@@ -112,6 +136,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         let choiceAs = [], choiceBs = [], choiceCs = [], choiceDs = [];
         let startTimes = [], endTimes = [];
         let subtitles = [];
+        let explanation = [];
         
         d3.selectAll(".bottom, .top, .additional")
         .style("opacity", "0")
@@ -148,17 +173,17 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         });
 
         try {
-            for (let data of questionData) {
-                let parseQuestion = JSON.parse(data.arguments);
+            for (let parseQuestion of questionData) {
                 questions.push(parseQuestion.question);
                 choiceAs.push(parseQuestion.choiceA);
                 choiceBs.push(parseQuestion.choiceB);
                 choiceCs.push(parseQuestion.choiceC);
                 choiceDs.push(parseQuestion.choiceD);
                 answers.push(parseQuestion.answer);
-                startTimes.push(data.startTime);
-                endTimes.push(data.endTime);
-                subtitles.push(data.subtitle.replace(/(?:\r\n|\r|\n)/g, ' '));
+                startTimes.push(parseQuestion.startTime);
+                endTimes.push(parseQuestion.endTime);
+                explanation.push(parseQuestion.explanation);
+                subtitles.push(parseQuestion.subtitle.replace(/(?:\r\n|\r|\n)/g, ' '));
             }
         } catch (e) {
             console.log(e);
@@ -179,6 +204,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         setStartTime(startTimes);
         setEndTime(endTimes);
         setSubtitles(subtitles);
+        setExplanation(explanation);
 
         return () => {
             d3.select(".round")
@@ -195,10 +221,9 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         <div className={"questionContainer"}>
             <div className={"questionForm"}>
                 <div className={"top"}>
-                    {/* <p>Taken from:</p>
-                    <div className={"subtitle"}>
-                        {subtitle[index]}
-                    </div> */}
+                    <div className={"explanation"}>
+                        {displayExplanation}
+                    </div>
                 </div>
 
                 <div className={"question"}>
