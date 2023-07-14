@@ -181,7 +181,6 @@ ${text}`
         m.push(questionData);
         m.push(...explanationMessages(choice, correct));
 
-        console.log(m);
         return {
             method: "POST",
             headers: {
@@ -405,7 +404,7 @@ B) False`,
     //         });
     //     }
     //     if (data.choices[0] && data.choices[0].message) {
-    //         console.log(data.choices[0].message.function_call);
+    //         console.log(term1, term2, data.choices[0].message.function_call);
     //         return data.choices[0].message.function_call;
     //     } else {
     //         return new Promise((resolve, reject) => {
@@ -465,13 +464,13 @@ export async function parsePhrase(text) {
             if (phraseData) {
                 let data = JSON5.parse(phraseData.arguments);
 
-                let mapExample = data.example.map(example => typeof example === "string" && example.toLowerCase().includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
+                // let mapExample = data.example.map(example => typeof example === "string" && example.toLowerCase().includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
                 
                 if (Object.keys(data.definitionTerm1).length > 0 && 
                     Object.keys(data.definitionTerm2).length > 0 && 
                     Object.keys(data.definitionPhrase).length > 0 && 
                     data.definitionPhrase.phrase.trim() !== "" && 
-                    mapExample &&
+                    // mapExample &&
                     data.example.length > 0 &&
                     // data.definitionTerm1.term.toLowerCase() + " " + data.definitionTerm2.term.toLowerCase() === data.definitionPhrase.phrase.toLowerCase() &&
                     (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase()
@@ -481,6 +480,7 @@ export async function parsePhrase(text) {
 
                     // i += j - i;
                 } else {
+                    console.log("Discarded", phrase[0] + " " + phrase[1]);
                     // i += j - i;
                     break;
                 }

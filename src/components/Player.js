@@ -25,7 +25,7 @@ class Gradient extends Component {
 
 videojs.registerComponent('Gradient', Gradient);
 
-export default function Player({clickCallback, timerCallback, textTrackChangeCallback, endCallback, paused, time, src, track, toggleDefinitions}) {
+export default function Player({clickCallback, timerCallback, textTrackChangeCallback, resizeCallback, endCallback, paused, time, src, track, toggleDefinitions}) {
     useEffect(() => {
         if (videojs.getAllPlayers().length === 0) {
             let player = videojs("video", {
@@ -66,60 +66,70 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
     useEffect(() => {
         let player = videojs.getAllPlayers()[0];
 
+        let textCallback = function () {     
+            // console.log("texttrackchange");           
+            if (d3.select(".vjs-text-track-cue").empty()) {
+                return;
+            }
+            let text = d3.select(".vjs-text-track-cue").select("div").text();
+            d3.select(".vjs-text-track-cue").select("div").text("");
+            // d3.selectAll(".vjs-text-track-cue div span").style("background-color", null);
+            let lines = text.split("\n");
+
+            for (let i = 0; i < lines.length; i++) {
+                const words = lines[i].trim().split(" ");
+                
+                for (let word of words) {
+                    d3.select(".vjs-text-track-cue")
+                    .select("div")
+                    .append("span")
+                    .classed("highlight", false)
+                    .text(word);
+
+                    d3.select(".vjs-text-track-cue")
+                    .select("div")
+                    .html(d3.select(".vjs-text-track-cue").select("div").html() + " ");
+                }
+                if (i < lines.length - 1)
+                    d3.select(".vjs-text-track-cue").select("div").append("span").text("\n");
+            }
+            
+            if (textTrackChangeCallback instanceof Function)
+                textTrackChangeCallback();
+        }
+
         if (player) {
             if (textTrackChangeCallback instanceof Function)
-                    textTrackChangeCallback();
-                    
-            player.on("texttrackchange", function () {                
-                if (d3.select(".vjs-text-track-cue").empty()) {
-                    return;
-                }
-                let text = d3.select(".vjs-text-track-cue").select("div").text();
-                d3.select(".vjs-text-track-cue").select("div").text("");
-                // d3.selectAll(".vjs-text-track-cue div span").style("background-color", null);
-                let lines = text.split("\n");
+                textTrackChangeCallback();
 
-                for (let i = 0; i < lines.length; i++) {
-                    const words = lines[i].trim().split(" ");
-                    
-                    for (let word of words) {
-                        d3.select(".vjs-text-track-cue")
-                        .select("div")
-                        .append("span")
-                        .text(word);
+            player.on("texttrackchange", textCallback);
+        }
 
-                        d3.select(".vjs-text-track-cue")
-                        .select("div")
-                        .html(d3.select(".vjs-text-track-cue").select("div").html() + " ");
-                    }
-                    if (i < lines.length - 1)
-                        d3.select(".vjs-text-track-cue").select("div").append("span").text("\n");
-                }
-
-                if (textTrackChangeCallback instanceof Function)
-                    textTrackChangeCallback();
-            });
-
-            player.on("playerresize", (e) => {
-                const config = { childList: true, subtree: true };
-
-                const callback = (mutationList, observer) => {
-                    for (const mutation of mutationList) {
-                        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-                            observer.disconnect();
-                            player.trigger("texttrackchange");
-
-                            if (textTrackChangeCallback instanceof Function)
-                                textTrackChangeCallback();
-                            return;
-                        }
-                    }
-                };
-                const observer = new MutationObserver(callback);
-                observer.observe(d3.select(".vjs-text-track-display").node(), config);
-            });
+        return () => {
+            if (player)
+                player.off("texttrackchange", textCallback);
         }
     }, [textTrackChangeCallback]);
+
+    useEffect(() => {
+        let player = videojs.getAllPlayers()[0];
+
+        let rcallback = () => {
+            player.trigger("texttrackchange");
+                        
+            if (resizeCallback instanceof Function)
+                resizeCallback();
+        }
+
+        if (player) {
+            player.on("playerresize", rcallback);
+        }
+
+        return () => {
+            if (player)
+                player.off("playerresize", rcallback);
+        }
+    }, [resizeCallback]);
 
     useEffect(() => {
         let player = videojs.getAllPlayers()[0];
@@ -142,7 +152,7 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            // player.currentTime(0)
+            player.currentTime(203)
         }
     }, [src, track]);
 

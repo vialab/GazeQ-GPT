@@ -159,6 +159,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let [ showMoreInfo, setShowMoreInfo ] = React.useState(false);
     let [ onPrev, setOnPrev ] = React.useState(false);
     let [ definitionCallbackState, setDefinitionCallbackState ] = React.useState(null);
+    
+    let [ textTrackChangeCallback, setTextTrackChangeCallback] = React.useState(null);
+    let [ resizeCallback, setResizeCallback] = React.useState(null);
 
     let wordScores = useRef(new Map());
     let frameScores = useRef(new Map());
@@ -182,7 +185,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let scoresRecordData = useRef({});
     
     let checkOverlap = (uniquePhrases, text) => {
-        // console.log([...uniquePhrases]);
+        // console.log("Start", [...uniquePhrases]);
         if (uniquePhrases.length <= 1) {
             return uniquePhrases;
         }
@@ -235,41 +238,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             // console.log("Block", firstBlock, secondBlock);
             // console.log("BlockIndex", firstIndex, secondIndex);
 
-            if (firstIndex + 1 < uniquePhrases.length) {
-                for (let i = 0; i < firstBlock.length; i++) {                    
-                    // console.log("Check", firstBlock[i], secondBlock[0]);
-
-                    if (
-                        firstBlock[i].join(" ").endsWith(secondBlock[0].join(" "))
-                    ) {
-                        if (newPhrases.length > 0) {
-                            let cutIndex = getCutIndex(newPhrases[newPhrases.length - 1], firstBlock[i]);
-    
-                            if (cutIndex > 0) {
-                                uniquePhrases.splice(firstIndex - firstBlock.length, firstBlock.length);
-                                
-                                // console.log("Changed Post3", [...uniquePhrases]);
-                                // console.log(secondBlockIndex - firstBlock.length);
-                                if (secondBlockIndex - firstBlock.length + 1 === uniquePhrases.length && startSecondIndex === 0) {
-                                    newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
-                                }
-                                continue main;
-                            }
-                        }
-
-                        uniquePhrases.splice(firstIndex + 1, secondBlock.length);
-                        // console.log("Changed Post1", [...uniquePhrases]);
-
-                        if (secondBlockIndex === uniquePhrases.length && startSecondIndex === 0) {
-                            newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
-                        }
-                        continue main;
-                    }
-                }
-            } else {
-                return [uniquePhrases[uniquePhrases.length - 1]];
-            }
-
             // console.log("Check2", secondIndex, uniquePhrases.length);
             if (secondIndex + 1 < uniquePhrases.length) {
                 let [thirdBlock, thirdIndex] = getBlock(secondIndex + 1);
@@ -303,6 +271,40 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 }
             }
 
+            if (firstIndex + 1 < uniquePhrases.length) {
+                for (let i = 0; i < firstBlock.length; i++) {                    
+                    // console.log("Check", firstBlock[i], secondBlock[secondBlock.length - 1]);
+
+                    if (
+                        firstBlock[i].join(" ").endsWith(secondBlock[secondBlock.length - 1].join(" "))
+                    ) {
+                        if (newPhrases.length > 0) {
+                            let cutIndex = getCutIndex(newPhrases[newPhrases.length - 1], firstBlock[i]);
+    
+                            if (cutIndex > 0) {
+                                uniquePhrases.splice(firstIndex - firstBlock.length, firstBlock.length);
+                                
+                                // console.log("Changed Post3", [...uniquePhrases]);
+                                // console.log(secondBlockIndex - firstBlock.length);
+                                if (secondBlockIndex - firstBlock.length + 1 === uniquePhrases.length && startSecondIndex === 0) {
+                                    newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
+                                }
+                                continue main;
+                            }
+                        }
+
+                        uniquePhrases.splice(firstIndex + 1, secondBlock.length);
+                        // console.log("Changed Post1", [...uniquePhrases]);
+
+                        if (secondBlockIndex === uniquePhrases.length && startSecondIndex === 0) {
+                            newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
+                        }
+                        continue main;
+                    }
+                }
+            } else {
+                return [uniquePhrases[uniquePhrases.length - 1]];
+            }
 
             // console.log(firstBlock, secondBlock);
             
@@ -312,7 +314,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                 // console.log(firstPhrase, secondPhrase);
                 let cutIndex = getCutIndex(firstPhrase, secondPhrase);
-                // console.log(cutIndex);
 
                 if (cutIndex === 0) {
                     optimalIndex = startFirstIndex;
@@ -320,8 +321,13 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     noOverlap = true;
                 } else
                 if (firstPhrase.join(" ").endsWith(secondPhrase.join(" ")) && !noOverlap) {
-                    optimalIndex = startFirstIndex;
-                    startSecondIndex++;
+                    if (!noOverlap) {
+                        optimalIndex = startFirstIndex;
+                        startSecondIndex++;
+                    } else {
+                        // optimalIndex = startFirstIndex;
+                        // startFirstIndex++;
+                    }
 
                     // if (startSecondIndex === secondBlock.length) {
                     //     optimalIndex = firstBlock.length - 1;
@@ -340,7 +346,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 // console.log("Changed", [...uniquePhrases]);
                 secondBlockIndex = firstIndex + 1;
 
-                // console.log(optimalIndex);
                 if (secondBlockIndex === uniquePhrases.length) {
                     newPhrases.push(firstBlock[optimalIndex]);
                 }
@@ -395,20 +400,19 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     change = true;
                 }
             }
-
             
-            for (let i = 0; i < newPhrases.length - 1; i++) {
-                let firstPhrase = newPhrases[i];
-                let secondPhrase = newPhrases[i + 1];
+            // for (let i = 0; i < newPhrases.length - 1; i++) {
+            //     let firstPhrase = newPhrases[i];
+            //     let secondPhrase = newPhrases[i + 1];
 
-                if (firstPhrase.join(" ").includes(secondPhrase.join(" "))) {
-                    newPhrases.splice(i + 1, 1);
-                    change = true;
-                    // i--;
-                }
-            }
+            //     if (firstPhrase.join(" ").includes(secondPhrase.join(" "))) {
+            //         newPhrases.splice(i + 1, 1);
+            //         change = true;
+            //         // console.log("removed", secondPhrase);
+            //         // i--;
+            //     }
+            // }
         }
-
         // console.log(newPhrases);
         return newPhrases;
     }
@@ -566,10 +570,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 slicePhrase([subTitle], subTitle, definitionsList, startIndex, true);
             }
             setCollocations(definitionsList);
-            console.log("done", t);
         } else if (delayIndex.current < 0) {
             setCollocations(null);
-            console.log("canceled", t);
         }
         setShowDefinition(null);
         setShowMoreInfo(false);
@@ -934,77 +936,183 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             forcePauseRef.current = forcePause;
     }, [forcePause]);
 
-    let [ textTrackChangeCallback, setTextTrackChangeCallback] = React.useState(null);
+    let fail = useRef(true);
 
     useEffect(() => {
-        console.log("Collocations", collocations)
         if (!showDefinitions) {
             setTextTrackChangeCallback(null);
+            setResizeCallback(null);
+
+            d3.selectAll("span.highlight").classed("highlight", false);
             return;
         } else if (!collocations) {
             return;
         }
         let collocationValues = [...collocations.values()];
+        fail.current = true;
 
         let callback = () => {
-            collocationValues.forEach((d, i) => {
+            if (!fail.current)
+                return;
+                
+            let f = false;
+            let subtitleNodesArray = [];
+
+            for (let d of collocationValues) {
                 let collocation = d.collocation;
                 let index = 0;
-                let subtitleNodes = [];
+                let subtitleNodes = new Set();
+                let tSubtitleNodes = new Set();
                 let addLength = 0;
                 let wordContainer = d3.select(".vjs-text-track-cue").select("div");
-                let wordNodes = wordContainer.selectAll("span").nodes()
+                let wordNodes = wordContainer.selectAll("span").nodes().filter(d => !d.classList.contains("highlight") && !d.classList.contains("copyCollocation"));
+                let hypenCount = -1;
+                let containsHighlight = false;
 
-                for (let text of wordNodes) {
+                for (let i = 0; i < wordNodes.length; i++) {
+                    let text = wordNodes[i];
+
                     if (text.innerText.trim() !== "") {
                         let innerText = text.innerText.toLowerCase();
+                        // console.log(innerText, collocation[index]);
                         
-                        if (innerText.startsWith(collocation[index]) || innerText.endsWith(collocation[index])) {
-                            // if (!text.parentElement.classList.contains("highlight"))
-                                subtitleNodes.push(text);
-                            index++;
+                        if (innerText.includes(collocation[index])) {
+                            if (innerText.includes("-")) {
+                                let splitHypen = innerText.split("-");
+                                let textIndex = splitHypen.indexOf(collocation[index]);
+                                
+                                if (hypenCount < 0 || hypenCount + 1 === textIndex) {
+                                    hypenCount = textIndex;
+                                    subtitleNodes.add(text);
+                                    index++;
+
+                                    if (text.parentElement.classList.contains("highlight")) {
+                                        containsHighlight = true;
+                                    }
+
+                                    if (subtitleNodes.size - addLength === collocation.length) {
+                                        if (containsHighlight) {
+                                            tSubtitleNodes = new Set([...subtitleNodes]);
+                                            subtitleNodes.clear();
+                                            index = 0;
+                                            addLength = 0;
+                                            hypenCount = -1;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (hypenCount !== splitHypen.length - 1) {
+                                        addLength--;
+                                        i--;
+                                    }
+                                } else {
+                                    subtitleNodes.clear();
+                                    index = 0;
+                                    addLength = 0;
+                                    hypenCount = -1;
+                                }
+                            } else if (innerText.startsWith(collocation[index]) || innerText.endsWith(collocation[index])) {
+                                subtitleNodes.add(text);
+                                index++;
+                                hypenCount = -1;
+
+                                if (text.parentElement.classList.contains("highlight")) {
+                                    containsHighlight = true;
+                                }
+                            }
                         } else {
-                            subtitleNodes = [];
+                            subtitleNodes.clear();
                             index = 0;
                             addLength = 0;
-                        }
 
-                        if (subtitleNodes.length - addLength === collocation.length) {
-                            break;
+                            if (innerText.startsWith(collocation[0]) || innerText.endsWith(collocation[0]))
+                                i--;
                         }
-                    } else if (subtitleNodes.length > 0) {
-                        subtitleNodes.push(text);
+                        // console.log([...subtitleNodes].map(d => d.innerText))
+
+                        if (subtitleNodes.size - addLength === collocation.length) {
+                            if (containsHighlight) {
+                                tSubtitleNodes = new Set([...subtitleNodes]);
+                                subtitleNodes.clear();
+                                index = 0;
+                                addLength = 0;
+                                hypenCount = -1;
+                            } else {
+                                break;
+                            }
+                        }
+                    } else if (subtitleNodes.size > 0) {
+                        subtitleNodes.add(text);
+
+                        if (text.parentElement.classList.contains("highlight")) {
+                            containsHighlight = true;
+                        }
                         addLength++;
                     }
                 }
 
-                if (subtitleNodes.length > 0) {
+                if (subtitleNodes.size > 0 || tSubtitleNodes.size > 0) {
+                    let optimalSubtitleNodes = subtitleNodes.size > 0 ? subtitleNodes : tSubtitleNodes;
+
+                    subtitleNodesArray.push(optimalSubtitleNodes);
+                    let subtitleArray = [...optimalSubtitleNodes];
+                    let firstNode = subtitleArray[0];
                     let collocationContainer = document.createElement("span");
 
-                    if (!subtitleNodes[0].parentElement.classList.contains("highlight")) {
+                    if (!firstNode.parentElement.classList.contains("highlight")) {
                         wordContainer.node()
-                        .insertBefore(collocationContainer, subtitleNodes[0])
+                        .insertBefore(collocationContainer, firstNode)
                     } else {
-                        collocationContainer = subtitleNodes[0].parentElement;
+                        collocationContainer = firstNode.parentElement;
                     }
+                    let hasHighlight = false;
                     
-                    for (let subtitleNode of subtitleNodes) {
+                    for (let subtitleNode of optimalSubtitleNodes) {
+                        if (subtitleNode.parentElement.classList.contains("highlight")) {
+                            hasHighlight = true;
+                            continue;
+                        }
+
+                        if (hasHighlight) {
+                            d3.select(collocationContainer)
+                            .html(d3.select(collocationContainer).html() + " ");
+                        }
                         d3.select(collocationContainer)
                         .classed("highlight", true)
-                        .append(() => subtitleNode)
+                        .append(() => d3.select(subtitleNode).clone(true).node());
+
+                        d3.select(subtitleNode).classed("copyCollocation", true);
 
                         d3.select(collocationContainer)
-                        .html(d3.select(collocationContainer).html() + (subtitleNodes.indexOf(subtitleNode) === subtitleNodes.length - 1 ? "" : " "));
+                        .html(d3.select(collocationContainer).html() + " ");
                     }
+                    
+                    d3.select(collocationContainer)
+                    .html(d3.select(collocationContainer).html().slice(0, -1));
                 } else {
-                    console.log("fail", collocation)
+                    console.log("fail", collocation);
+                    f = true;
+                    break;
                 }
-            });
+            };
+
+            if (f) {
+                d3.selectAll(".highlight").remove();
+                d3.selectAll(".copyCollocation").classed("copyCollocation", false);
+            } else {
+                d3.selectAll(".copyCollocation").remove();
+            }
+            
+            fail.current = f;
         }
         
-        setTextTrackChangeCallback(() => () => {
+        setTextTrackChangeCallback(() => callback);
+        setResizeCallback(() => () => {
+            fail.current = true;
             callback();
         });
+        callback();
     }, [collocations, showDefinitions]);
 
     useEffect(() => {
@@ -1405,6 +1513,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     clickCallback={clickCallback}
                     timerCallback={timerCallback}
                     textTrackChangeCallback={textTrackChangeCallback}
+                    resizeCallback={resizeCallback}
                     endCallback={playerEndCallback}
                     paused={paused}
                     time={videoTime}

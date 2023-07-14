@@ -10,9 +10,9 @@ import { ImMail4, ImInfo } from "react-icons/im";
 import fs from "fs";
 
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
-import * as phraseDefinitions1 from "../assets/processedSubtitles/Definitions_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
-import * as phraseDefinitions2 from "../assets/processedSubtitles/Definitions_2.json";
+import * as phraseDefinitions1 from "../assets/processedSubtitles/3.json";
+import * as phraseDefinitions2 from "../assets/processedSubtitles/4.json";
 
 const video1 = { 
     video: "file:///src/assets/videos/The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.mp4",
