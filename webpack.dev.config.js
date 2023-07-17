@@ -12,7 +12,7 @@ module.exports = {
       {
         test: /\.css?$/,
         use: [{ loader: 'style-loader' }, { loader: 'css-loader' }, { loader: 'postcss-loader' }],
-        include: defaultInclude
+        include: [defaultInclude, /node_modules/],
       },
       {
         test: /\.jsx?$/,

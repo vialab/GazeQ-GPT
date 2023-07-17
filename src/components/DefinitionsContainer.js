@@ -52,19 +52,19 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                 .on("end", () => {
                     definitionTimeout.current = null;
                     
-                    if (collocations.get(definition.current).definitions.definitionTerm1) {
-                        d3.select(bottom.current)
-                        .transition()
-                        .style("opacity", "1");
-                    } else {
-                        d3.select(bottom.current)
-                        .transition()
-                        .style("opacity", "0");
-                    }
+                    // if (collocations.get(definition.current).definitions.definitionTerm1) {
+                    //     d3.select(bottom.current)
+                    //     .transition()
+                    //     .style("opacity", "1");
+                    // } else {
+                    //     d3.select(bottom.current)
+                    //     .transition()
+                    //     .style("opacity", "0");
+                    // }
                     if (definitionCallbackRef.current instanceof Function) 
                         definitionCallbackRef.current(definition.current, collocations.get(definition.current), ref, "collocation");
                 });
-            }, 300);
+            }, 500);
         } else {
             clearTimeout(definitionTimeout.current);
             definitionTimeout.current = null;
@@ -119,6 +119,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
     }, [show]);
     
     useEffect(() => {
+        return;
         if (definition.current && showMoreInfo && !definitionMore.current && collocations.get(definition.current).definitions.definitionTerm1) {
             let ref = definitionRefs.current.get(definition.current);
             let opacity = d3.select(ref.current).style("opacity");
@@ -228,10 +229,12 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                     definitionRefs.current.set(collocation["collocation"].join(" "), ref);
 
                     return (
-                        <div className="collocation" style={{ textAlign: "center" }} collocation={JSON.stringify(collocation["collocation"])} key={JSON.stringify(collocation["collocation"])} ref={ref}>
-                            <b> { collocation["subtitle"] } </b>
-                            {/* <> Complexity: { Math.round(collocation["definitions"].complexity * 10) / 10 } </> */}
-                            <span><p> { collocation["definitions"].definitionPhrase.definition.toLowerCase() } </p></span>
+                        <div className="collocationDiv" key={JSON.stringify(collocation["collocation"])}>
+                            <div className="collocation" style={{ textAlign: "center" }} collocation={JSON.stringify(collocation["collocation"])} ref={ref}>
+                                <b> { collocation["subtitle"] } </b>
+                                {/* <> Complexity: { Math.round(collocation["definitions"].complexity * 10) / 10 } </> */}
+                                <span style={{ maxHeight: 0 }}><p> { collocation["definitions"].definitionPhrase.definition.toLowerCase() } </p></span>
+                            </div>
                         </div>
                     );
                 }) : null}

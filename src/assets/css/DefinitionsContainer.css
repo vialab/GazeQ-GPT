@@ -16,7 +16,7 @@
 
 #definitionsContainer #collocationsContainer, #definitionsContainer #moreInfoContainer {
     display: flex;
-    justify-content: center;
+    justify-content: space-evenly;
     align-items: center;
     flex-direction: column;
     gap: 20px;
@@ -25,12 +25,18 @@
     will-change: opacity, top;
 }
 
+#definitionsContainer #collocationsContainer {
+    height: -webkit-fill-available;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
 .collocation, .collocationInfo {
     width: 90%;
     padding: 20px;
     border: 1px solid rgba(119, 119, 119, 0.425);
     border-radius: 10px;
-    background-color: rgba(255, 255, 255, .5);
+    background-color: rgba(255, 255, 255, .7);
     backdrop-filter: saturate(180%) blur(5px);
     box-shadow: 0 0px 1px 1px hsla(0,0%,100%,.1);
     display: flex;
@@ -40,15 +46,25 @@
     position: sticky;
     margin: auto;
     will-change: transform, gap;
+    gap: 10px !important;
+    flex: 1;
+}
+
+.collocationDiv {
+    width: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
 }
 
 .collocationInfo {
     padding: 10px;
-    gap: 10px;
+    /* gap: 10px !important; */
 }
 
 .collocation span {
-    max-height: 0px;
+    max-height: initial !important;
     overflow: hidden;
     will-change: max-height;
 }

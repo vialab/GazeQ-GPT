@@ -10,6 +10,8 @@ import JSON5 from 'json5';
 import { ipcRenderer } from "electron";
 import { generateQuestion, getComplexity, getPhrase, parsePhrase } from "../js/OpenAIUtils";
 import OneEuroFilter from "../js/oneeuro.js";
+import { ToastContainer, toast, Flip } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.min.css';
 import "../assets/css/Home.css";
 
 import Player from "./Player";
@@ -147,7 +149,7 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
     }
 }
 
-export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, llm, mouseEnabled, forcePause, toggleDefinitions, showDefinitions, definitionCallback, definitionContainerCallback, endCallback, record, recordCallback }) {
+export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, llm, questions, mouseEnabled, forcePause, toggleDefinitions, showDefinitions, definitionCallback, definitionContainerCallback, endCallback, record, recordCallback }) {
     let [ questionData, setQuestion ] = useState("");
     let [ paused, setPaused ] = React.useState(true);
     let [ videoTime, setVideoTime ] = React.useState(-1);
@@ -176,6 +178,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let x = useRef(0), y = useRef(0);
     let endCallbackRef = useRef(endCallback);
     let llmRef = useRef(llm);
+    let questionsRef = useRef(questions);
     let ifRecord = useRef(record);
     let headDistancesRef = useRef(40);
 
@@ -392,10 +395,33 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 let cutIndex = getCutIndex(prevPhrase, currPhrase);
                 let cutIndex2 = getCutIndex(currPhrase, nextPhrase);
 
+                let cutPrevPhrase = [...prevPhrase].slice(0, prevPhrase.length - cutIndex).map(word => complexityMap.current.get(word) || 0);
+                let curCurrPhrase1 = [...currPhrase].slice(cutIndex).map(word => complexityMap.current.get(word) || 0);
+                let curCurrPhrase2 = [...currPhrase].slice(0, currPhrase.length - cutIndex2).map(word => complexityMap.current.get(word) || 0);
+                let cutNextPhrase = [...nextPhrase].slice(cutIndex2).map(word => complexityMap.current.get(word) || 0);
+
+                // console.log(cutPrevPhrase, curCurrPhrase1, curCurrPhrase2, cutNextPhrase);
+
                 // console.log(prevPhrase, currPhrase, nextPhrase);
                 // console.log(cutIndex, cutIndex2);
-                
-                if (cutIndex + cutIndex2 >= currPhrase.length) {
+
+                if (cutIndex > 0) {
+                    if (curCurrPhrase1.reduce((a, b) => a + b, 0) / curCurrPhrase1.length <= 1.5) {
+                        newPhrases.splice(i, 1);
+                        change = true;
+                    } else if (cutPrevPhrase.reduce((a, b) => a + b, 0) / cutPrevPhrase.length <= 1.5) {
+                        newPhrases.splice(i - 1, 1);
+                        change = true;
+                    }
+                } else if (cutIndex2 > 0) {
+                    if (curCurrPhrase2.reduce((a, b) => a + b, 0) / curCurrPhrase2.length <= 1.5) {
+                        newPhrases.splice(i, 1);
+                        change = true;
+                    } else if (cutNextPhrase.reduce((a, b) => a + b, 0) / cutNextPhrase.length <= 1.5) {
+                        newPhrases.splice(i + 1, 1);
+                        change = true;
+                    }
+                } else if (cutIndex + cutIndex2 >= currPhrase.length) {
                     newPhrases.splice(i, 1);
                     change = true;
                 }
@@ -477,7 +503,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     let setWords = new Map()
 
                     for (let word of chunkWords) {
-                        if (complexityMap.current.get(word) > (map === definitionsList ? (uniquePhrases.length === 0 ? 0 : averageComplexity) : 2) && additionalPhrases.current.get(word)) {
+                        if (complexityMap.current.get(word) > (map === definitionsList ? (uniquePhrases.length === 0 ? 0 : 4) : 2) && additionalPhrases.current.get(word)) {
                             let d = additionalPhrases.current.get(word);
                             d.complexity = complexityMap.current.get(word);
 
@@ -577,7 +603,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         setShowMoreInfo(false);
     };
 
-    let playerEndCallback = () => {
+    let playerEndCallback = async () => {
         if (onQuestions.current) {
             return;
         }
@@ -591,6 +617,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
         let addScores = (map) => {
             for (let [word, scores] of map) {
+                if (names.current.has(word)) {
+                    continue;
+                }
+
                 for (let [index, score] of scores) {
                     if (sortScores.has(word + index)) {
                         sortScores.get(word + index).score += score.score.reduce((a, b) => a + b, 0);
@@ -638,7 +668,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 subtitle = rawCaptions.current[i].data.text.replace(/(?:\r\n|\r|\n)/g, ' ') + " " + subtitle;
                 startAllTime = rawCaptions.current[i].data.end + 10;
 
-                if (startTime - startAllTime > 3000) {
+                if (startTime - startAllTime > 5000) {
                     startAllTime = rawCaptions.current[i].data.start;
                     break;
                 }
@@ -648,7 +678,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 subtitle += rawCaptions.current[i].data.text.replace(/(?:\r\n|\r|\n)/g, ' ') + " ";
                 endAllTime = rawCaptions.current[i].data.start - 10;
 
-                if (endAllTime - endTime > 3000) {
+                if (endAllTime - endTime > 5000) {
                     endAllTime = rawCaptions.current[i].data.end + 10;
                     break;
                 }
@@ -690,44 +720,68 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         }
         console.log("LLM", llmRef.current);
 
-        for (let i = 0; i < questionData.length; i++) {
-            let subtitle = questionData[i].subtitle;
-            let collocation = questionData[i].collocation;
-        // for (let i = 0; i < 1; i++) {
-        //     let subtitle = `It could be some new kind of personal water
-        //     purifier, or makeup that lasts as long as you want
-        //     it to, or a revolutionary clothing material.`;
-        //     let collocation = "";
+        if (llmRef.current) {
+            let promises = [];
 
-            generateQuestion(subtitle, collocation)
-            .then(qData => {
-                qData.subtitle = subtitle;
-                // qData.startTime = Math.random() * 5 + 1;
-                // qData.endTime = Math.random() * 5 + 6;
-                qData.startTime = questionData[i].startTime / 1000;
-                qData.endTime = questionData[i].endTime / 1000;
+            for (let i = 0; i < questionData.length; i++) {
+                let subtitle = questionData[i].subtitle;
+                let collocation = questionData[i].collocation;
+            // for (let i = 0; i < 1; i++) {
+            //     let subtitle = `It could be some new kind of personal water
+            //     purifier, or makeup that lasts as long as you want
+            //     it to, or a revolutionary clothing material.`;
+            //     let collocation = "";
 
-                questions.push(qData);
-                console.log(qData);
+                promises.push(generateQuestion(subtitle, collocation)
+                .then(qData => {
+                    qData.subtitle = subtitle;
+                    // qData.startTime = Math.random() * 5 + 1;
+                    // qData.endTime = Math.random() * 5 + 6;
+                    qData.startTime = questionData[i].startTime / 1000;
+                    qData.endTime = questionData[i].endTime / 1000;
 
-                if (questionData.length === questions.length) {
-                    setShowDefinitionContainer(false);
-                    onQuestions.current = true;
-                    
-                    d3.select("#video")
-                    .transition()
-                    .duration(1000)
-                    .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), "translateX(0%)"))
-                    .on("end", () => {
-                        setShowMoreInfo(false);
-                        setShowDefinition(null);
-                        setQuestion(questions);
-                    });
+                    questions.push(qData);
+                    console.log(qData);
+                    // if (questionData) 
+                    //     console.log(questionData.arguments);
+                }));
+
+            }
+            let p = Promise.all(promises);
+            toast.promise(
+                p,
+                {
+                  pending: "One second please...",
+                  success: 'Please answer the following questions',
+                },
+                {
+                    position: "bottom-center",
+                    autoClose: 5000,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "dark",
+                    toastId: "questionToast"
                 }
-                // if (questionData) 
-                //     console.log(questionData.arguments);
-            });
+            )
+            await p;
+        } else {
+            questions = Object.values(JSON.parse(JSON.stringify(questionsRef.current)).default);
         }
+        
+        setShowDefinitionContainer(false);
+        onQuestions.current = true;
+        questions.sort((a, b) => JSON.stringify(a).length - JSON.stringify(b).length);
+        
+        d3.select("#video")
+        .transition()
+        .duration(1000)
+        .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), "translateX(0%)"))
+        .on("end", () => {
+            setShowMoreInfo(false);
+            setShowDefinition(null);
+            setQuestion(questions);
+        });
     };
 
     let questionCallback = (questionData, submittedAnswer) => {
@@ -882,6 +936,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     }, [llm]);
 
     useEffect(() => {
+        questionsRef.current = questions;
+    }, [questions]);
+
+    useEffect(() => {
         ifRecord.current = record;
 
         if (!record) {
@@ -974,7 +1032,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                     if (text.innerText.trim() !== "") {
                         let innerText = text.innerText.toLowerCase();
-                        // console.log(innerText, collocation[index]);
+                        // console.log(innerText, collocation, collocation[index]);
                         
                         if (innerText.includes(collocation[index])) {
                             if (innerText.includes("-")) {
@@ -997,15 +1055,16 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                             index = 0;
                                             addLength = 0;
                                             hypenCount = -1;
+                                            continue;
                                         } else {
                                             break;
                                         }
-                                    }
-                                    
-                                    if (hypenCount !== splitHypen.length - 1) {
+                                    } else if (hypenCount !== splitHypen.length - 1) {
                                         addLength--;
                                         i--;
+                                        continue;
                                     }
+                                    
                                 } else {
                                     subtitleNodes.clear();
                                     index = 0;
@@ -1026,8 +1085,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             index = 0;
                             addLength = 0;
 
-                            if (innerText.startsWith(collocation[0]) || innerText.endsWith(collocation[0]))
-                                i--;
+                            // if (innerText.startsWith(collocation[0]) || innerText.endsWith(collocation[0]))
+                            //     i--;
                         }
                         // console.log([...subtitleNodes].map(d => d.innerText))
 
@@ -1092,7 +1151,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     .html(d3.select(collocationContainer).html().slice(0, -1));
                 } else {
                     console.log("fail", collocation);
-                    f = true;
+                    // f = true;
                     break;
                 }
             };
@@ -1115,14 +1174,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         callback();
     }, [collocations, showDefinitions]);
 
+    let names = useRef(new Set());
+
     useEffect(() => {
-        let names = new Set();
+        names.current = new Set();
 
         for (let [collocation, definition] of phrases.current) {
             if ((
                 definition.definitionTerm1.definition.includes("given name") || 
                 definition.definitionTerm1.definition.includes("common name") ||
                 definition.definitionTerm1.definition.includes("person's name") ||
+                definition.definitionTerm1.definition.includes("people's name") ||
                 definition.definitionTerm1.definition.includes("person named") ||
                 definition.definitionTerm1.definition.includes("name of a person") ||
                 definition.definitionTerm1.definition.includes("person with the name") ||
@@ -1135,7 +1197,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 for (let nameWord of nameWords) {
                     if (nameWord.length > 2) {
                         // console.log(nameWord);
-                        names.add(nameWord);
+                        names.current.add(nameWord);
                     }
                 }
                 // if (definition.definitionTerm1.term.length > 2) {
@@ -1149,6 +1211,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 definition.definitionTerm2.definition.includes("given name") || 
                 definition.definitionTerm2.definition.includes("common name") ||
                 definition.definitionTerm2.definition.includes("person's name") ||
+                definition.definitionTerm2.definition.includes("people's name") ||
                 definition.definitionTerm2.definition.includes("person named") ||
                 definition.definitionTerm2.definition.includes("name of a person") ||
                 definition.definitionTerm2.definition.includes("person with the name") ||
@@ -1160,7 +1223,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                 for (let nameWord of nameWords) {
                     if (nameWord.length > 2) {
-                        names.add(nameWord);
+                        names.current.add(nameWord);
                         // console.log(nameWord);
                     }
                 }
@@ -1181,7 +1244,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 continue;
             }
 
-            for (let name of names) {
+            for (let name of names.current) {
                 // let startIndex = collocation.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
                 // let endIndex = startIndex + name.length;
                 // name = startIndex === 0 ? name + " " : name;
@@ -1207,7 +1270,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     c.definitionPhrase.definition.toLowerCase().includes("person with the name") ||
                     c.definitionPhrase.definition.toLowerCase().includes("name of a person") ||
                     c.definitionPhrase.definition.toLowerCase().includes("person's name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("people's name") ||
                     c.definitionPhrase.definition.toLowerCase().includes("given name") ||
+                    c.definitionPhrase.definition.toLowerCase().includes("names") ||
                     c.definitionPhrase.definition.toLowerCase().includes("surname") ||
                     c.definitionPhrase.definition.toLowerCase().includes("last name") ||
                     c.definitionPhrase.definition.toLowerCase().includes("first name") ||
@@ -1526,6 +1591,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             </div>
             
             <DefinitionsContainer collocations={collocations} show={showDefinitionContainer} showDefinition={showDefinition} showMoreInfo={showMoreInfo} onPrev={onPrev} definitionCallback={definitionCallbackState} />
+            <ToastContainer transition={Flip} />
         </>
     );
 }

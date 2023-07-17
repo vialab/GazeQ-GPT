@@ -37,7 +37,7 @@ Give me the complexity (1-5) of the word.`
             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo-0613",
+            model: "gpt-3.5-turbo",
             messages: complexityMessages,
             functions: [
                 {
@@ -96,33 +96,45 @@ export function generateQuestion(text, word) {
             role: "system",
             content: `You are a professor making a multiple-choice test about a video.
             
-Create a multiple-choice question about the text given with four choices. Give the correct answer at the end of the question.
+Create an advanced multiple-choice question about the video given with four choices. Give the correct answer at the end of the question.
 
 Here are the criteria for the question:
 
-1. The question should be third-person. 
+1. The question must have the word: "${word}".
 
-2. There must only be one correct answer
+2. The correct answer should be include as much details as possible.
 
-3. The correct answer must contain the phrase: '${word}'. 
-            `
+3. The question must start with "why" or "how".
+
+4. The choices should be an explain a concept or an idea.
+
+Output your answer as a JSON object like so:
+{
+"question": [enter question]
+ "choiceA": [enter choice A],
+ "choiceB": [enter choice B],
+ "choiceC": [enter choice C],
+ "choiceD": [enter choice D],
+ "answer": [enter answer (A, B, C, or D)]
+}
+
+Let's work this out in a step by step way to be sure we have the right question that fits the criteria.`
         },
         {
             role: "user",
-            content: `Text:
-${text}`
-            ,
+            content: `Video:
+${text}}`,
         },
-        {
-            role: "assistant",
-            content: `Let's work this out in a step by step way to be sure we have the right answer.`
-        }
     ];
 
     const explanationMessages = (choice, correct = false) => {
         return [{
             role: "user",
-            content: `Explain in two sentences why option "${choice}" is ${correct ? "correct" : "incorrect"}. Do not include the correct choice.`
+            content: `Explain in one sentence why option "${choice}" is ${correct ? "correct" : "incorrect"}. Do not use words in the correct choice.`
+        },
+        {
+            role: "assistant",
+            content: `Let's work this out in a step by step way to be sure we have the right answer.`
         }]
     }
 
@@ -133,46 +145,47 @@ ${text}`
             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo-0613",
+            model: "gpt-3.5-turbo",
             messages: messages,
-            functions: [
-                {
-                    "name": "displayQuestion",
-                    "description": "Display question and choices.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "question": {
-                                "type": "string",
-                                "description": "The question to ask",
-                            },
-                            "choiceA": {
-                                "type": "string",
-                                "description": "The first choice to the question",
-                            },
-                            "choiceB": {
-                                "type": "string",
-                                "description": "The second choice to the question",
-                            },
-                            "choiceC": {
-                                "type": "string",
-                                "description": "The third choice to the question",
-                            },
-                            "choiceD": {
-                                "type": "string",
-                                "description": "The fourth choice to the question",
-                            },
-                            "answer": {
-                                "type": "array",
-                                "description": "The answer to the question (A, B, C, or D)",
-                                "items": {}
-                            },
-                        },
-                        "required": ["question", "choiceA", "choiceB", "choiceC", "choiceD", "answer"],
-                    },
-                }
-            ],
-            function_call: {"name": "displayQuestion"},
+            // functions: [
+            //     {
+            //         "name": "displayQuestion",
+            //         "description": "Display question and choices.",
+            //         "parameters": {
+            //             "type": "object",
+            //             "properties": {
+            //                 "question": {
+            //                     "type": "string",
+            //                     "description": "The question to ask",
+            //                 },
+            //                 "choiceA": {
+            //                     "type": "string",
+            //                     "description": "Choice A to the question",
+            //                 },
+            //                 "choiceB": {
+            //                     "type": "string",
+            //                     "description": "Choice B to the question",
+            //                 },
+            //                 "choiceC": {
+            //                     "type": "string",
+            //                     "description": "Choice C to the question",
+            //                 },
+            //                 "choiceD": {
+            //                     "type": "string",
+            //                     "description": "Choice D to the question",
+            //                 },
+            //                 "answer": {
+            //                     "type": "string",
+            //                     "description": "The answer to the question (A, B, C, or D)",
+            //                 },
+            //             },
+            //             "required": ["question", "choiceA", "choiceB", "choiceC", "choiceD", "answer"],
+            //         },
+            //     }
+            // ],
+            max_tokens: 1028,
+            top_p: 0.5,
+            // function_call: {"name": "displayQuestion"},
         }),
     };
 
@@ -188,7 +201,7 @@ ${text}`
                 Authorization: "Bearer " + process.env.OPENAI_API_KEY,
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo-0613",
+                model: "gpt-3.5-turbo",
                 messages: m,
                 functions: [
                     {
@@ -211,81 +224,91 @@ ${text}`
         };
     }
 
-    // return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
-    // .then(response => response.json())
-    // .then(async data =>  {
-    //     if (data.error) {
-    //         throw new Error(data.error);
-    //     }
-    //     if (data.choices[0] && data.choices[0].message) {
-    //         let questionData = JSON.parse(data.choices[0].message.function_call.arguments);
-    //         let parseQuestion = JSON.parse(data.choices[0].message.function_call.arguments);
-    //         let answers = parseQuestion.answer;
-    //         let correctAnswers = [];
+    return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
+    .then(response => response.json())
+    .then(async data =>  {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        if (data.choices[0] && data.choices[0].message) {
+            let content = data.choices[0].message.content;
+            let regex = /{(\s|.)*}/g;
+            let match = content.match(regex);
+
+            if (!match) {
+                throw new Error("No match.");
+            }
+            let questionData = JSON5.parse(match[0]);
+            // let questionData = JSON5.parse(data.choices[0].message.function_call.arguments);
+            let answer = questionData.answer;
+            let correctAnswers = [];
+            if (questionData.choiceA.toLowerCase().trim() === "" || questionData.choiceB.toLowerCase().trim() === "" || questionData.choiceC.toLowerCase().trim() === "" || questionData.choiceD.toLowerCase().trim() === "") {
+                throw new Error("One of the choices is empty.");
+            }
             
-    //         for (let answer of answers) {
-    //             if (answer === "A" || answer.toLowerCase() === parseQuestion.choiceA.toLowerCase()) {
-    //                 correctAnswers.push("A");
-    //             } else if (answer === "B" || answer.toLowerCase() === parseQuestion.choiceB.toLowerCase()) {
-    //                 correctAnswers.push("B");
-    //             } else if (answer === "C" || answer.toLowerCase() === parseQuestion.choiceC.toLowerCase()) {
-    //                 correctAnswers.push("C");
-    //             } else if (answer === "D" || answer.toLowerCase() === parseQuestion.choiceD.toLowerCase()) {
-    //                 correctAnswers.push("D");
-    //             }
-    //         }
-    //         let incorrectAnswers = ["A", "B", "C", "D"].filter(x => !correctAnswers.includes(x));
-    //         let explanationData = {};
-    //         let settleFetch = []
+            // for (let answer of answers) {
+                if (answer === "A" || answer.toLowerCase() === questionData.choiceA.toLowerCase()) {
+                    correctAnswers.push("A");
+                } else if (answer === "B" || answer.toLowerCase() === questionData.choiceB.toLowerCase()) {
+                    correctAnswers.push("B");
+                } else if (answer === "C" || answer.toLowerCase() === questionData.choiceC.toLowerCase()) {
+                    correctAnswers.push("C");
+                } else if (answer === "D" || answer.toLowerCase() === questionData.choiceD.toLowerCase()) {
+                    correctAnswers.push("D");
+                } else {
+                    throw new Error("No correct answer found.");
+                }
+            // }
+            let incorrectAnswers = ["A", "B", "C", "D"].filter(x => !correctAnswers.includes(x));
+            let explanationData = {};
+            let settleFetch = []
 
-    //         let fetchExplanation = async (answer, q, ifCorrect) => {
-    //             return fetch("https://api.openai.com/v1/chat/completions", requestOptions2(answer, q, ifCorrect))
-    //             .then(response => response.json())
-    //             .then(explainData => {
-    //                 if (explainData.choices[0] && explainData.choices[0].message) {
-    //                     let eData = JSON.parse(explainData.choices[0].message.function_call.arguments).explanation;
-    //                     explanationData[answer] = eData;
-    //                 } else {
-    //                     throw new Error("No explanation data found.");
-    //                 }
-    //                 console.log(explanationData);
-    //             }).catch(error => {
-    //                 console.log("error", error)
+            let fetchExplanation = async (answer, q, ifCorrect) => {
+                return fetch("https://api.openai.com/v1/chat/completions", requestOptions2(answer, q, ifCorrect))
+                .then(response => response.json())
+                .then(explainData => {
+                    if (explainData.error) {
+                        throw new Error(explainData.error);
+                    }
+                    if (explainData.choices[0] && explainData.choices[0].message) {
+                        let eData = JSON5.parse(explainData.choices[0].message.function_call.arguments).explanation;
+                        explanationData[answer] = eData;
+                    } else {
+                        throw new Error("No explanation data found.");
+                    }
+                }).catch(error => {
+                    console.log("error", error)
                     
-    //                 return new Promise((resolve, reject) => {
-    //                     setTimeout(() => {
-    //                         resolve(fetchExplanation(answer, q, ifCorrect));
-    //                     }, 5000);
-    //                 });
-    //             });
-    //         }
+                    return new Promise((resolve, reject) => {
+                        resolve(fetchExplanation(answer, q, ifCorrect));
+                    });
+                });
+            }
 
-    //         for (let answer of correctAnswers) {
-    //             settleFetch.push(fetchExplanation(answer, data.choices[0].message, true));
-    //         }
+            for (let answer of correctAnswers) {
+                settleFetch.push(fetchExplanation(answer, data.choices[0].message, true));
+            }
 
-    //         for (let answer of incorrectAnswers) {
-    //             settleFetch.push(fetchExplanation(answer, data.choices[0].message, false));
-    //         }
+            for (let answer of incorrectAnswers) {
+                // settleFetch.push(fetchExplanation(answer, data.choices[0].message, false));
+                settleFetch.push(() => "");
+            }
 
-    //         return Promise.allSettled(settleFetch)
-    //         .then(() => {
-    //             questionData.explanation = explanationData;
-    //             return questionData;
-    //         })
-    //     } else {
-    //         throw new Error("Error generating question");
-    //     }
-    // })
-    // .catch(error => {
-    //     console.log("error", error)
+            await Promise.all(settleFetch);
+           
+            questionData.explanation = explanationData;
+            return questionData;
+        } else {
+            throw new Error("Error generating question");
+        }
+    })
+    .catch(error => {
+        console.log("error", error)
         
-    //     return new Promise((resolve, reject) => {
-    //         setTimeout(() => {
-    //             resolve(generateQuestion(text, word));
-    //         }, 5000);
-    //     });
-    // });
+        return new Promise((resolve, reject) => {
+            resolve(generateQuestion(text, word));
+        });
+    });
 
     return new Promise((resolve, reject) => {
         resolve(JSON.parse(
@@ -301,7 +324,7 @@ ${text}`
                     "C": "Correct! Chemistry is the study of matter.",
                     "D": "Physics is the study of energy and matter, not just matter."
                 },
-                "answer": ["A","Through chemistry"]
+                "answer": "A"
             }`
         ));
     });
@@ -315,12 +338,12 @@ export function getPhrase(term1, term2) {
             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo-0613",
+            model: "gpt-3.5-turbo",
             temperature: 0,
             messages: [
                 {
                     role: "system",
-                    content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide short definitions for each word in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
+                    content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide one-sentence description for each word in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
                 },
                 {
                     role: "user",
@@ -328,6 +351,10 @@ export function getPhrase(term1, term2) {
 A) True
 B) False`,
                 },
+                {
+                    role: "assistant",
+                    content: "Since a 6 year old will be reading this, I will simplify my definitions without using the word that I am trying to define.",
+                }
             ],
             functions: [
                 {
@@ -441,6 +468,7 @@ B) False`,
 
 export async function parsePhrase(text) {
     let phrases = new Map();
+    let promises = [];
 
     for (let i = 0; i < text.length - 1; i++) {
         let phrase = [text[i]];
@@ -451,41 +479,47 @@ export async function parsePhrase(text) {
             continue;
         }
 
-        for (let j = i; j < text.length - 1; j++) {
-            phrase.push(text[j + 1]);
-            let ifStop = removeStopwords([phrase[1]])[0];
+        let promise = new Promise(async (resolve, reject) => {
+            for (let j = i; j < text.length - 1; j++) {
+                phrase.push(text[j + 1]);
+                let ifStop = removeStopwords([phrase[1]])[0];
 
-            if (!ifStop) {
-                phrase = [phrase[0] + " " + phrase[1]];
-                continue;
-            }
-            let phraseData = await getPhrase(phrase[0], phrase[1]);
-            
-            if (phraseData) {
-                let data = JSON5.parse(phraseData.arguments);
-
-                // let mapExample = data.example.map(example => typeof example === "string" && example.toLowerCase().includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
-                
-                if (Object.keys(data.definitionTerm1).length > 0 && 
-                    Object.keys(data.definitionTerm2).length > 0 && 
-                    Object.keys(data.definitionPhrase).length > 0 && 
-                    data.definitionPhrase.phrase.trim() !== "" && 
-                    // mapExample &&
-                    data.example.length > 0 &&
-                    // data.definitionTerm1.term.toLowerCase() + " " + data.definitionTerm2.term.toLowerCase() === data.definitionPhrase.phrase.toLowerCase() &&
-                    (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase()
-                ) {
+                if (!ifStop) {
                     phrase = [phrase[0] + " " + phrase[1]];
-                    phrases.set(phrase[0].toLowerCase(), data);
+                    continue;
+                }
+                let phraseData = await getPhrase(phrase[0], phrase[1]);
+                
+                if (phraseData) {
+                    console.log(phraseData);
+                    let data = JSON5.parse(phraseData.arguments);
 
-                    // i += j - i;
-                } else {
-                    console.log("Discarded", phrase[0] + " " + phrase[1]);
-                    // i += j - i;
-                    break;
+                    // let mapExample = data.example.map(example => typeof example === "string" && example.toLowerCase().includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
+                    
+                    if (Object.keys(data.definitionTerm1).length > 0 && 
+                        Object.keys(data.definitionTerm2).length > 0 && 
+                        Object.keys(data.definitionPhrase).length > 0 && 
+                        data.definitionPhrase.phrase.trim() !== "" && 
+                        // mapExample &&
+                        data.example.length > 0 &&
+                        // data.definitionTerm1.term.toLowerCase() + " " + data.definitionTerm2.term.toLowerCase() === data.definitionPhrase.phrase.toLowerCase() &&
+                        (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase()
+                    ) {
+                        phrase = [phrase[0] + " " + phrase[1]];
+                        phrases.set(phrase[0].toLowerCase(), data);
+
+                        // i += j - i;
+                    } else {
+                        console.log("Discarded", phrase[0] + " " + phrase[1]);
+                        // i += j - i;
+                        break;
+                    }
                 }
             }
-        }
+            resolve();
+        });
+        promises.push(promise);
     }
+    await Promise.all(promises);
     return phrases;
 }

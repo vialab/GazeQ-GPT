@@ -25,7 +25,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
     let checkChoice = (choice, ref) => {
         if (!correct) {
-            if (answer[index].includes(choice) || answer[index].map((a) => a.toLowerCase()).includes(d3.select(ref.current).text().toLowerCase())) {
+            if (answer[index].toLowerCase() === choice.toLowerCase() || answer[index].toLowerCase().includes(d3.select(ref.current).text().toLowerCase())) {
                 submittedAnswers.current.add(choice);
                 
                 d3.select(ref.current)
@@ -33,7 +33,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 .style("color", "white")
                 .style("pointer-events", "none");
                 
-                if (submittedAnswers.current.size === answer[index].length) {
+                // if (submittedAnswers.current.size === answer[index].length) {
                     d3.selectAll(".bottom")
                     .transition()
                     .style("opacity", "1")
@@ -43,32 +43,37 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                     .style("pointer-events", "none");
 
                     correct = true;
-                } else {
-                    d3.select(".additional")
+
+                    d3.selectAll(".top")
                     .transition()
-                    .style("opacity", "1")
-                }
+                    .style("opacity", "0")
+                    .on("end", () => {
+                        setDisplayExplanation(explanation[index][choice]);
+
+                        d3.selectAll(".top")
+                        .transition()
+                        .style("opacity", "1");
+                    });
+                // } else {
+                //     d3.select(".additional")
+                //     .transition()
+                //     .style("opacity", "1")
+                // }
             } else {
                 d3.select(ref.current)
                 .style("background-color", "rgb(239, 35, 60, 0.5)")
                 .style("color", "white");
             }
-            
-            d3.selectAll(".top")
-            .transition()
-            .style("opacity", "0")
-            .on("end", () => {
-                setDisplayExplanation(explanation[index][choice]);
-
-                d3.selectAll(".top")
-                .transition()
-                .style("opacity", "1");
-            });
         }
     }
 
     let nextHandler = () => {
         correct = false;
+
+        d3.selectAll(".choice")
+        .style("background-color", "white")
+        .style("color", "black")
+        .style("pointer-events", "all");
 
         if (index < question.length - 1) {
             setIndex(index + 1);
@@ -76,11 +81,6 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
             .transition()
             .style("opacity", "0")
             .style("pointer-events", "none");
-
-            d3.selectAll(".choice")
-            .style("background-color", "white")
-            .style("color", "black")
-            .style("pointer-events", "all");
 
             d3.select(".additional")
             .transition()
@@ -183,7 +183,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 startTimes.push(parseQuestion.startTime);
                 endTimes.push(parseQuestion.endTime);
                 explanation.push(parseQuestion.explanation);
-                subtitles.push(parseQuestion.subtitle.replace(/(?:\r\n|\r|\n)/g, ' '));
+                // subtitles.push(parseQuestion.subtitle.replace(/(?:\r\n|\r|\n)/g, ' '));
             }
         } catch (e) {
             console.log(e);

@@ -11,15 +11,18 @@ import fs from "fs";
 
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
-import * as phraseDefinitions1 from "../assets/processedSubtitles/3.json";
-import * as phraseDefinitions2 from "../assets/processedSubtitles/4.json";
+import * as phraseDefinitions1 from "../assets/processedSubtitles/t3.json";
+import * as phraseDefinitions2 from "../assets/processedSubtitles/t.json";
+
+import * as questionData from "../assets/processedSubtitles/Questions.json";
 
 const video1 = { 
     video: "file:///src/assets/videos/The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.mp4",
     track: "file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt",
     complexityData: complexityData1,
     phraseDefinitions: phraseDefinitions1,
-    llm: true
+    llm: true,
+    questions: questionData
 }
 
 const video2 = {
@@ -27,7 +30,8 @@ const video2 = {
     track: "file:///src/assets/videos/en_The_History_of_Electrical_Engineering__Crash_Course_Engineering_4_-_English.vtt",
     complexityData: complexityData2,
     phraseDefinitions: phraseDefinitions2,
-    llm: false
+    llm: false,
+    questions: questionData
 }
 
 let videoList = [
@@ -58,6 +62,7 @@ export default function App() {
     let [ complexityData, setComplexityData ] = React.useState(videoList[index.current].complexityData);
     let [ phraseDefinitions, setPhraseDefinitions ] = React.useState(videoList[index.current].phraseDefinitions);
     let [ llm, setLlm ] = React.useState(videoList[index.current].llm);
+    let [ questions, setQuestions ] = React.useState(videoList[index.current].questions);
     let [ enableMouse, setEnableMouse ] = React.useState(true);
     let [ toggleDefinitions, setToggleDefinitions ] = React.useState(state === "study");
     let [ modalIsOpen, setModalIsOpen ] = React.useState(false);
@@ -121,6 +126,7 @@ export default function App() {
         setComplexityData(videoList[index.current].complexityData);
         setPhraseDefinitions(videoList[index.current].phraseDefinitions);
         setLlm(videoList[index.current].llm);
+        setQuestions(videoList[index.current].questions);
         setToggleDefinitions(true);
         setShowDefinitions(false);
         setVideoOrder(0);
@@ -149,6 +155,7 @@ export default function App() {
             setSrc(videoList[index.current].video);
             setTrack(videoList[index.current].track);
             setLlm(videoList[index.current].llm);
+            setQuestions(videoList[index.current].questions);
             setComplexityData(videoList[index.current].complexityData);
             setPhraseDefinitions(videoList[index.current].phraseDefinitions);
         }
@@ -376,12 +383,12 @@ export default function App() {
                             <div className="checklistItem" id="showDefinition">
                                 <div className="check"></div> Read one of the definitions
                             </div>
-                            <div className="checklistItem" id="moreInfo">
+                            {/* <div className="checklistItem" id="moreInfo">
                                 <div className="check"></div> Open the "more info" section
                             </div>
                             <div className="checklistItem" id="prev">
                                 <div className="check"></div> Close the "more info" section
-                            </div>
+                            </div> */}
                         </div>
                     </>,
                     "prev": true,
@@ -406,7 +413,9 @@ export default function App() {
                             } else if (type === "prev") {
                                 d3.select("#prev .check")
                                 .classed("checked", true);
-                                
+                            }
+
+                            if (d3.selectAll(".check").nodes().filter(d => !d.classList.contains("checked")).length === 0) {   
                                 d3.select(".modalButton.disabled")
                                 .classed("enable", true)
                             }
@@ -502,6 +511,7 @@ export default function App() {
         }
         setSrc(videoList[index.current].video);
         setTrack(videoList[index.current].track);
+        setQuestions(videoList[index.current].questions);
         setComplexityData(videoList[index.current].complexityData);
         setPhraseDefinitions(videoList[index.current].phraseDefinitions);
     }, [videoOrder]);
@@ -853,7 +863,8 @@ export default function App() {
                 phraseDefinitions={ state === "study" ? phraseDefinitions : videoList[index.current].phraseDefinitions }
                 srcInit={ state === "study" ? src : videoList[index.current].video }
                 trackInit={ state === "study" ? track : videoList[index.current].track }
-                llm={ state === "study" ? llm : videoList[index.current].llm }
+                llm={ state === "study" ? llm : true }
+                questions={ state === "study" ? questions : videoList[index.current].questions }
                 endCallback={ endVideoCallback }
                 definitionCallback={ definitionCallback }
                 definitionContainerCallback={ definitionContainerCallback }
