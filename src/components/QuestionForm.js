@@ -25,9 +25,9 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
     let checkChoice = (choice, ref) => {
         if (!correct) {
-            if (answer[index].toLowerCase() === choice.toLowerCase() || answer[index].toLowerCase().includes(d3.select(ref.current).text().toLowerCase())) {
-                submittedAnswers.current.add(choice);
-                
+            submittedAnswers.current.add(choice);
+            
+            if (answer[index].toLowerCase() === choice.toLowerCase() || answer[index].toLowerCase().includes(d3.select(ref.current).text().toLowerCase())) {                
                 d3.select(ref.current)
                 .style("background-color", "rgba(41, 197, 115, 0.5)")
                 .style("color", "white")
@@ -87,12 +87,12 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
             .style("opacity", "0");
 
             if (questionCallback instanceof Function)
-                questionCallback(question[index], [...submittedAnswers.current]);
+                questionCallback(questionData[index], [...submittedAnswers.current]);
         } else {
             closeQuestionContainer();
             
             if (questionCallback instanceof Function)
-                questionCallback(question[index], [...submittedAnswers.current]);
+                questionCallback(questionData[index], [...submittedAnswers.current]);
             
             if (endCallback instanceof Function)
                 endCallback();

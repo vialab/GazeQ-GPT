@@ -712,15 +712,16 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 questionTime.clear();
             }
         }
-
-        if (questionData.length === 0) {
-            if (endCallbackRef.current instanceof Function) {
-                endCallbackRef.current();
-            }
-        }
         console.log("LLM", llmRef.current);
 
         if (llmRef.current) {
+            if (questionData.length === 0) {
+                if (endCallbackRef.current instanceof Function) {
+                    endCallbackRef.current();
+                }
+                return;
+            }
+
             let promises = [];
 
             for (let i = 0; i < questionData.length; i++) {
@@ -794,13 +795,13 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         forcePauseRef.current = false;
         onQuestions.current = false;
 
-        if (!definitionToggle.current) {
+        if (!definitionToggle.current && showDefinitions) {
             setShowDefinitionContainer(true);
         }
         d3.select("#video")
         .transition()
         .duration(1000)
-        .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), definitionToggle.current ? "translateX(0%)" : "translateX(-15%)"));
+        .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), (definitionToggle.current || !showDefinitions) ? "translateX(0%)" : "translateX(-15%)"));
 
         if (endCallbackRef.current instanceof Function) {
             endCallbackRef.current();
@@ -946,7 +947,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             scoresRecordData.current = {wordScores: [...wordScores.current], frameScores: [...frameScores.current], definitionScores: [...definitionScores.current]}
             
             if (recordCallback instanceof Function)
-                recordCallback({eyeData: [...eyeGazeRecordData.current], questionData: [...questionRecordData.current], definitionData: [...definitionRecordData.current], scoresData: {...scoresRecordData.current}});
+                recordCallback({eyeData: [...eyeGazeRecordData.current], questionData: [...questionRecordData.current], definitionData: showDefinitions ? [...definitionRecordData.current] : ["No definitions"], scoresData: {...scoresRecordData.current}});
             
             eyeGazeRecordData.current = [];
             questionRecordData.current = [];
@@ -957,7 +958,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
     useEffect(() => {
         setDefinitionCallbackState(() => (collocation, definition, element, type) => {
-            definitionCallbackFunc(collocation, definition, element, type);
+            console.log(ifRecord.current)
+            if (ifRecord.current)
+                definitionCallbackFunc(collocation, definition, element, type);
 
             if (definitionCallback instanceof Function)
                 definitionCallback(collocation, definition, element, type);
@@ -1335,7 +1338,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                 if (x && y) {
                     if (ifRecord.current) {
-                        eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime});
+                        eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime, xOffset: xOffset, yOffset: yOffset});
                     }
                     // heatmap.addData({ x: x, y: y });
 

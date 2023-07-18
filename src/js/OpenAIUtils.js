@@ -20,9 +20,7 @@ Here is some information to analyze the word's complexity:
         },
         {
             role: "user",
-            content: `Word: ${word}
-
-Give me the complexity (1-5) of the word.`
+            content: `Word: ${word}`
         },
         {
             role: "assistant",
@@ -104,13 +102,13 @@ Here are the criteria for the question:
 
 2. The correct answer should be include as much details as possible.
 
-3. The question must start with "why" or "how".
+3. The question must not start with "what".
 
 4. The choices should be an explain a concept or an idea.
 
 Output your answer as a JSON object like so:
 {
-"question": [enter question]
+ "question": [enter question],
  "choiceA": [enter choice A],
  "choiceB": [enter choice B],
  "choiceC": [enter choice C],
@@ -236,6 +234,7 @@ ${text}}`,
             let match = content.match(regex);
 
             if (!match) {
+                console.log(data.choices[0].message);
                 throw new Error("No match.");
             }
             let questionData = JSON5.parse(match[0]);
@@ -343,7 +342,7 @@ export function getPhrase(term1, term2) {
             messages: [
                 {
                     role: "system",
-                    content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide one-sentence description for each word in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
+                    content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide one-sentence description for each term in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
                 },
                 {
                     role: "user",
@@ -359,13 +358,13 @@ B) False`,
             functions: [
                 {
                     "name": "displayPhrase",
-                    "description": "Display a definition about a given phrase.",
+                    "description": "Display a simple definition about a given phrase.",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "definitionTerm1": {
                                 "type": "object",
-                                "description": "The definition of the first term.",
+                                "description": "The simplified definition of the first term.",
                                 "properties": {
                                     "term": {
                                         "type": "string",
@@ -373,13 +372,13 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The definition of the term",
+                                        "description": "The simplified definition of the term",
                                     }
                                 }
                             },
                             "definitionTerm2": {
                                 "type": "object",
-                                "description": "The definition of the second term.",
+                                "description": "The simplified definition of the second term.",
                                 "properties": {
                                     "term": {
                                         "type": "string",
@@ -387,13 +386,13 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The definition of the term",
+                                        "description": "The simplified definition of the term",
                                     }
                                 }
                             },
                             "definitionPhrase": {
                                 "type": "object",
-                                "description": "The definition of the phrase.",
+                                "description": "The simplified definition of the phrase.",
                                 "properties": {
                                     "phrase": {
                                         "type": "string",
@@ -401,7 +400,7 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The definition of the phrase",
+                                        "description": "The simplified definition of the phrase",
                                     }
                                 }
                             },

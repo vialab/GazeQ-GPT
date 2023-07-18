@@ -21,7 +21,6 @@ const video1 = {
     track: "file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt",
     complexityData: complexityData1,
     phraseDefinitions: phraseDefinitions1,
-    llm: true,
     questions: questionData
 }
 
@@ -30,7 +29,6 @@ const video2 = {
     track: "file:///src/assets/videos/en_The_History_of_Electrical_Engineering__Crash_Course_Engineering_4_-_English.vtt",
     complexityData: complexityData2,
     phraseDefinitions: phraseDefinitions2,
-    llm: false,
     questions: questionData
 }
 
@@ -467,6 +465,7 @@ export default function App() {
                 "nextCallback": () => {
                     setState("home");
                     setEndVideoCallback(null);
+                    setIfRecord(false);
                 }
             },
         ]
@@ -491,17 +490,6 @@ export default function App() {
     }, [pid, ifShowDefinitions]);
 
     useEffect(() => {
-        if (ifLLmFirst) {
-            videoList[0].llm = true;
-            videoList[1].llm = false;
-        } else {
-            videoList[0].llm = false;
-            videoList[1].llm = true;
-        }
-        setLlm(videoList[index.current].llm);
-    }, [ifLLmFirst]);
-
-    useEffect(() => {
         if (videoOrder === 0) {
             videoList[0] = video1;
             videoList[1] = video2;
@@ -509,12 +497,21 @@ export default function App() {
             videoList[0] = video2;
             videoList[1] = video1;
         }
+
+        if (ifLLmFirst) {
+            videoList[0].llm = true;
+            videoList[1].llm = false;
+        } else {
+            videoList[0].llm = false;
+            videoList[1].llm = true;
+        }
         setSrc(videoList[index.current].video);
         setTrack(videoList[index.current].track);
         setQuestions(videoList[index.current].questions);
         setComplexityData(videoList[index.current].complexityData);
         setPhraseDefinitions(videoList[index.current].phraseDefinitions);
-    }, [videoOrder]);
+        setLlm(videoList[index.current].llm);
+    }, [videoOrder, ifLLmFirst]);
 
     useEffect(() => {
         setForcePause(modalIsOpen);
