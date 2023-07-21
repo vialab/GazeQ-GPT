@@ -1,0 +1,42 @@
+[
+    {
+        "question": "Why was Willian Gilbert considered the father of electrical engineering?",
+        "choiceA": "Described electrical attraction and magnetic poles",
+        "choiceB": "Described electrically charged particles through a transmission medium",
+        "choiceC": "Patented the first electric telegraph",
+        "choiceD": "Uses an electromagnet with a pen to make a mark on paper",
+        "answer": "A"
+    },
+    {
+        "question": "What did the engineers discover after the transatlantic telegraph line was laid down?",
+        "choiceA": "Able to make a system of dashes and dots, known as Morse code, using an electromagnet",
+        "choiceB": "Fluctuate an electric current to induce different sound vibrations",
+        "choiceC": "Use magnetic needles to sway right or left to indicate specific letters",
+        "choiceD": "Able to produce alternating current and direct current",
+        "answer": "B"
+    },
+    {
+        "question": "Why was Sir Humphry Davy’s arc lighting not successful?",
+        "choiceA": "It was too expensive to make",
+        "choiceB": "It consumed too much energy",
+        "choiceC": "Davy’s battery was not able to produce a stable arc",
+        "choiceD": "It was too bright for home usage",
+        "answer": "C"
+    },
+    {
+        "question": "How did the computers gain a broader audience?",
+        "choiceA": "Westinghouse won the contract to supply electricity",
+        "choiceB": "Edison tried to discredit AC currents",
+        "choiceC": "Computers were part of “radio engineering”",
+        "choiceD": "The transistor was developed",
+        "answer": "D"
+    },
+    {
+        "question": "What led to the discovery of the radio?",
+        "choiceA": "Manipulation of electromagnetic waves ",
+        "choiceB": "Conversion of light to electrical impulses",
+        "choiceC": "Two carbon rods in a battery circuit",
+        "choiceD": "Continuous-current electrical generator",
+        "answer": "A"
+    }
+]

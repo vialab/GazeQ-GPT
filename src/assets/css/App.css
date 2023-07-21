@@ -278,16 +278,67 @@
 
 .checkmark__check {
     stroke-dasharray: 48;
-    stroke-dashoffset: 0;
+    stroke-dashoffset: 48;
 }
 
-.modalButton:hover .checkmark .checkmark__check {
-    animation: stroke 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+.checkmark__circle {
+    stroke-dasharray: 225;
+    stroke-dashoffset: 225;
+    transform: rotate(180deg);
+    transform-origin: center;
+    
+    animation: strokeCircleReverse 0s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.modalButton.reverse .checkmark .checkmark__check {
+    animation: strokeReverse 0.7s cubic-bezier(0.65, 0, 0.45, 1);
+}
+
+.modalButton.animated .checkmark .checkmark__check {
+    animation: stroke 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.6s;
+}
+
+.modalButton.reverse .checkmark .checkmark__circle {
+    animation: strokeCircleReverse 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.6s;
+}
+
+.modalButton.animated .checkmark .checkmark__circle {
+    animation: strokeCircle 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
 }
 
 @keyframes stroke {
     0% {
         stroke-dashoffset: 48;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes strokeReverse {
+    0% {
+        stroke-dashoffset: 0;
+    }
+
+    100% {
+        stroke-dashoffset: 48;
+    }
+}
+
+@keyframes strokeCircle {
+    0% {
+        stroke-dashoffset: 0;
+    }
+
+    100% {
+        stroke-dashoffset: 225;
+    }
+}
+
+@keyframes strokeCircleReverse {
+    0% {
+        stroke-dashoffset: 225;
     }
 
     100% {
@@ -305,32 +356,56 @@
     align-items: center;
 }
 
-.leftright {
+.leftright, .rightleft {
     height: 2px;
     width: 30px;
     position: absolute;
     background-color: white;
     border-radius: 2px;
+}
+
+.leftright {
     transform: rotate(45deg);
-    transition: all .3s ease-in;
 }
 
 .rightleft {
-    height: 2px;
-    width: 30px;
-    position: absolute;
-    background-color: white;
-    border-radius: 2px;
-    transform: rotate(-45deg);
-    transition: all .3s ease-in;
-}
-
-.modalButton:hover .close-container .leftright {
     transform: rotate(-45deg);
 }
 
-.modalButton:hover .close-container .rightleft {
-    transform: rotate(45deg);
+.modalButton.reverse .close-container .leftright {
+    animation: rotate 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.modalButton.animated .close-container .leftright {
+    animation: rotateReverse 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.modalButton.reverse .close-container .rightleft {
+    animation: rotateReverse 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.modalButton.animated .close-container .rightleft {
+    animation: rotate 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(-45deg);
+    }
+
+    100% {
+        transform: rotate(45deg);
+    }
+}
+
+@keyframes rotateReverse {
+    0% {
+        transform: rotate(45deg);
+    }
+
+    100% {
+        transform: rotate(-45deg);
+    }
 }
 
 .calibrateScreen {

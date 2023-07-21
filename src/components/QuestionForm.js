@@ -48,7 +48,8 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                     .transition()
                     .style("opacity", "0")
                     .on("end", () => {
-                        setDisplayExplanation(explanation[index][choice]);
+                        if (explanation[index])
+                            setDisplayExplanation(explanation[index][choice]);
 
                         d3.selectAll(".top")
                         .transition()

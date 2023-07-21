@@ -1,0 +1,42 @@
+[
+    {
+        "question": "What was the final step of the Leblanc process?",
+        "choiceA": "Heat sodium chloride with sulfuric acid to produce sodium sulfate",
+        "choiceB": "Mix crushed limestone and coal and fired",
+        "choiceC": "Separate sodium carbonate from black ash by washing it with water",
+        "choiceD": "Mix sodium carbonate and calcium sulfide",
+        "answer": "C"
+    },
+    {
+        "question": "What happened after when Leblanc began large-scale production of soda ash? ",
+        "choiceA": "He received an award for his revolutionary process",
+        "choiceB": "Taken over by revolutionaries because it was bad for the environment",
+        "choiceC": "Made a handbook on chemical engineering",
+        "choiceD": "Gave a series of lectures at the Manchester School of Technology",
+        "answer": "B"
+    },
+    {
+        "question": "Why was George Davis’s work unique?",
+        "choiceA": "It formed the foundation for acid production and brewing",
+        "choiceB": "On how best to deliver drugs into our bodies",
+        "choiceC": "Extract energy from biomass",
+        "choiceD": "Organized basic operations like transporting liquids and gases or distillation",
+        "answer": "D"
+    },
+    {
+        "question": "How does one manage large-scale chemical production?",
+        "choiceA": "Break down each part of a chemical plant into individual units",
+        "choiceB": "Hire more graduating chemical engineers",
+        "choiceC": "Make chemical processes more economically viable, efficient and cheaper",
+        "choiceD": "Consider momentum transfer, mass transfer and thermodynamics",
+        "answer": "A"
+    },
+    {
+        "question": "Why did the French Royal Academy offer a prize?",
+        "choiceA": "They need more glass, paper and soap during the American Revolutionary War",
+        "choiceB": "Produce sodium carbonate due to lack of sodium carbonate during the American Revolutionary War",
+        "choiceC": "Extracting energy from biomass",
+        "choiceD": "Improved the process of making gasoline",
+        "answer": "B"
+    }
+]

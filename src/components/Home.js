@@ -87,6 +87,14 @@ function reviver(key, value) {
     return value;
 }
 
+function *shuffle(array) {
+    var i = array.length;
+
+    while (i--) {
+        yield array.splice(Math.floor(Math.random() * (i + 1)), 1)[0];
+    }
+}
+
 function getCollocation(text, phrases, complexityMap, secondary = false, additionalPhrases = new Map(), checkComplexity = true) {
     let words = tokenize.extract(text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
     let uniquePhrases = new Set();
@@ -771,13 +779,58 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 }
             )
             await p;
+            questions.sort((a, b) => JSON.stringify(a).length - JSON.stringify(b).length);
         } else {
             questions = Object.values(JSON.parse(JSON.stringify(questionsRef.current)).default);
+
+            for (let question of questions) {
+                let choiceA = question.choiceA;
+                let choiceB = question.choiceB;
+                let choiceC = question.choiceC;
+                let choiceD = question.choiceD;
+                let answer;
+
+                switch (question.answer) {
+                    case "A":
+                        answer = choiceA;
+                        break;
+                    case "B":
+                        answer = choiceB;
+                        break;
+                    case "C":
+                        answer = choiceC;
+                        break;
+                    case "D":
+                        answer = choiceD;
+                        break;
+                }
+                let choices = [choiceA, choiceB, choiceC, choiceD];
+                let shuffled = shuffle(choices);
+
+                question.choiceA = shuffled.next().value;
+                question.choiceB = shuffled.next().value;
+                question.choiceC = shuffled.next().value;
+                question.choiceD = shuffled.next().value;
+                
+                switch (answer) {
+                    case question.choiceA:
+                        question.answer = "A";
+                        break;
+                    case question.choiceB:
+                        question.answer = "B";
+                        break;
+                    case question.choiceC:
+                        question.answer = "C";
+                        break;
+                    case question.choiceD:
+                        question.answer = "D";
+                        break;
+                }
+            }
+            questions = [...shuffle(questions)];
         }
-        
         setShowDefinitionContainer(false);
         onQuestions.current = true;
-        questions.sort((a, b) => JSON.stringify(a).length - JSON.stringify(b).length);
         
         d3.select("#video")
         .transition()
@@ -1093,8 +1146,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             index = 0;
                             addLength = 0;
 
-                            // if (innerText.startsWith(collocation[0]) || innerText.endsWith(collocation[0]))
-                            //     i--;
+                            if (innerText.startsWith(collocation[0]) || innerText.endsWith(collocation[0]))
+                                i--;
                         }
                         // console.log([...subtitleNodes].map(d => d.innerText))
 
@@ -1159,7 +1212,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     .html(d3.select(collocationContainer).html().slice(0, -1));
                 } else {
                     console.log("fail", collocation);
-                    // f = true;
+                    f = true;
                     break;
                 }
             };
@@ -1170,7 +1223,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             } else {
                 d3.selectAll(".copyCollocation").remove();
             }
-            
             fail.current = f;
         }
         
@@ -1214,7 +1266,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 if (definition.definitionTerm1.term.length > 2) {
                     names.current.add(definition.definitionTerm1.term.toLowerCase());
                     
-                    console.log(definition.definitionTerm1.term);
+                    // console.log(definition.definitionTerm1.term);
                 }
             }
 
@@ -1244,7 +1296,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 if (definition.definitionTerm2.term.length > 2) {
                     names.current.add(definition.definitionTerm2.term.toLowerCase());
                     
-                    console.log(definition.definitionTerm2.term);
+                    // console.log(definition.definitionTerm2.term);
                 }
             }
         }

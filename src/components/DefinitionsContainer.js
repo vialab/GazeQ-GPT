@@ -121,6 +121,9 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
     useEffect(() => {
         return;
         if (definition.current && showMoreInfo && !definitionMore.current && collocations.get(definition.current).definitions.definitionTerm1) {
+            clearTimeout(definitionTimeout.current);
+            definitionTimeout.current = null;
+
             let ref = definitionRefs.current.get(definition.current);
             let opacity = d3.select(ref.current).style("opacity");
             let bbox = ref.current.getBoundingClientRect();
@@ -135,7 +138,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
             .transition()
             .duration(1000)
             .styleTween("opacity", () => d3.interpolate(opacity ,"1"))
-            .styleTween("transform", () => d3.interpolate(`translate(0px, 0px)`, `translate(0, -${dy}px)`));
+            .styleTween("transform", () => d3.interpolate(`translate(0px, 0px)`, `translate(0px, ${-dy}px)`));
             
             let moreInfoContainer = ref.current;
 

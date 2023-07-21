@@ -11,17 +11,19 @@ import fs from "fs";
 
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
+
 import * as phraseDefinitions1 from "../assets/processedSubtitles/t.json";
 import * as phraseDefinitions2 from "../assets/processedSubtitles/t2.json";
 
-import * as questionData from "../assets/processedSubtitles/Questions.json";
+import * as questionData1 from "../assets/processedSubtitles/Questions_1.json";
+import * as questionData2 from "../assets/processedSubtitles/Questions_2.json";
 
 const video1 = { 
     video: "file:///src/assets/videos/The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.mp4",
     track: "file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt",
     complexityData: complexityData1,
     phraseDefinitions: phraseDefinitions1,
-    questions: questionData
+    questions: questionData1
 }
 
 const video2 = {
@@ -29,7 +31,7 @@ const video2 = {
     track: "file:///src/assets/videos/en_The_History_of_Electrical_Engineering__Crash_Course_Engineering_4_-_English.vtt",
     complexityData: complexityData2,
     phraseDefinitions: phraseDefinitions2,
-    questions: questionData
+    questions: questionData2
 }
 
 let videoList = [
@@ -49,7 +51,7 @@ function replacer(_, value) {
 }
 
 export default function App() {
-    let index = useRef(1);
+    let index = useRef(0);
     let gazeRef = useRef(null), fixationRef = useRef(null);
     let onSettings = useRef(false);
     let studyState = useRef("preStudy");
@@ -201,8 +203,13 @@ export default function App() {
 
     let setUpButtons = () => {
         let leave = new Map();
+        let animationendForward = new Map();
+        let animationendReverse = new Map();
 
         d3.selectAll(".modalButton .arrow")
+        .on("animationstart", (e) => {
+            animationendForward.set(e.srcElement.closest(".modalButton"), false);
+        })
         .on("animationend", (e) => {
             d3.select(e.srcElement.offsetParent)
             .classed("animated", false);
@@ -214,19 +221,91 @@ export default function App() {
                 }, 100);
             }
         })
+
+
+        d3.selectAll(".modalButton .checkmark .checkmark__check")
+        .on("animationstart", (e) => {
+            animationendReverse.set(e.srcElement.closest(".modalButton"), false);
+        })
+        .on("animationend", (e) => {
+            if (leave.get(e.srcElement.closest(".modalButton"))) {
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("animated", false);
+
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("reverse", true);
+            }
+            animationendForward.set(e.srcElement.closest(".modalButton"), true);
+        })
+
+        d3.selectAll(".modalButton .checkmark .checkmark__circle")
+        .on("animationstart", (e) => {
+            animationendForward.set(e.srcElement.closest(".modalButton"), false);
+        })
+        .on("animationend", (e) => {
+            animationendReverse.set(e.srcElement.closest(".modalButton"), true);
+
+            if (!leave.get(e.srcElement.closest(".modalButton"))) {
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("animated", true);
+            }
+        })
+
+        d3.selectAll(".modalButton .leftright")
+        .on("animationstart", (e) => {
+            if (e.srcElement.closest(".modalButton").classList.contains("reverse"))
+                animationendReverse.set(e.srcElement.closest(".modalButton"), false);
+            else
+                animationendForward.set(e.srcElement.closest(".modalButton"), false);
+        })
+        .on("animationend", (e) => {
+            if (e.srcElement.closest(".modalButton").classList.contains("reverse"))
+                animationendReverse.set(e.srcElement.closest(".modalButton"), true);
+            else
+                animationendForward.set(e.srcElement.closest(".modalButton"), true);
+
+            if (leave.get(e.srcElement.closest(".modalButton"))) {
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("animated", false);
+
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("reverse", true);
+            } else {
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("animated", true);
+
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("reverse", false);
+            }
+        })
         
         d3.selectAll(".modalButton")
         .each((d, i, n) => {
             leave.set(n[i], true);
+            animationendForward.set(n[i], true);
+            animationendReverse.set(n[i], true);
         })
         .on("pointerenter", (e) => {
             leave.set(e.srcElement, false);
 
-            d3.select(e.srcElement)
-            .classed("animated", true);
+            if (animationendReverse.get(e.srcElement)) {
+                d3.select(e.srcElement)
+                .classed("animated", true);
+
+                d3.select(e.srcElement)
+                .classed("reverse", false);
+            }
         })
         .on("pointerleave", (e) => {
             leave.set(e.srcElement, true);
+            
+            if (animationendForward.get(e.srcElement)) {
+                d3.select(e.srcElement)
+                .classed("animated", false);
+
+                d3.select(e.srcElement)
+                .classed("reverse", true);
+            }
         });
     };
 
@@ -560,6 +639,7 @@ export default function App() {
                         { content[modalContentIndex].confirm ? 
                             <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
                                 <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
                             </svg>
                             :
                             <>
@@ -745,6 +825,7 @@ export default function App() {
                     <div id={"cta"}>
                         <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
                             <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
                         </svg>
                     </div>
                 </button>,
