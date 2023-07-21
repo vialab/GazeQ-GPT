@@ -34522,20 +34522,20 @@
             "french royal academy offered up a prize",
             {
                 "definitionTerm1": {
-                    "term": "french",
-                    "definition": "relating to France or its people or language"
+                    "term": "french royal academy",
+                    "definition": "a group of important people in France who give awards"
                 },
                 "definitionTerm2": {
-                    "term": "royal",
-                    "definition": "belonging to or relating to a king or queen"
+                    "term": "offered up a prize",
+                    "definition": "gave a special reward"
                 },
                 "definitionPhrase": {
                     "phrase": "french royal academy offered up a prize",
-                    "definition": "The French Royal Academy offered a prize."
+                    "definition": "a group of important people in France who gave a special reward"
                 },
                 "example": [
-                    "The French Royal Academy offered up a prize for the best essay.",
-                    "I heard that the French Royal Academy offered up a prize for the most talented artist."
+                    "The french royal academy offered up a prize to the best student in the class.",
+                    "The french royal academy offered up a prize for the best painting in the art competition."
                 ]
             }
         ],

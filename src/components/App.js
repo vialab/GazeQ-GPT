@@ -11,8 +11,8 @@ import fs from "fs";
 
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
-import * as phraseDefinitions1 from "../assets/processedSubtitles/t3.json";
-import * as phraseDefinitions2 from "../assets/processedSubtitles/t.json";
+import * as phraseDefinitions1 from "../assets/processedSubtitles/t.json";
+import * as phraseDefinitions2 from "../assets/processedSubtitles/t2.json";
 
 import * as questionData from "../assets/processedSubtitles/Questions.json";
 
@@ -49,7 +49,7 @@ function replacer(_, value) {
 }
 
 export default function App() {
-    let index = useRef(0);
+    let index = useRef(1);
     let gazeRef = useRef(null), fixationRef = useRef(null);
     let onSettings = useRef(false);
     let studyState = useRef("preStudy");
@@ -115,7 +115,10 @@ export default function App() {
         setToggleDefinitions(!toggleDefinitions);
     };
 
+    let preToggle = useRef(false);
+
     let startStudy = () => {
+        preToggle.current = toggleDefinitions;
         setState("study");
         index.current = 0;
         studyState.current = "preStudy";
@@ -148,6 +151,8 @@ export default function App() {
     };
 
     let videoCallback = () => {
+        setShowDefinitions(false);
+
         if (index.current < videoList.length - 1) {
             index.current++;
             setSrc(videoList[index.current].video);
@@ -160,6 +165,7 @@ export default function App() {
         setModalContentIndex(0);
         setModalIsOpen(true);
         setIfRecord(false);
+
         let player = videojs.getAllPlayers()[0];
 
         if (player) {
@@ -445,6 +451,9 @@ export default function App() {
                 </div>,
                 "prev": true,
                 "confirm": true,
+                "nextCallback": () => {
+                    setShowDefinitions(ifShowDefinitions);
+                },
             },
         ]
 
@@ -466,6 +475,8 @@ export default function App() {
                     setState("home");
                     setEndVideoCallback(null);
                     setIfRecord(false);
+                    setShowDefinitions(true);
+                    setToggleDefinitions(preToggle.current);
                 }
             },
         ]

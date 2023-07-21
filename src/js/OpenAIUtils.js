@@ -346,13 +346,14 @@ export function getPhrase(term1, term2) {
                 },
                 {
                     role: "user",
-                    content: `"${term1} ${term2}" is a phrase
+                    content: `"${term1} ${term2}" is a phrase (Context: history of electrical engineering)
+
 A) True
 B) False`,
                 },
                 {
                     role: "assistant",
-                    content: "Since a 6 year old will be reading this, I will simplify my definitions without using the word that I am trying to define.",
+                    content: "Since a 6 year old will be reading this, I will simplify my definitions without using the word that I am trying to define with the given context.",
                 }
             ],
             functions: [
@@ -372,7 +373,7 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The simplified definition of the term",
+                                        "description": "The simplified definition of the term with the term removed",
                                     }
                                 }
                             },
@@ -386,13 +387,13 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The simplified definition of the term",
+                                        "description": "The simplified definition of the term with the term removed",
                                     }
                                 }
                             },
                             "definitionPhrase": {
                                 "type": "object",
-                                "description": "The simplified definition of the phrase.",
+                                "description": "The definition of the phrase without using any of the words in the phrase",
                                 "properties": {
                                     "phrase": {
                                         "type": "string",
@@ -400,7 +401,7 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The simplified definition of the phrase",
+                                        "description": "The definition of the phrase without using any of the words in the phrase",
                                     }
                                 }
                             },
@@ -418,29 +419,29 @@ B) False`,
         }),
     };
 
-    // return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
-    // .then(response => response.json())
-    // .then(data => {
-    //     if (data.error) {
-    //         console.log(data.error);
-    //         return new Promise((resolve, reject) => {
-    //             setTimeout(() => {
-    //                 resolve(getPhrase(term1, term2));
-    //             }, 15000);
-    //         });
-    //     }
-    //     if (data.choices[0] && data.choices[0].message) {
-    //         console.log(term1, term2, data.choices[0].message.function_call);
-    //         return data.choices[0].message.function_call;
-    //     } else {
-    //         return new Promise((resolve, reject) => {
-    //             setTimeout(() => {
-    //                 resolve(getPhrase(term1, term2));
-    //             }, 15000);
-    //         });
-    //     }
-    // })
-    // .catch(error => console.log("error", error));
+    return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.log(data.error);
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(getPhrase(term1, term2));
+                }, 15000);
+            });
+        }
+        if (data.choices[0] && data.choices[0].message) {
+            console.log(term1, term2, data.choices[0].message.function_call);
+            return data.choices[0].message.function_call;
+        } else {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(getPhrase(term1, term2));
+                }, 15000);
+            });
+        }
+    })
+    .catch(error => console.log("error", error));
 
     let rand = Math.random() * -1;
 
@@ -502,7 +503,11 @@ export async function parsePhrase(text) {
                         // mapExample &&
                         data.example.length > 0 &&
                         // data.definitionTerm1.term.toLowerCase() + " " + data.definitionTerm2.term.toLowerCase() === data.definitionPhrase.phrase.toLowerCase() &&
-                        (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase()
+                        (
+                            (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase() ||
+                            (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionTerm1.term.toLowerCase() ||
+                            (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionTerm2.term.toLowerCase()
+                        )
                     ) {
                         phrase = [phrase[0] + " " + phrase[1]];
                         phrases.set(phrase[0].toLowerCase(), data);
