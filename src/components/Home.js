@@ -172,14 +172,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     
     let [ textTrackChangeCallback, setTextTrackChangeCallback] = React.useState(null);
     let [ resizeCallback, setResizeCallback] = React.useState(null);
-
+    
     let wordScores = useRef(new Map());
     let frameScores = useRef(new Map());
     let definitionScores = useRef(new Map());
     let definitionToggle = useRef(toggleDefinitions);
     let index = useRef(-1), delayIndex = useRef(-1);
     let rawCaptions = useRef([]);
-    let forcePauseRef = useRef(true), end = useRef(false), onQuestions = useRef(false);
+    let pauseRef = useRef(false), forcePauseRef = useRef(true), end = useRef(false), onQuestions = useRef(false);
     let complexityMap = useRef(JSON.parse(JSON.stringify(complexityData), reviver));
     let phrases = useRef(JSON.parse(JSON.stringify(phraseDefinitions), reviver));
     let additionalPhrases = useRef(new Map());
@@ -463,7 +463,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         
         if (t > 0) {
             end.current = false;
-        } else if (t === 0) {
+        } else if (t === 0 && !onQuestions.current) {
             wordScores.current.clear();
             frameScores.current.clear();
             definitionScores.current.clear();
@@ -620,6 +620,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         if (onQuestions.current) {
             return;
         }
+        onQuestions.current = true;
         end.current = true;
         forcePauseRef.current = true;
 
@@ -644,7 +645,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
         }
         addScores(wordScores.current);
-        addScores(frameScores.current);
+        // addScores(frameScores.current);
         addScores(definitionScores.current);
 
         let topWords = [...sortScores.entries()];
@@ -753,6 +754,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     // qData.endTime = Math.random() * 5 + 6;
                     qData.startTime = questionData[i].startTime / 1000;
                     qData.endTime = questionData[i].endTime / 1000;
+                    qData.collocation = collocation;
 
                     questions.push(qData);
                     console.log(qData);
@@ -830,7 +832,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             questions = [...shuffle(questions)];
         }
         setShowDefinitionContainer(false);
-        onQuestions.current = true;
         
         d3.select("#video")
         .transition()
@@ -984,6 +985,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     }, [track]);
 
     useEffect(() => {
+        pauseRef.current = paused;
+    }, [paused]);
+
+    useEffect(() => {
         complexityMap.current = JSON.parse(JSON.stringify(complexityData), reviver);
     }, [complexityData]);
 
@@ -1002,11 +1007,11 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     useEffect(() => {
         ifRecord.current = record;
 
-        if (!record) {
+        if (!record && eyeGazeRecordData.current.length > 0) {
             scoresRecordData.current = {wordScores: [...wordScores.current], frameScores: [...frameScores.current], definitionScores: [...definitionScores.current]}
             
             if (recordCallback instanceof Function)
-                recordCallback({eyeData: [...eyeGazeRecordData.current], questionData: [...questionRecordData.current], definitionData: showDefinitions ? [...definitionRecordData.current] : ["No definitions"], scoresData: {...scoresRecordData.current}});
+                recordCallback({eyeData: [...eyeGazeRecordData.current], questionData: [...questionRecordData.current], definitionData: definitionToggle.current ? [...definitionRecordData.current] : ["No definitions"], scoresData: {...scoresRecordData.current}});
             
             eyeGazeRecordData.current = [];
             questionRecordData.current = [];
@@ -1181,8 +1186,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     let collocationContainer = document.createElement("span");
 
                     if (!firstNode.parentElement.classList.contains("highlight")) {
-                        wordContainer.node()
-                        .insertBefore(collocationContainer, firstNode)
+                        try {
+                            wordContainer.node()
+                            .insertBefore(collocationContainer, firstNode)
+                        } catch (e) {
+                            console.log(e);
+                        }
                     } else {
                         collocationContainer = firstNode.parentElement;
                     }
@@ -1317,6 +1326,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 definition.definitionTerm2.definition = "";
                 // phrases.current.delete(collocation);
             }
+            
+            if (definition.definitionPhrase.definition.toLowerCase().replace("’", "'").includes(collocation.replace("’", "'").toLowerCase())) {
+                let startIndex = definition.definitionPhrase.definition.toLowerCase().replace("’", "'").search(collocation.replace("’", "'").toLowerCase());
+                definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(startIndex + collocation.length).trim();
+                definition.definitionPhrase.definition.split(" ")[0].search(/[a-zA-Z]/) === -1 ? definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(definition.definitionPhrase.definition.split(" ")[0].length).trim() : null;
+            }
 
             for (let name of names.current) {
                 // let startIndex = collocation.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
@@ -1366,13 +1381,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         }
     }, [phraseDefinitions]);
 
+    let oneeuroX = useRef(new OneEuroFilter(1 / 33, 0.0008, 0.001, 1));
+    let oneeuroY = useRef(new OneEuroFilter(1 / 33, 0.0008, 0.001, 1));
+    let rbfchain = useRef(new RBFChain(0.01, 0.95, 0.175, 1.0));
+    let rbfchainFrame = useRef(new RBFChain(0.01, 0.95, 0.665, 1.0));
+    let lastTime = useRef(null), currentTime = useRef(null), dt = useRef(null);
+    let timeout = useRef(null);
+    
     useEffect(() => {
-        let oneeuroX = new OneEuroFilter(1 / 33, 0.0008, 0.001, 2);
-        let oneeuroY = new OneEuroFilter(1 / 33, 0.0008, 0.001, 2);
-        let rbfchain = new RBFChain(0.01, 0.95, 0.175, 1.0);
-        let rbfchainFrame = new RBFChain(0.01, 0.95, 0.665, 1.0);
-        let lastTime = null, currentTime = null, dt = null;
-        let timeout = null;
 
         // ipcRenderer.on('fixation-pos', (event, arg) => {
         //     let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
@@ -1388,31 +1404,33 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             if (map.has(word)) {
                 if (map.get(word).has(index.current)) {
                     map.get(word).get(index.current).score.push(score)
+                    map.get(word).get(index.current).dt.push(dt.current)
                 } else {
-                    map.get(word).set(index.current, {score: [score]});
+                    map.get(word).set(index.current, {score: [score], dt: [dt.current]});
                 }
             } else {
-                map.set(word, new Map().set(index.current, {score: [score]}));
+                map.set(word, new Map().set(index.current, {score: [score], dt: [dt.current]}));
             }
         }
 
         let test = (event, arg) => {
-            currentTime = new Date().getTime();
-            dt = currentTime - lastTime;
-            lastTime = currentTime;            
+            currentTime.current = new Date().getTime();
 
-            if (dt) {
+            if (lastTime.current)
+                dt.current = currentTime.current - lastTime.current;
+
+            if (dt.current) {
                 let xOffset = new Number(d3.select("#gazeCursor").attr("xoffset"));
                 let yOffset = new Number(d3.select("#gazeCursor").attr("yoffset"));
-                let x = oneeuroX.filter(arg.x + xOffset, currentTime);
-                let y = oneeuroY.filter(arg.y + yOffset, currentTime);
+                let x = oneeuroX.current.filter(arg.x + xOffset, currentTime.current);
+                let y = oneeuroY.current.filter(arg.y + yOffset, currentTime.current);
                 let nodes = d3.selectAll(".vjs-text-track-cue div span").nodes();
                 let userCenterRadius = headDistancesRef.current * Math.tan(4 * Math.PI/180) * 0.393701 * 127 / 2;
                 // console.log(screen.height - document.documentElement.clientHeight)
 
                 if (x && y) {
                     if (ifRecord.current) {
-                        eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime, xOffset: xOffset, yOffset: yOffset});
+                        eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime.current, xOffset: xOffset, yOffset: yOffset});
                     }
                     // heatmap.addData({ x: x, y: y });
 
@@ -1422,10 +1440,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
 
                     let input_data = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-                    let probability = rbfchain.add_element(input_data);
-                    let is_fixation = probability >= rbfchain.delta;
-                    let probabilityFrame = rbfchainFrame.add_element(input_data);
-                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.delta;
+                    let probability = rbfchain.current.add_element(input_data);
+                    let is_fixation = probability >= rbfchain.current.delta;
+                    let probabilityFrame = rbfchainFrame.current.add_element(input_data);
+                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.current.delta;
 
                     // d3.select("body")
                     // .append("div")
@@ -1479,7 +1497,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             if (words instanceof Array) {
                                 for (let word of words) {
                                     if (complexityMap.current.has(word)) {
-                                        let score = (1 / words.length) * Math.log10(2) * Math.sqrt(dt) * (complexityMap.current.get(word) / 5) * 1000;
+                                        let score = (1 / words.length) * Math.sqrt(dt.current) * (complexityMap.current.get(word) / 5) * 1000;
                                         addScores(definitionScores.current, word, score);
                                     }
                                 }
@@ -1519,7 +1537,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                 if (text instanceof Array && playerArea && is_fixation) {
                                     for (let word of text) { 
                                         if (complexityMap.current.has(word)) {
-                                            let frameScore = Math.log10(nodes.length + 1) * Math.sqrt(dt) * (complexityMap.current.get(word) / 5) * 1000;
+                                            let frameScore = (Math.log10(nodes.length) + 1) * Math.sqrt(dt.current) * (complexityMap.current.get(word) / 5) * 1000;
                                             addScores(frameScores.current, word, frameScore);
                                         }
                                     }
@@ -1530,7 +1548,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                                     for (let word of text) {                                    
                                         if (complexityMap.current.has(word)) {
-                                            let score = (1 / nodes.length) * Math.log10(2) * Math.sqrt(dt) * (1 / (d + 1)) * (complexityMap.current.get(word) / 5) * 1000;
+                                            let score = (1 / nodes.length) * Math.sqrt(dt.current) * (1 / (d + 1)) * (complexityMap.current.get(word) / 5) * 1000;
                                             addScores(wordScores.current, word, score);
                                         }
                                     }
@@ -1543,14 +1561,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     let inAreaOfInterest = !(window.innerWidth * 0.95 <= x || definitionsBBox.x <= x);
 
                     if (!end.current && !onQuestions.current && showDefinitions) {
-                        if (inAreaOfInterest && document.hasFocus() && paused && !forcePauseRef.current && !forcePause) {
-                            if (!timeout) {
-                                timeout = setTimeout(() => {
+                        if (inAreaOfInterest && document.hasFocus() && pauseRef && !forcePauseRef.current) {
+                            if (!timeout.current) {
+                                timeout.current = setTimeout(() => {
                                     let caption = rawCaptions.current[index.current];
 
                                     if (definitionToggle.current)
                                         setShowDefinitionContainer(false);
-                                    setShowDefinition(null);
+                                    // setShowDefinition(null);
                                     setShowMoreInfo(false);
         
                                     if (caption) {
@@ -1560,12 +1578,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                         setVideoTime(-1);
                                     }
                                     setPaused(false);
-                                    timeout = null;
+                                    timeout.current = null;
                                 }, 500);
                             }
-                        } else if ((!inAreaOfInterest || !document.hasFocus()) || (forcePauseRef.current || forcePause)) {
-                            clearTimeout(timeout);
-                            timeout = null;
+                        } else if ((!inAreaOfInterest || !document.hasFocus()) || (forcePauseRef.current)) {
+                            clearTimeout(timeout.current);
+                            timeout.current = null;
                             setPaused(true);
     
                             if (document.hasFocus() && !inAreaOfInterest) {
@@ -1574,7 +1592,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             } else {
                                 if (definitionToggle.current)
                                     setShowDefinitionContainer(false);
-                                setShowDefinition(null);
+                                // setShowDefinition(null);
                                 setShowMoreInfo(false);
                             }
                         }
@@ -1606,11 +1624,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     //     }
                     // }
                 } else {
-                    clearInterval(timeout);
-                    timeout = null;
+                    clearInterval(timeout.current);
+                    timeout.current = null;
                     setPaused(true);
                 }
             }
+            lastTime.current = currentTime.current;
         }
         let mouseInterval;
 
@@ -1640,13 +1659,13 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         }
 
         return () => {
-            clearInterval(timeout);
+            clearInterval(timeout.current);
             clearInterval(mouseInterval);
-            timeout = null;
+            timeout.current = null;
             ipcRenderer.removeAllListeners();
             d3.select(document).on("mousemove", null);
         }
-    }, [paused, mouseEnabled, showDefinitions, forcePause]);
+    }, [mouseEnabled, showDefinitions]);
 
     return (
         <>

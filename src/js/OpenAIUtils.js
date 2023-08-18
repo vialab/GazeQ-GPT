@@ -35,7 +35,7 @@ Here is some information to analyze the word's complexity:
             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4",
             messages: complexityMessages,
             functions: [
                 {
@@ -88,7 +88,7 @@ Here is some information to analyze the word's complexity:
     })
 }
 
-export function generateQuestion(text, word) {
+export function generateQuestion(text, word, initRequestOptions = "") {
     const messages = [
         {
             role: "system",
@@ -100,11 +100,9 @@ Here are the criteria for the question:
 
 1. The question must have the word: "${word}".
 
-2. The correct answer should be include as much details as possible.
+2. All choices should explain a concept or an idea in one sentence and similar in length to each other.
 
-3. The question must not start with "what".
-
-4. The choices should be an explain a concept or an idea.
+3. All incorrect choices must be plausible and related to the correct choice.
 
 Output your answer as a JSON object like so:
 {
@@ -114,15 +112,17 @@ Output your answer as a JSON object like so:
  "choiceC": [enter choice C],
  "choiceD": [enter choice D],
  "answer": [enter answer (A, B, C, or D)]
-}
-
-Let's work this out in a step by step way to be sure we have the right question that fits the criteria.`
+}`
         },
         {
             role: "user",
             content: `Video:
 ${text}}`,
         },
+        {
+            role: "assistant",
+            content: `Let's work this out in a step by step way to be sure we have the right question that fits the criteria.`
+        }
     ];
 
     const explanationMessages = (choice, correct = false) => {
@@ -143,7 +143,7 @@ ${text}}`,
             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4",
             messages: messages,
             // functions: [
             //     {
@@ -181,8 +181,7 @@ ${text}}`,
             //         },
             //     }
             // ],
-            max_tokens: 1028,
-            top_p: 0.5,
+            max_tokens: 2048,
             // function_call: {"name": "displayQuestion"},
         }),
     };
@@ -199,7 +198,7 @@ ${text}}`,
                 Authorization: "Bearer " + process.env.OPENAI_API_KEY,
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo",
+                model: "gpt-4",
                 messages: m,
                 functions: [
                     {
@@ -222,7 +221,7 @@ ${text}}`,
         };
     }
 
-    return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
+    return fetch("https://api.openai.com/v1/chat/completions", initRequestOptions === "" ? requestOptions : initRequestOptions)
     .then(response => response.json())
     .then(async data =>  {
         if (data.error) {
@@ -233,9 +232,19 @@ ${text}}`,
             let regex = /{(\s|.)*}/g;
             let match = content.match(regex);
 
-            if (!match) {
+            if (!match && initRequestOptions === "") {
+                let addRequestOptions = {...requestOptions};
                 console.log(data.choices[0].message);
-                throw new Error("No match.");
+
+                addRequestOptions.body = JSON.stringify({
+                    model: "gpt-4",
+                    messages: [...messages, data.choices[0].message],
+                    max_tokens: 2048,
+                });
+
+                return new Promise((resolve, reject) => {
+                    resolve(generateQuestion(text, word, addRequestOptions));
+                });
             }
             let questionData = JSON5.parse(match[0]);
             // let questionData = JSON5.parse(data.choices[0].message.function_call.arguments);
@@ -279,7 +288,9 @@ ${text}}`,
                     console.log("error", error)
                     
                     return new Promise((resolve, reject) => {
-                        resolve(fetchExplanation(answer, q, ifCorrect));
+                        setTimeout(() => {
+                            resolve(fetchExplanation(answer, q, ifCorrect));
+                        }, 5000);
                     });
                 });
             }
@@ -305,7 +316,9 @@ ${text}}`,
         console.log("error", error)
         
         return new Promise((resolve, reject) => {
-            resolve(generateQuestion(text, word));
+            setTimeout(() => {
+                resolve(generateQuestion(text, word));
+            }, 5000);
         });
     });
 
@@ -337,12 +350,12 @@ export function getPhrase(term1, term2) {
             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4",
             temperature: 0,
             messages: [
                 {
                     role: "system",
-                    content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide one-sentence description for each term in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
+                    content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide one-sentence definition for each term in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
                 },
                 {
                     role: "user",
@@ -351,10 +364,6 @@ export function getPhrase(term1, term2) {
 A) True
 B) False`,
                 },
-                {
-                    role: "assistant",
-                    content: "Since a 6 year old will be reading this, I will simplify my definitions without using the word that I am trying to define with the given context.",
-                }
             ],
             functions: [
                 {
@@ -373,7 +382,7 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The simplified definition of the term with the term removed",
+                                        "description": "The simplified definition of the term without using any of the words in the term",
                                     }
                                 }
                             },
@@ -387,27 +396,31 @@ B) False`,
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The simplified definition of the term with the term removed",
+                                        "description": "The simplified definition of the term without using any of the words in the term",
                                     }
                                 }
                             },
                             "definitionPhrase": {
                                 "type": "object",
-                                "description": "The definition of the phrase without using any of the words in the phrase",
+                                "description": "A one-sentence definition of the phrase without using any of the words in the phrase",
                                 "properties": {
+                                    "isPhrase": {
+                                        "type": "boolean",
+                                        "description": "Whether the given phrase is a phrase or not",
+                                    },
                                     "phrase": {
                                         "type": "string",
                                         "description": "The phrase to define",
                                     },
                                     "definition": {
                                         "type": "string",
-                                        "description": "The definition of the phrase without using any of the words in the phrase",
+                                        "description": "A one-sentence definition of the phrase without using any of the words in the phras",
                                     }
                                 }
                             },
                             "example": {
                                 "type": "array",
-                                "description": "An array of examples of the phrase.",
+                                "description": "An array of examples of the phrase. Do not change the phrase in any way.",
                                 "items": {}
                             }
                         },
@@ -419,29 +432,29 @@ B) False`,
         }),
     };
 
-    return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            console.log(data.error);
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    resolve(getPhrase(term1, term2));
-                }, 15000);
-            });
-        }
-        if (data.choices[0] && data.choices[0].message) {
-            console.log(term1, term2, data.choices[0].message.function_call);
-            return data.choices[0].message.function_call;
-        } else {
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    resolve(getPhrase(term1, term2));
-                }, 15000);
-            });
-        }
-    })
-    .catch(error => console.log("error", error));
+    // return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
+    // .then(response => response.json())
+    // .then(data => {
+    //     if (data.error) {
+    //         console.log(data.error);
+    //         return new Promise((resolve, reject) => {
+    //             setTimeout(() => {
+    //                 resolve(getPhrase(term1, term2));
+    //             }, 15000);
+    //         });
+    //     }
+    //     if (data.choices[0] && data.choices[0].message) {
+    //         console.log(term1, term2, data.choices[0].message.function_call);
+    //         return data.choices[0].message.function_call;
+    //     } else {
+    //         return new Promise((resolve, reject) => {
+    //             setTimeout(() => {
+    //                 resolve(getPhrase(term1, term2));
+    //             }, 15000);
+    //         });
+    //     }
+    // })
+    // .catch(error => console.log("error", error));
 
     let rand = Math.random() * -1;
 
@@ -500,6 +513,7 @@ export async function parsePhrase(text) {
                         Object.keys(data.definitionTerm2).length > 0 && 
                         Object.keys(data.definitionPhrase).length > 0 && 
                         data.definitionPhrase.phrase.trim() !== "" && 
+                        data.definitionPhrase.isPhrase &&
                         // mapExample &&
                         data.example.length > 0 &&
                         // data.definitionTerm1.term.toLowerCase() + " " + data.definitionTerm2.term.toLowerCase() === data.definitionPhrase.phrase.toLowerCase() &&

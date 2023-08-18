@@ -33,15 +33,16 @@
 .questionContainer .choices {
     display: grid;
     overflow: hidden;
-    grid-template-rows: repeat(4, minmax(0, 1fr));
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    grid-column-gap: 5px;
-    grid-row-gap: 5px;
+    /* grid-template-rows: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(1, minmax(0, 1fr)); */
+    grid-column-gap: 10px;
+    grid-row-gap: 10px;
     width: 100%;
     height: min-content;
     justify-content: center;
     align-content: center;
-    max-height: 50%;
+    font-size: 1em;
+    /* max-height: 50%; */
 }
 
 .questionContainer .choices .choice {
@@ -53,7 +54,7 @@
     justify-content: center;
     text-align: center;
     align-items: center;
-    padding: 1rem;
+    padding: 15px;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     word-wrap: break-word;
@@ -149,6 +150,7 @@
     top: 0;
     bottom: auto;
     text-align: center;
+    font-size: 0.9em;
 }
 
 .top p {

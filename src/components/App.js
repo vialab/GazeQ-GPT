@@ -12,8 +12,8 @@ import fs from "fs";
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
 
-import * as phraseDefinitions1 from "../assets/processedSubtitles/t.json";
-import * as phraseDefinitions2 from "../assets/processedSubtitles/t2.json";
+import * as phraseDefinitions1 from "../assets/processedSubtitles/t5.json";
+import * as phraseDefinitions2 from "../assets/processedSubtitles/t6.json";
 
 import * as questionData1 from "../assets/processedSubtitles/Questions_1.json";
 import * as questionData2 from "../assets/processedSubtitles/Questions_2.json";
@@ -450,6 +450,13 @@ export default function App() {
                         setDefinitionCallback(null);
                         setDefinitionContainerCallback(null);
                         setShowDefinitions(false);
+
+                        let player = videojs.getAllPlayers()[0];
+
+                        if (player) {
+                            player.currentTime(0);
+                            player.pause();
+                        }
                     },
                 },
             );
@@ -510,6 +517,10 @@ export default function App() {
                             }
                         })
                     },
+                    "nextCallback": () => {
+                        setDefinitionCallback(null);
+                        setDefinitionContainerCallback(null);
+                    }
                 },
             );
         } else {
