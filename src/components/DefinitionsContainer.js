@@ -221,8 +221,31 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
         setMoreInfo(null);
         definitionMore.current = null;
         definition.current = null;
-
     }, [collocations]);
+
+    let skipTerms = [];
+
+    if (moreInfo) {
+        for (let i = 1; "skipTerm" + i in moreInfo; i++) {
+            if (moreInfo["skipTerm" + i] === false) {
+                skipTerms.push(
+                    <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["definitions"]["definitionTerm" + i].collocation)} key={moreInfo["definitions"]["definitionTerm" + i].term}>
+                        <b> { moreInfo["definitions"]["definitionTerm" + i].term } </b>
+                        {/* <> Complexity: { Math.round(moreInfo["definitions"]["definitionTerm" + i].complexity * 10) / 10 } </> */}
+                        <span><p> { moreInfo["definitions"]["definitionTerm" + i].definition.toLowerCase() } </p></span>
+                    </div>
+                );
+            } else if (moreInfo["skipTerm" + i] instanceof Object) {
+                skipTerms.push(
+                    <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm" + i].collocation)} key={moreInfo["skipTerm" + i].definitionPhrase.phrase}>
+                        <b> { moreInfo["skipTerm" + i].subtitle } </b>
+                        {/* <> Complexity: { Math.round(moreInfo["skipTerm" + i].complexity * 10) / 10 } </> */}
+                        <span><p> { moreInfo["skipTerm" + i].definitionPhrase.definition.toLowerCase() } </p></span>
+                    </div>
+                );
+            }
+        }
+    }
 
     return (
         <div id="definitionsContainer" ref={definitionsContainer} >
@@ -247,33 +270,7 @@ export default function DefinitionsContainer({ collocations, show, showDefinitio
                     <>
                         <hr style={{width: "90%", border: "1px solid rgba(57, 57, 58, 0.5)", margin: "0"}}/>
 
-                        { !moreInfo["skipTerm1"] ?
-                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["definitions"].definitionTerm1.collocation)} key={moreInfo["definitions"].definitionTerm1.term}>
-                                <b> { moreInfo["definitions"].definitionTerm1.term } </b>
-                                {/* <> Complexity: { Math.round(moreInfo["definitions"].definitionTerm1.complexity * 10) / 10 } </> */}
-                                <span><p> { moreInfo["definitions"].definitionTerm1.definition.toLowerCase() } </p></span>
-                            </div>
-                        : 
-                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm1"].collocation)} key={moreInfo["skipTerm1"].definitionPhrase.phrase}>
-                                <b> { moreInfo["skipTerm1"].subtitle } </b>
-                                {/* <> Complexity: { Math.round(moreInfo["skipTerm1"].complexity * 10) / 10 } </> */}
-                                <span><p> { moreInfo["skipTerm1"].definitionPhrase.definition.toLowerCase() } </p></span>
-                            </div>
-                        }
-
-                        { !moreInfo["skipTerm2"] ?
-                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["definitions"].definitionTerm2.collocation)} key={moreInfo["definitions"].definitionTerm2.term}>
-                                <b> { moreInfo["definitions"].definitionTerm2.term } </b>
-                                {/* <> Complexity: { Math.round(moreInfo["definitions"].definitionTerm2.complexity * 10) / 10 } </> */}
-                                <span><p> { moreInfo["definitions"].definitionTerm2.definition.toLowerCase() } </p></span>
-                            </div>
-                        : moreInfo["skipTerm2"] === true ? null :
-                            <div className="collocationInfo" style={{ textAlign: "center" }} collocation={JSON.stringify(moreInfo["skipTerm2"].collocation)} key={moreInfo["skipTerm2"].definitionPhrase.phrase}>
-                                <b> { moreInfo["skipTerm2"].subtitle } </b>
-                                {/* <> Complexity: { Math.round(moreInfo["skipTerm2"].complexity * 10) / 10 } </> */}
-                                <span><p> { moreInfo["skipTerm2"].definitionPhrase.definition.toLowerCase() } </p></span>
-                            </div>
-                        }
+                        { skipTerms }
 
                         { [...moreInfo["additional"].entries()].map(([_, additional], index) => {
                             return (

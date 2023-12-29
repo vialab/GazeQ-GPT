@@ -11,6 +11,7 @@ const Component = videojs.getComponent('Component');
 class Gradient extends Component {
     constructor(player, options = {}) {
         super(player, options);
+
         if (options.text) {
             this.updateTextContent(options.text);
         }
@@ -25,7 +26,7 @@ class Gradient extends Component {
 
 videojs.registerComponent('Gradient', Gradient);
 
-export default function Player({clickCallback, timerCallback, textTrackChangeCallback, resizeCallback, endCallback, paused, time, src, track, toggleDefinitions}) {
+export default function Player({clickCallback, timerCallback, textTrackChangeCallback, resizeCallback, endCallback, paused, time, src, track, toggleDefinitions, resetCallback}) {
     useEffect(() => {
         if (videojs.getAllPlayers().length === 0) {
             let player = videojs("video", {
@@ -34,27 +35,69 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
                 },
                 fill: true,
                 disablePictureInPicture: true,
+                userActions: {
+                    doubleClick: false
+                }
             });
+            let timeout = null;
 
             d3.select(".video-js.vjs-theme-fantasy")
             .on("pointerenter", () => {
                 d3.select(".vjs-control-bar").transition().style("opacity", "1");
+                d3.select(".video-js.vjs-theme-fantasy").style("cursor", "auto");
             })
             .on("pointerleave", () => {
                 d3.select(".vjs-control-bar").transition().style("opacity", "0");
+            })
+            .on("pointermove", () => {
+                if (player.paused()) return;
+
+                if (d3.select(".vjs-control-bar").style("opacity") === "0") {
+                    d3.select(".vjs-control-bar").style("opacity", "1");
+                    d3.select(".video-js.vjs-theme-fantasy").style("cursor", "auto");
+                }
+                clearTimeout(timeout);
+                
+                timeout = setTimeout(() => {
+                    if (player.paused()) return;
+
+                    d3.select(".vjs-control-bar").transition().style("opacity", "0");
+                    d3.select(".video-js.vjs-theme-fantasy").style("cursor", "none");
+
+                    timeout = null;
+                }, 2000);
             });
 
             player.getChild("ControlBar").addChild("Gradient", {}, 0);
 
+            let clicked = false;
+
             player.on("click", (e) => {
+                clicked = true;
+
                 if (clickCallback instanceof Function)
                     clickCallback(player.paused());
             });
+
+            document.onkeydown = (e) => {
+                if (clicked) {
+                    if (e.key === "ArrowLeft") {
+                        player.currentTime(player.currentTime() - 5);
+                    } else if (e.key === "ArrowRight") {
+                        player.currentTime(player.currentTime() + 5);
+                    }
+                }
+            }
 
             player.on("timeupdate", () => {
                 if (timerCallback instanceof Function)
                     timerCallback(player.currentTime());
             });
+
+            player.on("reset", () => {
+                if (resetCallback instanceof Function)
+                    resetCallback();
+            })
 
             player.on("ended", () => {
                 if (endCallback instanceof Function)
@@ -152,6 +195,7 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
+            player.trigger("reset");
             // player.currentTime(240)
         }
     }, [src, track]);

@@ -20,6 +20,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
     let refB = React.useRef();
     let refC = React.useRef();
     let refD = React.useRef();
+    let startTimeRef = React.useRef();
     let correct = false;
     let submittedAnswers = React.useRef(new Set());
 
@@ -75,6 +76,12 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         .style("background-color", "white")
         .style("color", "black")
         .style("pointer-events", "all");
+        
+        let submittedTime = new Date().getTime();
+
+        questionData[index].startTime = startTimeRef.current;
+        questionData[index].submittedTime = submittedTime;
+        startTimeRef.current = submittedTime;
 
         if (index < question.length - 1) {
             setIndex(index + 1);
@@ -192,6 +199,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
         if (questions.length > 0) {
             openQuestionContainer();
+            startTimeRef.current = new Date().getTime();
         } else {
             closeQuestionContainer();
         }

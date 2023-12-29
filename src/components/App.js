@@ -12,7 +12,7 @@ import fs from "fs";
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
 
-import * as phraseDefinitions1 from "../assets/processedSubtitles/t5.json";
+import * as phraseDefinitions1 from "../assets/processedSubtitles/t7.json";
 import * as phraseDefinitions2 from "../assets/processedSubtitles/t6.json";
 
 import * as questionData1 from "../assets/processedSubtitles/Questions_1.json";
@@ -78,7 +78,7 @@ export default function App() {
     let [ definitionContainerCallback, setDefinitionContainerCallback ] = React.useState(null);
     let [ endVideoCallback, setEndVideoCallback ] = React.useState(null);
     let [ ifRecord, setIfRecord ] = React.useState(false);
-    let [ recordCallback, setRecordCallback ] = React.useState(() => (data) => recordCallbackFunc(data));
+    let [ recordCallback, setRecordCallback ] = React.useState(() => recordCallbackFunc);
     let [ forcePause, setForcePause ] = React.useState(false);
     
     let preStudyContent = useRef([]);
@@ -248,6 +248,9 @@ export default function App() {
             if (!leave.get(e.srcElement.closest(".modalButton"))) {
                 d3.select(e.srcElement.closest(".modalButton"))
                 .classed("animated", true);
+                
+                d3.select(e.srcElement.closest(".modalButton"))
+                .classed("reverse", false);
             }
         })
 
@@ -309,23 +312,29 @@ export default function App() {
         });
     };
 
-    let recordCallbackFunc = (data) => {
+    let recordCallbackFunc = (src, data) => {
         let eyeData = data.eyeData;
         let questionData = data.questionData;
         let definitionData = data.definitionData;
         let scoresData = data.scoresData;
-        
 
         if (eyeData.length > 0 || questionData.length > 0 || definitionData.length > 0 || scoresData.length > 0) {            
             let duplicateNum = 0;
-            let directory = "./data/" + pid + "_" + duplicateNum;
-
+            let videoName = video1.video === src ? "chemical" : "electrical";
+            let directory = "./data/" + pid + "_" + videoName;
+            
             while (fs.existsSync(directory)) {
                 duplicateNum++;
-                directory = "./data/" + pid + "_" + duplicateNum;
+                directory = "./data/" + pid + "_" + videoName + " (" + duplicateNum + ")";
             }
             fs.mkdirSync(directory, { recursive: true });
-            fs.writeFileSync(directory + "/eyeData.json", JSON.stringify(eyeData, replacer));
+            let csv = eyeData[0].xOffset + " " + eyeData[0].yOffset + "\nx, y, dt, index, headDistance, radius, timestamp\n";
+
+            eyeData.slice(1 , eyeData.length).forEach((row) => {
+                csv += row.x + ", " + row.y + ", " + row.dt + ", " + row.index + ", " + row.headDistance + ", " + row.radius + ", " + row.timestamp + "\n";
+            });
+
+            fs.writeFileSync(directory + "/eyeData.csv", csv);
             fs.writeFileSync(directory + "/questionData.json", JSON.stringify(questionData, replacer));
             fs.writeFileSync(directory + "/definitionData.json", JSON.stringify(definitionData, replacer));
             fs.writeFileSync(directory + "/scoresData.json", JSON.stringify(scoresData, replacer));
@@ -378,12 +387,27 @@ export default function App() {
                 "prev": false,
             },
             {
+                "content": <div style={{ textAlign: "center" }}>
+                    Have you submitted the questionnaire?
+                </div>,
+                "prev": true,
+                "confirm": true,
+                "disableNext": true,
+                "callback": () => {
+                    setTimeout(() => {
+                        d3.select(".modalButton.disabled")
+                        .classed("enable", true)
+                    }, 1000);
+                },
+            },
+            {
                 "content": 
                 <div>
                     <h3 style={{width: "100%", textAlign: "center"}}>Welcome to the Study</h3>
                     <ul> 
                         <li style={{ margin: "30px 0px" }}>Your task is to watch two videos and answer a comphrehension quiz at the end of each video.</li>
-                        <li style={{ margin: "30px 0px" }}>You are able to pause or rewind the video.</li>
+                        <li style={{ margin: "30px 0px" }}>You are able to pause the video.</li>
+                        <li style={{ margin: "30px 0px" }}>You are able to rewatch parts of the video by navigating with the progress bar or clicking arrow keys.</li>
                     </ul>
                 </div>,
                 "prev": true,
@@ -456,6 +480,7 @@ export default function App() {
                         if (player) {
                             player.currentTime(0);
                             player.pause();
+                            player.trigger("reset");
                         }
                     },
                 },
@@ -541,6 +566,13 @@ export default function App() {
                 </div>,
                 "prev": true,
                 "confirm": true,
+                "disableNext": true,
+                "callback": () => {
+                    setTimeout(() => {
+                        d3.select(".modalButton.disabled")
+                        .classed("enable", true)
+                    }, 1000);
+                },
                 "nextCallback": () => {
                     setShowDefinitions(ifShowDefinitions);
                 },
@@ -561,6 +593,20 @@ export default function App() {
                     <iframe key={"postStudy"} src={"https://docs.google.com/forms/d/e/1FAIpQLSekva_HDgGjrpaigGVI1W5O4LNaiUNFnjaZ4NPFdzwep0cwFQ/viewform?usp=pp_url&entry.377591269=" + pid + "&entry.1353774704=" + (ifShowDefinitions ? "With+Definitions" : "Without+Definitions")} />
                 </>,
                 "prev": true,
+            },
+            {
+                "content": <div style={{ textAlign: "center" }}>
+                    Have you submitted the questionnaires?
+                </div>,
+                "prev": true,
+                "confirm": true,
+                "disableNext": true,
+                "callback": () => {
+                    setTimeout(() => {
+                        d3.select(".modalButton.disabled")
+                        .classed("enable", true)
+                    }, 1000);
+                },
                 "nextCallback": () => {
                     setState("home");
                     setEndVideoCallback(null);
@@ -687,10 +733,20 @@ export default function App() {
                 setModalBottomContent(bottom);
             }
         } else {
+            setModalIsOpen(false);
+            setShowDefinitions(ifShowDefinitions);
+            setDefinitionCallback(null);
+            setDefinitionContainerCallback(null);
+            setIfRecord(true);
+            
             let player = videojs.getAllPlayers()[0];
 
             if (player) {
                 player.currentTime(0);
+                
+                setTimeout(() => {
+                    player.trigger("reset");
+                }, 1000);
             }
             if (d3.select("#gazeCursor").style("display") !== "none")
                 toggleGaze();
@@ -700,18 +756,12 @@ export default function App() {
             } else {
                 studyState.current = "postStudy";
             }
-            setModalIsOpen(false);
-            setShowDefinitions(ifShowDefinitions);
-            setDefinitionCallback(null);
-            setDefinitionContainerCallback(null);
-            setIfRecord(true);
             
             if (content[modalContentIndex - 1].nextCallback instanceof Function) {
                 content[modalContentIndex - 1].nextCallback();
             }
         }
-
-    }, [modalContentIndex]);
+    }, [modalContentIndex, pid]);
 
     useEffect(() => {
         if (state === "study" && !onSettings.current) {
@@ -719,7 +769,7 @@ export default function App() {
                 <h3>Settings</h3>
                 <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
                     <div className="field">
-                        <input id="pid" name="pid" required defaultValue="test"/>
+                        <input id="pid" name="pid" required defaultValue={pid}/>
                         <label htmlFor="pid">Participant ID</label>
                     </div>
 
@@ -797,6 +847,7 @@ export default function App() {
 
                     setModalIsOpen(ifModalOpen);
                     setPid(id);
+                    setRecordCallback(() => recordCallbackFunc);
                     setModalContent(prevModalContent);
                     setModalBottomContent(prevModalBottomContent);
                     setVideoOrder(videoOrder === "1" ? 1 : 0);
@@ -869,7 +920,7 @@ export default function App() {
             if (!onSettings.current)
                 d3.select(document).on("keydown", null);
         }
-    }, [state, modalContent, modalBottomContent, modalIsOpen]);
+    }, [state, modalContent, modalBottomContent, modalIsOpen, pid]);
 
     useEffect(() => {
         if (state === "study") {

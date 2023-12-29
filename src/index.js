@@ -2,7 +2,6 @@ import React from 'react'
 import { createRoot } from 'react-dom/client';
 import App from './components/App.js'
 
-// process.env.OPENAI_API_KEY = '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';
 let r = document.createElement('div')
 
 r.id = 'root'
