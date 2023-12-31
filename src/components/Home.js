@@ -180,7 +180,7 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
     }
 }
 
-export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, llm, questions, mouseEnabled, forcePause, toggleDefinitions, showDefinitions, definitionCallback, definitionContainerCallback, endCallback, record, recordCallback }) {
+export default function Home({ srcInit, trackInit, complexityData, phraseDefinitions, llm, questions, mouseEnabled, forcePause, toggleDefinitions, showDefinitions, definitionCallback, definitionContainerCallback, endCallback, record, recordCallback, fileData }) {
     let [ questionData, setQuestion ] = useState("");
     let [ paused, setPaused ] = React.useState(true);
     let [ videoTime, setVideoTime ] = React.useState(-1);
@@ -212,6 +212,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let questionsRef = useRef(questions);
     let ifRecord = useRef(record);
     let headDistancesRef = useRef(40);
+    let fileUploadRef = useRef(false);
 
     let eyeGazeRecordData = useRef([]);
     let questionRecordData = useRef([]);
@@ -680,6 +681,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     };
 
     let playerEndCallback = async () => {
+        if (ifRecord.current) {
+            eyeGazeRecordData.current.splice(1, 0, {timestamp: Date.now(), message: "PlayerEnd"});
+        }
         if (onQuestions.current) {
             return;
         }
@@ -715,6 +719,56 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
         let sortScores = new Map([...videoWordScores, ...videoDefinitionScores]);
         
+        if (ifRecord.current) {
+            let scoresRecordBackup = {wordScores: [...wordScores.current], frameScores: [...frameScores.current], definitionScores: [...definitionScores.current]}
+            let dataBackUp = {eyeData: [...eyeGazeRecordData.current], definitionData: definitionToggle.current ? [...definitionRecordData.current] : ["No definitions"], scoresData: {...scoresRecordBackup}};
+            
+            let eyeData = dataBackUp.eyeData;
+            let questionData = dataBackUp.questionData;
+            let definitionData = dataBackUp.definitionData;
+            let scoresData = dataBackUp.scoresData;
+
+            function findDuplicateDirectory(directory, extension) {
+                let duplicateNum = 1;
+                let dir = "./data/backup/(" + duplicateNum + ") " + directory + "." + extension;
+                
+                while (fs.existsSync(dir)) {
+                    duplicateNum++;
+                    dir = "./data/backup/(" + duplicateNum + ") " + directory + "." + extension;
+                }
+                return dir;
+            }
+
+            if (eyeData.length > 0 || questionData.length > 0 || definitionData.length > 0 || scoresData.length > 0) {
+                let eyeDataDirectory = findDuplicateDirectory("eyeData", "csv");
+                let definitionDataDirectory = findDuplicateDirectory("definitionData", "json");
+                let scoresDataDirectory = findDuplicateDirectory("scoresData", "json");
+
+                fs.mkdirSync("./data/backup", { recursive: true });
+                let csv = eyeData[0].xOffset + " " + eyeData[0].yOffset;
+
+                let sliceEyeData = eyeData.slice(1, eyeData.length);
+
+                for (let i = 0; i < sliceEyeData.length; i++) {
+                    if (sliceEyeData[i].message) {
+                        csv += "\n" + sliceEyeData[i].message + " " + sliceEyeData[i].timestamp;
+                        sliceEyeData.splice(i, 1);
+                        i--;
+                    } else {
+                        break;
+                    }
+                }
+                csv += "\nx, y, dt, index, headDistance, radius, timestamp\n";
+
+                sliceEyeData.forEach((row) => {
+                    csv += row.x + ", " + row.y + ", " + row.dt + ", " + row.index + ", " + row.headDistance + ", " + row.radius + ", " + row.timestamp + "\n";
+                });
+                fs.writeFileSync(eyeDataDirectory, csv);
+                fs.writeFileSync(definitionDataDirectory, JSON.stringify(definitionData, replacer));
+                fs.writeFileSync(scoresDataDirectory, JSON.stringify(scoresData, replacer));
+            }
+        }
+        
         function getTopWords(sortScores) {
             let subtitleScores = new Map();
 
@@ -730,6 +784,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
 
             for (let [key, value] of subtitleScores) {
+                if (index < 0 || index >= rawCaptions.current.length) {
+                    continue;
+                }
                 let index = key;
                 let score = value.score;
                 let startTime = rawCaptions.current[index].data.start;
@@ -870,22 +927,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
         if (llmRef.current) {
             if (questionData.length === 0) {
-                onQuestions.current = false;
-                forcePauseRef.current = false;
-                
-                if (endCallbackRef.current instanceof Function) {
-                    endCallbackRef.current();
-                }
-
-                if (!ifRecord.current) {
-                    let player = videojs.getAllPlayers()[0];
-
-                    if (player)
-                        player.trigger("reset");
-                }
+                questionEndCallback();
+                setQuestion([]);
                 return;
             }
-
             let promises = [];
 
             for (let i = 0; i < questionData.length; i++) {
@@ -995,6 +1040,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             setShowMoreInfo(false);
             setShowDefinition(null);
             setQuestion(questions);
+
+            if (ifRecord.current) {
+                eyeGazeRecordData.current.splice(1, 0, {timestamp: Date.now(), message: "QuestionStart"});
+            }
         });
     };
 
@@ -1006,7 +1055,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     };
 
     let questionCallback = (questionData, submittedAnswer) => {
-        if (ifRecord.current) {
+        if (ifRecord.current || fileUploadRef.current) {
             questionRecordData.current.push({question: questionData, submittedAnswer: submittedAnswer});
         }
     }
@@ -1014,14 +1063,15 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let questionEndCallback = () => {
         forcePauseRef.current = false;
         onQuestions.current = false;
+        fileUploadRef.current = false;
 
-        setShowDefinitionContainer(true);
-
-        if (!definitionToggle.current) {
+        if (definitionToggle.current == false) {
             d3.select("#video")
             .transition()
             .duration(1000)
             .styleTween("transform", () => d3.interpolate(d3.select("#video").style("transform"), "translateX(-15%)"))
+
+            setShowDefinitionContainer(true);
         }
 
         if (endCallbackRef.current instanceof Function) {
@@ -1063,8 +1113,15 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         });
         heatmap.setData({min: 0, max: 0, data: []});
 
+        // document.onkeydown = function (e) {
+        //     if (e.ctrlKey && e.key === 'r') {
+        //         e.preventDefault();
+        //     }
+        // }            
+
         return () => {
             d3.select(".heatmap-canvas").remove();
+            document.onkeydown = null;
         };
     }, []);
 
@@ -1176,7 +1233,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 });
             };
 
-            // runPromisesInBatches(promiseComplexityFunctions, 50, batchComplexityFunction).then(() => {
+            // runPromisesInBatches(promiseComplexityFunctions, 25, batchComplexityFunction).then(() => {
             //     console.log("Finished");
             // });
             // let complexityData = new Map();
@@ -1247,7 +1304,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             definitionToggle.current = toggleDefinitions;
             setShowDefinitionContainer(!definitionToggle.current);
         } else {
-            definitionToggle.current = false;
+            definitionToggle.current = null;
             setShowDefinitionContainer(false);
         }
     }, [toggleDefinitions, showDefinitions]);
@@ -1861,6 +1918,37 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             d3.select(document).on("mousemove", null);
         }
     }, [mouseEnabled, showDefinitions]);
+
+    useEffect(() => {
+        if (fileData) {
+            let data = {...fileData};
+
+            wordScores.current = new Map(data.wordScores);
+            frameScores.current = new Map(data.frameScores);
+            definitionScores.current = new Map(data.definitionScores);
+            fileUploadRef.current = true;
+            onQuestions.current = false;
+            questionRecordData.current = [];
+
+            playerEndCallback();
+
+            endCallbackRef.current = () => {
+                if (questionRecordData.current.length > 0) {
+                    let duplicateNum = 1;
+                    let dir = "./data/backup/(" + duplicateNum + ") questionData.json";
+                    
+                    while (fs.existsSync(dir)) {
+                        duplicateNum++;
+                        dir = "./data/backup/(" + duplicateNum + ") questionData.json";
+                    }
+                    fs.writeFileSync(dir, JSON.stringify(questionRecordData.current, replacer));
+                    questionRecordData.current = [];
+                }
+                fileUploadRef.current = false;
+                endCallbackRef.current = endCallback;
+            }
+        }        
+    }, [fileData]);
 
     return (
         <>

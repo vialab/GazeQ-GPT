@@ -69,7 +69,7 @@ export default function App() {
     let [ showDefinitions, setShowDefinitions ] = React.useState(state !== "study");
     let [ modalContent, setModalContent ] = React.useState(null);
     let [ modalBottomContent, setModalBottomContent ] = React.useState(null);
-    let [ modalContentIndex, setModalContentIndex ] = React.useState(0);
+    let [ modalContentIndex, setModalContentIndex ] = React.useState(-1);
     let [ pid, setPid ] = React.useState("test");
     let [ videoOrder, setVideoOrder ] = React.useState(0);
     let [ ifShowDefinitions, setIfShowDefinitions ] = React.useState(true);
@@ -80,6 +80,7 @@ export default function App() {
     let [ ifRecord, setIfRecord ] = React.useState(false);
     let [ recordCallback, setRecordCallback ] = React.useState(() => recordCallbackFunc);
     let [ forcePause, setForcePause ] = React.useState(false);
+    let [ fileData, setFileData ] = React.useState(null);
     
     let preStudyContent = useRef([]);
     let postStudyContent = useRef([]);
@@ -91,6 +92,23 @@ export default function App() {
 
         d3.select(fixationRef.current)
         .style("display", d3.select(fixationRef.current).style("display") === "none" ? "block" : "none");
+    };
+
+    let getContent = () => {
+        let content;
+
+        switch (studyState.current) {
+            case "preStudy":
+                content = preStudyContent.current;
+                break;
+            case "postTask":
+                content = postTaskContent.current;
+                break;
+            case "postStudy":
+                content = postStudyContent.current;
+                break;
+        }
+        return content;
     };
 
     let toggleMouseRef = React.useRef(null);
@@ -187,17 +205,19 @@ export default function App() {
             .style("opacity", "1")
         };
 
-        if (iframe && iframe.contentDocument) {
-            iframe.addEventListener('load', () => {
-                revealContent();
-            });
+        if (modalIsOpen) {
+            if (iframe && iframe.contentDocument) {
+                iframe.addEventListener('load', () => {
+                    revealContent();
+                });
 
-            iframe.addEventListener('error', (e) => {
-                console.log(e);
+                iframe.addEventListener('error', (e) => {
+                    console.log(e);
+                    revealContent();
+                });
+            } else {
                 revealContent();
-            });
-        } else {
-            revealContent();
+            }
         }
     };
 
@@ -328,12 +348,24 @@ export default function App() {
                 directory = "./data/" + pid + "_" + videoName + " (" + duplicateNum + ")";
             }
             fs.mkdirSync(directory, { recursive: true });
-            let csv = eyeData[0].xOffset + " " + eyeData[0].yOffset + "\nx, y, dt, index, headDistance, radius, timestamp\n";
+            let csv = eyeData[0].xOffset + " " + eyeData[0].yOffset;
 
-            eyeData.slice(1 , eyeData.length).forEach((row) => {
+            let sliceEyeData = eyeData.slice(1, eyeData.length);
+
+            for (let i = 0; i < sliceEyeData.length; i++) {
+                if (sliceEyeData[i].message) {
+                    csv += "\n" + sliceEyeData[i].message + " " + sliceEyeData[i].timestamp;
+                    sliceEyeData.splice(i, 1);
+                    i--;
+                } else {
+                    break;
+                }
+            }
+            csv += "\nx, y, dt, index, headDistance, radius, timestamp\n";
+
+            sliceEyeData.forEach((row) => {
                 csv += row.x + ", " + row.y + ", " + row.dt + ", " + row.index + ", " + row.headDistance + ", " + row.radius + ", " + row.timestamp + "\n";
             });
-
             fs.writeFileSync(directory + "/eyeData.csv", csv);
             fs.writeFileSync(directory + "/questionData.json", JSON.stringify(questionData, replacer));
             fs.writeFileSync(directory + "/definitionData.json", JSON.stringify(definitionData, replacer));
@@ -617,19 +649,7 @@ export default function App() {
             },
         ]
 
-        let content;
-
-        switch (studyState.current) {
-            case "preStudy":
-                content = preStudyContent.current;
-                break;
-            case "postTask":
-                content = postTaskContent.current;
-                break;
-            case "postStudy":
-                content = postStudyContent.current;
-                break;
-        }
+        let content = getContent();
 
         if (modalContentIndex >= content.length) {
             setModalContentIndex(content.length - 1);
@@ -673,19 +693,10 @@ export default function App() {
     }, [modalBottomContent]);
 
     useEffect(() => {
-        let content;
-
-        switch (studyState.current) {
-            case "preStudy":
-                content = preStudyContent.current;
-                break;
-            case "postTask":
-                content = postTaskContent.current;
-                break;
-            case "postStudy":
-                content = postStudyContent.current;
-                break;
+        if (modalContentIndex < 0) {
+            return;
         }
+        let content = getContent();
 
         if (modalContentIndex < content.length) {
             setModalContent(content[modalContentIndex].content);
@@ -914,6 +925,132 @@ export default function App() {
                     }
                 }
             });
+        } else if (state !== "study" && !onSettings.current) {
+            let fileChangeHandler = () => {
+                let file = d3.select("#file").node().files[0];
+
+                d3.select("#fileName")
+                .text(file.name);
+            }
+
+            let fileUpload  = <>
+                <h3>Settings</h3>
+                <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                    <div className='settingsContainer'> 
+                        <p>Video Settings</p>
+                        <div className='settings'>
+                            <div>
+                                <input type="radio" id="0" name="video" value="0" defaultChecked={src === video1.video}/>
+                                <label htmlFor="0">
+                                    <div className="Video 1">Video 1</div>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="1" name="video" value="1" defaultChecked={src === video2.video}/>
+                                <label htmlFor="1">
+                                    <div className="Video 2">Video 2</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className='settingsContainer'> 
+                        <p>File Upload</p>
+                        <div className='settings' style={{ display: "flex", width: "500px", justifyContent: "center", alignItems: "center" }}>
+                            <div style={{ gap: "10px", flexDirection: "column", marginTop: "10px" }}>
+                                <input type="file" id="file" name="file" accept=".json, .csv" style={{ display: "none" }} onChange={fileChangeHandler} />
+                                <label htmlFor="file">Upload File</label>
+                                <p id="fileName">No file selected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </>
+
+            let fileHandler = () => {
+                let file = d3.select("#file").node().files[0];
+
+                if (file) {
+                    let reader = new FileReader();
+
+                    function reviver(key, value) {
+                        if (typeof value === "object" && value !== null) {
+                            if (value.dataType === "Map") {
+                                return new Map(value.value);
+                            }
+                        }
+                        return value;
+                    }
+
+                    reader.onload = (e) => {
+                        setFileData(JSON.parse(e.target.result, reviver));
+                    }
+                    reader.readAsText(file);
+                }
+                let videoSrc = d3.select("input[name='video']:checked").property("value");
+                setVideoOrder(videoSrc === "1" ? 1 : 0);
+
+                d3.select(".contentContainer")
+                .transition()
+                .duration(500)
+                .style("opacity", "0")
+                .on("end", () => {
+                    onSettings.current = false;
+                    setModalIsOpen(false);
+                });
+            }
+
+            let cancelHandler = () => {
+                d3.select(".contentContainer")
+                .transition()
+                .duration(500)
+                .style("opacity", "0")
+                .on("end", () => {
+                    onSettings.current = false;
+                    setModalIsOpen(false);
+                });
+            }
+            
+            let bottomContent = [
+                <button className={"round modalButton nextButton cancel"} onClick={cancelHandler} key={"settingsCancel"}>
+                    <div id={"cta"}>
+                        <div className="close-container">
+                            <div className="leftright"></div>
+                            <div className="rightleft"></div>
+                        </div>
+                    </div>
+                </button>,
+                <button className={"round modalButton nextButton confirm"} onClick={fileHandler} key={"settingsConfirm"}>
+                    <div id={"cta"}>
+                        <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                            <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
+                        </svg>
+                    </div>
+                </button>,
+            ]
+
+            d3.select(document).on("keydown", (e) => {
+                if (e.key === "y" && e.ctrlKey && !onSettings.current) {
+                    setModalIsOpen(true);
+                    
+                    if (d3.select(".contentContainer").node()) {
+                        d3.select(".contentContainer")
+                        .transition()
+                        .duration(500)
+                        .style("opacity", "0")
+                        .on("end", () => {
+                            onSettings.current = true;
+                            setModalContent(fileUpload);
+                            setModalBottomContent(bottomContent);
+                        });
+                    } else {
+                        onSettings.current = true;
+                        setModalContent(fileUpload);
+                        setModalBottomContent(bottomContent);
+                    }
+                }
+            });
         }
 
         return () => {
@@ -968,7 +1105,7 @@ export default function App() {
                         { modalBottomContent }
                     </div>
                 </div>
-                <Tooltip id="my-tooltip" openOnClick closeOnEsc closeOnResize place='bottom-end'>
+                <Tooltip id="my-tooltip" openEvents={{ click: true }} closeEvents={{ click: true }} globalCloseEvents={{ clickOutsideAnchor: true, resize: true, escape: true, scroll: true }} place='bottom-end'>
                     <div style={{ display: "flex", flexDirection: "column", fontFamily: "Raleway", fontSize: "1em", userSelect: "none" }}>
                         <span>
                             <b>Project Title:</b>
@@ -1010,12 +1147,12 @@ export default function App() {
             </Modal>
 
             <Home
-                complexityData={ state === "study" ? complexityData : videoList[index.current].complexityData }
-                phraseDefinitions={ state === "study" ? phraseDefinitions : videoList[index.current].phraseDefinitions }
-                srcInit={ state === "study" ? src : videoList[index.current].video }
-                trackInit={ state === "study" ? track : videoList[index.current].track }
+                complexityData={ complexityData }
+                phraseDefinitions={  phraseDefinitions }
+                srcInit={ src }
+                trackInit={ track }
                 llm={ state === "study" ? llm : true }
-                questions={ state === "study" ? questions : videoList[index.current].questions }
+                questions={ questions }
                 endCallback={ endVideoCallback }
                 definitionCallback={ definitionCallback }
                 definitionContainerCallback={ definitionContainerCallback }
@@ -1025,6 +1162,7 @@ export default function App() {
                 showDefinitions={ showDefinitions }
                 record = { ifRecord }
                 recordCallback = { recordCallback }
+                fileData={ fileData }
             />
             <div id={"gazeCursor"} ref={gazeRef} xoffset={0} yoffset={0}></div>
             <div id={"fixationCursor"} ref={fixationRef}></div>

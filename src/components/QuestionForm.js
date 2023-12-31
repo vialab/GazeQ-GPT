@@ -152,7 +152,8 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
         d3.selectAll(".choice")
         .style("background-color", "white")
-        .style("color", "black");
+        .style("color", "black")
+        .style("pointer-events", "all");
 
         let leave = true;
 
