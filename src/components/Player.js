@@ -207,7 +207,7 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
             d3.select(player.el_)
             .transition()
             .duration(1000)
-            .styleTween("transform", () => d3.interpolate(d3.select(player.el_).style("transform"), toggleDefinitions ? "translateX(0%)" : "translateX(-15%)"));
+            .styleTween("transform", () => d3.interpolate(d3.select(player.el_).style("transform"), toggleDefinitions == false ? "translateX(-15%)" :  "translateX(0%)"));
         }
     }, [toggleDefinitions]);
 

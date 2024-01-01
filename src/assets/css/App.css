@@ -189,7 +189,7 @@
     padding: 5px;
 }
 
-.contentContainer .settings input[type=radio]:checked~label {
+.contentContainer .settings input[type=radio]:checked~label, .contentContainer .settings input[type=file]:valid ~ label {
     border: 1px solid #E58F65;
 }
 

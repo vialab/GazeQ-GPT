@@ -35,7 +35,8 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 .style("pointer-events", "none");
                 
                 // if (submittedAnswers.current.size === answer[index].length) {
-                    d3.selectAll(".bottom")
+                    d3.select(".questionForm")
+                    .selectAll(".bottom")
                     .transition()
                     .style("opacity", "1")
                     .style("pointer-events", "all");
@@ -85,7 +86,8 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
         if (index < question.length - 1) {
             setIndex(index + 1);
-            d3.selectAll(".bottom, .top")
+            d3.select(".questionForm")
+            .selectAll(".bottom, .top")
             .transition()
             .style("opacity", "0")
             .style("pointer-events", "none");
@@ -146,7 +148,8 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         let subtitles = [];
         let explanation = [];
         
-        d3.selectAll(".bottom, .top, .additional")
+        d3.select(".questionForm")
+        .selectAll(".bottom, .top, .additional")
         .style("opacity", "0")
         .style("pointer-events", "none");
 

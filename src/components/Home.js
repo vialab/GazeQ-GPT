@@ -798,7 +798,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             
             let topSubtitles = [...subtitleScores.entries()];
             topSubtitles.sort((a, b) => b[1].score - a[1].score);
-            console.log(topSubtitles);
+            console.log(subtitleScores);
 
             let topWordsFromSubtitles = new Map();
 
@@ -815,12 +815,11 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     }
                 }
             }
+            console.log(topWordsFromSubtitles);
             return topWordsFromSubtitles;
         }
-
         let topWords = [...getTopWords(sortScores).entries()];
         // topWords.sort((a, b) => b[1].score - a[1].score);
-        console.log(topWords);
         
         function getQuestionData(topWords, secondRun = false) {
             let questionData = [];
@@ -1051,6 +1050,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         wordScores.current.clear();
         frameScores.current.clear();
         definitionScores.current.clear();
+        onQuestions.current = false;
+        setQuestion([]);
         console.log("reset")
     };
 
@@ -1331,6 +1332,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             setTextTrackChangeCallback(null);
             setResizeCallback(null);
 
+            let highlightNodes = d3.selectAll("span.highlight").nodes();
+            
+            for (let highlightNode of highlightNodes) {
+                let parent = highlightNode.parentElement;
+                let children = [...highlightNode.childNodes];
+                
+                for (let child of children) {
+                    parent.insertBefore(child, highlightNode);
+                }
+                parent.removeChild(highlightNode);
+            }
             d3.selectAll("span.highlight").classed("highlight", false);
             return;
         } else if (!collocations) {
@@ -1947,7 +1959,11 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 fileUploadRef.current = false;
                 endCallbackRef.current = endCallback;
             }
-        }        
+        } else {
+            onQuestions.current = false;
+            fileUploadRef.current = false;
+            setQuestion([]);
+        }
     }, [fileData]);
 
     return (

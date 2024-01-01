@@ -5,6 +5,11 @@ const { app, BrowserWindow, protocol } = require("electron");
 const path = require("path");
 const url = require("url");
 
+const {
+    default: installExtension,
+    REACT_DEVELOPER_TOOLS,
+} = require("electron-devtools-installer");
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
@@ -76,16 +81,16 @@ function createWindow() {
 
         // Open the DevTools automatically if developing
         if (dev) {
-            const {
-                default: installExtension,
-                REACT_DEVELOPER_TOOLS,
-            } = require("electron-devtools-installer");
-
-            installExtension(REACT_DEVELOPER_TOOLS).catch((err) =>
+            installExtension(REACT_DEVELOPER_TOOLS)
+            .then((name) => console.log(`Added Extension:  ${name}`))
+            .catch((err) =>
                 console.log("Error loading React DevTools: ", err)
             );
-            mainWindow.webContents.openDevTools();
         }
+    });
+    
+    mainWindow.webContents.once('dom-ready', () => {
+        mainWindow.webContents.openDevTools();
     });
 
     // Emitted when the window is closed.

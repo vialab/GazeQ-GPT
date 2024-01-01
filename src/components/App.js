@@ -138,6 +138,18 @@ export default function App() {
     let preToggle = useRef(false);
 
     let startStudy = () => {
+        if (modalIsOpen) {
+            d3.select(".contentContainer")
+            .transition()
+            .duration(500)
+            .style("opacity", "0")
+            .on("end", () => {
+                setModalContentIndex(0);
+            });
+        } else {
+            setModalContentIndex(0);
+        }
+
         preToggle.current = toggleDefinitions;
         setState("study");
         index.current = 0;
@@ -153,8 +165,9 @@ export default function App() {
         setVideoOrder(0);
         setIfLLmFirst(true);
         setIfShowDefinitions(true);
-        setModalContentIndex(0);
+        // setModalContentIndex(0);
         setEndVideoCallback(() => videoCallback);
+        setFileData(null);
 
         if (d3.select(gazeRef.current).style("display") !== "none")
             toggleGaze();
@@ -195,9 +208,11 @@ export default function App() {
 
     let setUp = () => {
         d3.select(".contentContainer")
+        .interrupt()
         .style("opacity", "0")
 
-        let iframe = document.querySelector("iframe");
+        let iframe = d3.select(".contentContainer").select("iframe").node();
+        
         let revealContent = () => {
             d3.select(".contentContainer")
             .transition()
@@ -697,52 +712,51 @@ export default function App() {
             return;
         }
         let content = getContent();
+        onSettings.current = false;
 
         if (modalContentIndex < content.length) {
             setModalContent(content[modalContentIndex].content);
             
-            if (!onSettings.current) {
-                let nextButton = <button className={"round modalButton nextButton" + (content[modalContentIndex].disableNext ? " disabled" : "") + (content[modalContentIndex].confirm ? " confirm" : "")} onClick={nextContent.current} key={"next" + modalContentIndex}>
-                    <div id={"cta"}>
-                        { content[modalContentIndex].confirm ? 
-                            <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                                <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                                <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
-                            </svg>
-                            :
-                            <>
-                                <span className={"arrow next primera"}></span>
-                                <span className={"arrow next segunda"}></span>
-                            </>
-                        }
-                    </div>
-                </button>
-                
-                let prevButton = <button className={"round modalButton prevButton"+ (content[modalContentIndex].confirm ? " cancel" : "")} onClick={prevContent} key={"prev" + modalContentIndex}>
-                    <div id={"cta"}>
-                        { content[modalContentIndex].confirm ?
-                            <div className="close-container">
-                                <div className="leftright"></div>
-                                <div className="rightleft"></div>
-                            </div> :
-                            <>
-                                <span className={"arrow next primera"}></span>
-                                <span className={"arrow next segunda"}></span>
-                            </>
-                        }
-                    </div>
-                </button>
-                
-                let bottom = [nextButton]
+            let nextButton = <button className={"round modalButton nextButton" + (content[modalContentIndex].disableNext ? " disabled" : "") + (content[modalContentIndex].confirm ? " confirm" : "")} onClick={nextContent.current} key={"next" + modalContentIndex}>
+                <div id={"cta"}>
+                    { content[modalContentIndex].confirm ? 
+                        <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                            <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
+                        </svg>
+                        :
+                        <>
+                            <span className={"arrow next primera"}></span>
+                            <span className={"arrow next segunda"}></span>
+                        </>
+                    }
+                </div>
+            </button>
+            
+            let prevButton = <button className={"round modalButton prevButton"+ (content[modalContentIndex].confirm ? " cancel" : "")} onClick={prevContent} key={"prev" + modalContentIndex}>
+                <div id={"cta"}>
+                    { content[modalContentIndex].confirm ?
+                        <div className="close-container">
+                            <div className="leftright"></div>
+                            <div className="rightleft"></div>
+                        </div> :
+                        <>
+                            <span className={"arrow next primera"}></span>
+                            <span className={"arrow next segunda"}></span>
+                        </>
+                    }
+                </div>
+            </button>
+            
+            let bottom = [nextButton]
 
-                if (content[modalContentIndex].prev) {
-                    bottom.splice(0, 0, prevButton);
-                }
-                
-                if (content[modalContentIndex].callback instanceof Function)
-                    content[modalContentIndex].callback();
-                setModalBottomContent(bottom);
+            if (content[modalContentIndex].prev) {
+                bottom.splice(0, 0, prevButton);
             }
+            
+            if (content[modalContentIndex].callback instanceof Function)
+                content[modalContentIndex].callback();
+            setModalBottomContent(bottom);
         } else {
             setModalIsOpen(false);
             setShowDefinitions(ifShowDefinitions);
@@ -775,135 +789,231 @@ export default function App() {
     }, [modalContentIndex, pid]);
 
     useEffect(() => {
-        if (state === "study" && !onSettings.current) {
-            let settingContent = <>
-                <h3>Settings</h3>
-                <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                    <div className="field">
-                        <input id="pid" name="pid" required defaultValue={pid}/>
-                        <label htmlFor="pid">Participant ID</label>
-                    </div>
+        if (!onSettings.current) {
+            let settingContent, bottomContent;
 
-                    <div className='settingsContainer'> 
-                        <p>Definition Settings</p>
-                        <div className='settings'>
-                            <div>
-                                <input type="radio" id="With Definitions" name="assistance" value="With Definitions" defaultChecked={ifShowDefinitions}/>
-                                <label htmlFor="With Definitions">With Definitions</label>
+            function createBottomContent(cancelHandler, confirmHandler) {
+                let bottomContent = [
+                    <button className={"round modalButton nextButton cancel"} onClick={cancelHandler} key={"settingsCancel"}>
+                        <div id={"cta"}>
+                            <div className="close-container">
+                                <div className="leftright"></div>
+                                <div className="rightleft"></div>
                             </div>
-                            <div>
-                                <input type="radio" id="Without Definitions" name="assistance" value="Without Definitions" defaultChecked={!ifShowDefinitions}/>
-                                <label htmlFor="Without Definitions">Without Definitions</label>
+                        </div>
+                    </button>,
+                    <button className={"round modalButton nextButton confirm"} onClick={confirmHandler} key={"settingsConfirm"}>
+                        <div id={"cta"}>
+                            <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
+                            </svg>
+                        </div>
+                    </button>,
+                ]
+                return bottomContent;
+            }
+
+            if (state === "study") {
+                settingContent = <>
+                    <h3>Settings</h3>
+                    <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                        <div className="field">
+                            <input id="pid" name="pid" required defaultValue={pid}/>
+                            <label htmlFor="pid">Participant ID</label>
+                        </div>
+
+                        <div className='settingsContainer'> 
+                            <p>Definition Settings</p>
+                            <div className='settings'>
+                                <div>
+                                    <input type="radio" id="With Definitions" name="assistance" value="With Definitions" defaultChecked={ifShowDefinitions}/>
+                                    <label htmlFor="With Definitions">With Definitions</label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="Without Definitions" name="assistance" value="Without Definitions" defaultChecked={!ifShowDefinitions}/>
+                                    <label htmlFor="Without Definitions">Without Definitions</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='settingsContainer'> 
+                            <p>Video Settings</p>
+                            <div className='settings'>
+                                <div>
+                                    <input type="radio" id="0" name="video" value="0" defaultChecked={videoOrder === 0}/>
+                                    <label htmlFor="0">
+                                        <div className="Video 1">Video 1</div>
+                                        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                                        <div className="Video 2">Video 2</div>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="1" name="video" value="1" defaultChecked={videoOrder !== 0}/>
+                                    <label htmlFor="1">
+                                        <div className="Video 2">Video 2</div>
+                                        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                                        <div className="Video 1">Video 1</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='settingsContainer'> 
+                            <p>LLM Settings</p>
+                            <div className='settings'>
+                                <div>
+                                    <input type="radio" id="llmFirst" name="llmQs" value="llmFirst" defaultChecked={ifLLmFirst}/>
+                                    <label htmlFor="llmFirst">LLM Qs First</label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="llmSecond" name="llmQs" value="llmSecond" defaultChecked={!ifLLmFirst}/>
+                                    <label htmlFor="llmSecond">LLM Qs Second</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "20px" }}> 
+                            <p>Toggle Gaze</p>
+                            <label className="switch"><input type="checkbox" defaultChecked={d3.select(gazeRef.current).style("display") !== "none"} onChange={toggleGaze}/><span className="slider sliderRound"></span></label>
+                            <p>Enable Mouse</p>
+                            <label className="switch"><input type="checkbox" defaultChecked={enableMouse} onChange={() => toggleMouseRef.current()}/><span className="slider sliderRound"></span></label>
+                        </div>
+                    </div>
+                </>
+                let prevModalContent = modalContent, prevModalBottomContent = modalBottomContent;
+                let ifModalOpen = modalIsOpen;
+                
+                let settingHandler = () => {
+                    d3.select(".contentContainer")
+                    .transition()
+                    .duration(500)
+                    .style("opacity", "0")
+                    .on("end", () => {
+                        let id = d3.select("input#pid").property("value");
+                        let ifShowDefinition = d3.select("input[name='assistance']:checked").property("value") === "With Definitions";
+                        let ifLLmFirst = d3.select("input[name='llmQs']:checked").property("value") === "llmFirst";
+                        let videoOrder = d3.select("input[name='video']:checked").property("value");
+
+                        setModalIsOpen(ifModalOpen);
+                        setPid(id);
+                        setRecordCallback(() => recordCallbackFunc);
+                        setModalContent(prevModalContent);
+                        setModalBottomContent(prevModalBottomContent);
+                        setVideoOrder(videoOrder === "1" ? 1 : 0);
+                        setIfShowDefinitions(ifShowDefinition);
+                        setIfLLmFirst(ifLLmFirst);
+                        onSettings.current = false;
+
+                        if (!modalIsOpen) {
+                            setShowDefinitions(ifShowDefinition);
+                        }
+                    });
+                }
+                
+                let cancelHandler = () => {
+                    d3.select(".contentContainer")
+                    .transition()
+                    .duration(500)
+                    .style("opacity", "0")
+                    .on("end", () => {
+                        onSettings.current = false;
+                        setModalContent(prevModalContent);
+                        setModalBottomContent(prevModalBottomContent);
+                        setModalIsOpen(ifModalOpen);
+                    });
+                }
+                bottomContent = createBottomContent(cancelHandler, settingHandler);
+            } else {
+                let fileChangeHandler = () => {
+                    let file = d3.select("#file").node().files[0];
+
+                    if (file)
+                        d3.select("#fileName").text(file.name);
+                    else
+                        d3.select("#fileName").text("No file selected");
+                }
+
+                settingContent = <>
+                    <h3>Settings</h3>
+                    <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                        <div className='settingsContainer'> 
+                            <p>Video Settings</p>
+                            <div className='settings'>
+                                <div>
+                                    <input type="radio" id="0" name="video" value="0" defaultChecked={src === video1.video}/>
+                                    <label htmlFor="0">
+                                        <div className="Video 1">Video 1</div>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="1" name="video" value="1" defaultChecked={src === video2.video}/>
+                                    <label htmlFor="1">
+                                        <div className="Video 2">Video 2</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className='settingsContainer'> 
+                            <p>File Upload</p>
+                            <div className='settings' style={{ display: "flex", width: "500px", justifyContent: "center", alignItems: "center" }}>
+                                <div style={{ gap: "10px", flexDirection: "column", marginTop: "10px" }}>
+                                    <input type="file" id="file" name="file" accept=".json, .csv" style={{ display: "none" }} onChange={fileChangeHandler} required="required" />
+                                    <label htmlFor="file">Upload File</label>
+                                    <p id="fileName">No file selected</p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </>
 
-                    <div className='settingsContainer'> 
-                        <p>Video Settings</p>
-                        <div className='settings'>
-                            <div>
-                                <input type="radio" id="0" name="video" value="0" defaultChecked={videoOrder === 0}/>
-                                <label htmlFor="0">
-                                    <div className="Video 1">Video 1</div>
-                                    <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
-                                    <div className="Video 2">Video 2</div>
-                                </label>
-                            </div>
-                            <div>
-                                <input type="radio" id="1" name="video" value="1" defaultChecked={videoOrder !== 0}/>
-                                <label htmlFor="1">
-                                    <div className="Video 2">Video 2</div>
-                                    <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
-                                    <div className="Video 1">Video 1</div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                let fileHandler = () => {
+                    let file = d3.select("#file").node().files[0];
 
-                    <div className='settingsContainer'> 
-                        <p>LLM Settings</p>
-                        <div className='settings'>
-                            <div>
-                                <input type="radio" id="llmFirst" name="llmQs" value="llmFirst" defaultChecked={ifLLmFirst}/>
-                                <label htmlFor="llmFirst">LLM Qs First</label>
-                            </div>
-                            <div>
-                                <input type="radio" id="llmSecond" name="llmQs" value="llmSecond" defaultChecked={!ifLLmFirst}/>
-                                <label htmlFor="llmSecond">LLM Qs Second</label>
-                            </div>
-                        </div>
-                    </div>
+                    if (file) {
+                        let reader = new FileReader();
 
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "20px" }}> 
-                        <p>Toggle Gaze</p>
-                        <label className="switch"><input type="checkbox" defaultChecked={d3.select(gazeRef.current).style("display") !== "none"} onChange={toggleGaze}/><span className="slider sliderRound"></span></label>
-                        <p>Enable Mouse</p>
-                        <label className="switch"><input type="checkbox" defaultChecked={enableMouse} onChange={() => toggleMouseRef.current()}/><span className="slider sliderRound"></span></label>
-                    </div>
-                </div>
-            </>
-            let prevModalContent = modalContent, prevModalBottomContent = modalBottomContent;
-            let ifModalOpen = modalIsOpen;
-            
-            let settingHandler = () => {
-                d3.select(".contentContainer")
-                .transition()
-                .duration(500)
-                .style("opacity", "0")
-                .on("end", () => {
-                    let id = d3.select("input#pid").property("value");
-                    let ifShowDefinition = d3.select("input[name='assistance']:checked").property("value") === "With Definitions";
-                    let ifLLmFirst = d3.select("input[name='llmQs']:checked").property("value") === "llmFirst";
-                    let videoOrder = d3.select("input[name='video']:checked").property("value");
+                        function reviver(key, value) {
+                            if (typeof value === "object" && value !== null) {
+                                if (value.dataType === "Map") {
+                                    return new Map(value.value);
+                                }
+                            }
+                            return value;
+                        }
 
-                    setModalIsOpen(ifModalOpen);
-                    setPid(id);
-                    setRecordCallback(() => recordCallbackFunc);
-                    setModalContent(prevModalContent);
-                    setModalBottomContent(prevModalBottomContent);
-                    setVideoOrder(videoOrder === "1" ? 1 : 0);
-                    setIfShowDefinitions(ifShowDefinition);
-                    setIfLLmFirst(ifLLmFirst);
-                    onSettings.current = false;
-
-                    if (!modalIsOpen) {
-                        setShowDefinitions(ifShowDefinition);
+                        reader.onload = (e) => {
+                            setFileData(JSON.parse(e.target.result, reviver));
+                        }
+                        reader.readAsText(file);
                     }
-                });
+                    let videoSrc = d3.select("input[name='video']:checked").property("value");
+                    setVideoOrder(videoSrc === "1" ? 1 : 0);
+
+                    d3.select(".contentContainer")
+                    .transition()
+                    .duration(500)
+                    .style("opacity", "0")
+                    .on("start", () => {
+                        onSettings.current = false;
+                        setModalIsOpen(false);
+                    });
+                }
+
+                let cancelHandler = () => {
+                    d3.select(".contentContainer")
+                    .transition()
+                    .duration(500)
+                    .style("opacity", "0")
+                    .on("start", () => {
+                        onSettings.current = false;
+                        setModalIsOpen(false);
+                    });
+                }
+                bottomContent = createBottomContent(cancelHandler, fileHandler);
             }
             
-            let cancelHandler = () => {
-                d3.select(".contentContainer")
-                .transition()
-                .duration(500)
-                .style("opacity", "0")
-                .on("end", () => {
-                    onSettings.current = false;
-                    setModalContent(prevModalContent);
-                    setModalBottomContent(prevModalBottomContent);
-                    setModalIsOpen(ifModalOpen);
-                });
-            }
-
-            let bottomContent = [
-                <button className={"round modalButton nextButton cancel"} onClick={cancelHandler} key={"settingsCancel"}>
-                    <div id={"cta"}>
-                        <div className="close-container">
-                            <div className="leftright"></div>
-                            <div className="rightleft"></div>
-                        </div>
-                    </div>
-                </button>,
-                <button className={"round modalButton nextButton confirm"} onClick={settingHandler} key={"settingsConfirm"}>
-                    <div id={"cta"}>
-                        <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                            <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                            <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
-                        </svg>
-                    </div>
-                </button>,
-            ]
-
             d3.select(document).on("keydown", (e) => {
                 if (e.key === "y" && e.ctrlKey && !onSettings.current) {
                     setModalIsOpen(true);
@@ -921,132 +1031,6 @@ export default function App() {
                     } else {
                         onSettings.current = true;
                         setModalContent(settingContent);
-                        setModalBottomContent(bottomContent);
-                    }
-                }
-            });
-        } else if (state !== "study" && !onSettings.current) {
-            let fileChangeHandler = () => {
-                let file = d3.select("#file").node().files[0];
-
-                d3.select("#fileName")
-                .text(file.name);
-            }
-
-            let fileUpload  = <>
-                <h3>Settings</h3>
-                <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                    <div className='settingsContainer'> 
-                        <p>Video Settings</p>
-                        <div className='settings'>
-                            <div>
-                                <input type="radio" id="0" name="video" value="0" defaultChecked={src === video1.video}/>
-                                <label htmlFor="0">
-                                    <div className="Video 1">Video 1</div>
-                                </label>
-                            </div>
-                            <div>
-                                <input type="radio" id="1" name="video" value="1" defaultChecked={src === video2.video}/>
-                                <label htmlFor="1">
-                                    <div className="Video 2">Video 2</div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className='settingsContainer'> 
-                        <p>File Upload</p>
-                        <div className='settings' style={{ display: "flex", width: "500px", justifyContent: "center", alignItems: "center" }}>
-                            <div style={{ gap: "10px", flexDirection: "column", marginTop: "10px" }}>
-                                <input type="file" id="file" name="file" accept=".json, .csv" style={{ display: "none" }} onChange={fileChangeHandler} />
-                                <label htmlFor="file">Upload File</label>
-                                <p id="fileName">No file selected</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </>
-
-            let fileHandler = () => {
-                let file = d3.select("#file").node().files[0];
-
-                if (file) {
-                    let reader = new FileReader();
-
-                    function reviver(key, value) {
-                        if (typeof value === "object" && value !== null) {
-                            if (value.dataType === "Map") {
-                                return new Map(value.value);
-                            }
-                        }
-                        return value;
-                    }
-
-                    reader.onload = (e) => {
-                        setFileData(JSON.parse(e.target.result, reviver));
-                    }
-                    reader.readAsText(file);
-                }
-                let videoSrc = d3.select("input[name='video']:checked").property("value");
-                setVideoOrder(videoSrc === "1" ? 1 : 0);
-
-                d3.select(".contentContainer")
-                .transition()
-                .duration(500)
-                .style("opacity", "0")
-                .on("end", () => {
-                    onSettings.current = false;
-                    setModalIsOpen(false);
-                });
-            }
-
-            let cancelHandler = () => {
-                d3.select(".contentContainer")
-                .transition()
-                .duration(500)
-                .style("opacity", "0")
-                .on("end", () => {
-                    onSettings.current = false;
-                    setModalIsOpen(false);
-                });
-            }
-            
-            let bottomContent = [
-                <button className={"round modalButton nextButton cancel"} onClick={cancelHandler} key={"settingsCancel"}>
-                    <div id={"cta"}>
-                        <div className="close-container">
-                            <div className="leftright"></div>
-                            <div className="rightleft"></div>
-                        </div>
-                    </div>
-                </button>,
-                <button className={"round modalButton nextButton confirm"} onClick={fileHandler} key={"settingsConfirm"}>
-                    <div id={"cta"}>
-                        <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                            <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                            <circle r="13" fill="none" stoke="white" cx="50%" cy="50%" className="checkmark__circle" />
-                        </svg>
-                    </div>
-                </button>,
-            ]
-
-            d3.select(document).on("keydown", (e) => {
-                if (e.key === "y" && e.ctrlKey && !onSettings.current) {
-                    setModalIsOpen(true);
-                    
-                    if (d3.select(".contentContainer").node()) {
-                        d3.select(".contentContainer")
-                        .transition()
-                        .duration(500)
-                        .style("opacity", "0")
-                        .on("end", () => {
-                            onSettings.current = true;
-                            setModalContent(fileUpload);
-                            setModalBottomContent(bottomContent);
-                        });
-                    } else {
-                        onSettings.current = true;
-                        setModalContent(fileUpload);
                         setModalBottomContent(bottomContent);
                     }
                 }
@@ -1091,7 +1075,7 @@ export default function App() {
                 overlayClassName="overlay"
                 appElement={document.getElementById('root')}
                 onAfterOpen={() => {setUp(); setUpButtons();}}
-                closeTimeoutMS={1000}
+                closeTimeoutMS={500}
                 onRequestClose={() => setModalIsOpen(false)}
                 shouldCloseOnEsc={false}
                 shouldFocusAfterRender={true}
