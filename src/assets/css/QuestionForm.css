@@ -23,6 +23,11 @@
     box-shadow: inset 0 0px 20px 50px hsla(0, 0%, 100%, 0.1);
 }
 
+.questionContainer .questionDiv {
+    position: absolute;
+    margin-bottom: 100px;
+}
+
 .questionContainer .question {
     font-size: 1.2rem;
     font-weight: 600;
@@ -98,14 +103,17 @@
         opacity: 1;
         transform: translateX(0) scale(1);
     }
+
     25% {
         opacity: 0;
         transform: translateX(100%) scale(0.5);
     }
+
     26% {
         opacity: 0;
         transform: translateX(-100%) scale(0.5);
     }
+
     55% {
         opacity: 1;
         transform: translateX(0) scale(1);
@@ -142,18 +150,20 @@
     flex-direction: column;
     height: auto;
     margin: 20px;
-    position: absolute;
-    bottom: 0;
 }
 
 .top {
-    top: 0;
-    bottom: auto;
     text-align: center;
     font-size: 0.9em;
+    margin-top: initial;
+    margin-bottom: auto;
 }
 
 .top p {
+    margin: 0;
+}
+
+.bottom {
     margin: 0;
 }
 
@@ -177,4 +187,40 @@
 .additional {
     margin: 5px;
     opacity: 0;
+}
+
+.rating {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    margin-top: auto;
+}
+
+.like, .dislike {
+    display: inline-block;
+    cursor: pointer;
+    margin: 10px;
+    font-size: 2.5em;
+    transition: all 0.2s ease-in-out;
+}
+
+.dislike {
+    transform: translateY(7px);
+}
+
+.dislike:hover {
+    transform: scale(1.1) translateY(7px);
+
+}
+
+.like:hover {
+    transform: scale(1.1);
+}
+
+.like:hover, .like.active {
+    color: rgba(41, 197, 115, 0.8);
+}
+
+.dislike:hover, .dislike.active {
+    color: rgb(239, 35, 60, 0.5);
 }

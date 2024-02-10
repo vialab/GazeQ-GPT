@@ -13,7 +13,7 @@ import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
 
 import * as phraseDefinitions1 from "../assets/processedSubtitles/t7.json";
-import * as phraseDefinitions2 from "../assets/processedSubtitles/t6.json";
+import * as phraseDefinitions2 from "../assets/processedSubtitles/t8.json";
 
 import * as questionData1 from "../assets/processedSubtitles/Questions_1.json";
 import * as questionData2 from "../assets/processedSubtitles/Questions_2.json";
@@ -78,7 +78,6 @@ export default function App() {
     let [ definitionContainerCallback, setDefinitionContainerCallback ] = React.useState(null);
     let [ endVideoCallback, setEndVideoCallback ] = React.useState(null);
     let [ ifRecord, setIfRecord ] = React.useState(false);
-    let [ recordCallback, setRecordCallback ] = React.useState(() => recordCallbackFunc);
     let [ forcePause, setForcePause ] = React.useState(false);
     let [ fileData, setFileData ] = React.useState(null);
     
@@ -445,25 +444,10 @@ export default function App() {
                         d3.select(".modalButton.disabled")
                         .classed("enable", true)
                     }, 1000);
-                },
-            },
-            {
-                "content": 
-                <div>
-                    <h3 style={{width: "100%", textAlign: "center"}}>Welcome to the Study</h3>
-                    <ul> 
-                        <li style={{ margin: "30px 0px" }}>Your task is to watch two videos and answer a comphrehension quiz at the end of each video.</li>
-                        <li style={{ margin: "30px 0px" }}>You are able to pause the video.</li>
-                        <li style={{ margin: "30px 0px" }}>You are able to rewatch parts of the video by navigating with the progress bar or clicking arrow keys.</li>
-                    </ul>
-                </div>,
-                "prev": true,
-                "callback": () => {
-                    d3.select("html").on("keydown", null);
                     
                     if (d3.select(gazeRef.current).style("display") !== "none")
                         toggleGaze();
-                }
+                },
             },
             {
                 "content": <>
@@ -495,6 +479,24 @@ export default function App() {
                         }
                     });
                 },
+            },
+            {
+                "content": 
+                <div>
+                    <h3 style={{width: "100%", textAlign: "center"}}>Welcome to the Study</h3>
+                    <ul> 
+                        <li style={{ margin: "30px 0px" }}>Your task is to watch two videos and answer a comphrehension quiz at the end of each video.</li>
+                        <li style={{ margin: "30px 0px" }}>You are able to pause the video.</li>
+                        <li style={{ margin: "30px 0px" }}>You are able to rewatch parts of the video by navigating with the progress bar or clicking arrow keys.</li>
+                    </ul>
+                </div>,
+                "prev": true,
+                "callback": () => {
+                    d3.select("html").on("keydown", null);
+                    
+                    if (d3.select(gazeRef.current).style("display") !== "none")
+                        toggleGaze();
+                }
             },
         ]
         
@@ -540,7 +542,7 @@ export default function App() {
                         <h3 style={{width: "100%", textAlign: "center"}}>Practice the following tasks to continue</h3>
                         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "20px" }}>
                             <div className="checklistItem" id="definitionPanel">
-                                <div className="check"></div> Open the definition panel
+                                <div className="check"></div> Open the definition panel by looking to the right of the screen
                             </div>
                             <div className="checklistItem" id="showDefinition">
                                 <div className="check"></div> Read one of the definitions
@@ -897,7 +899,6 @@ export default function App() {
 
                         setModalIsOpen(ifModalOpen);
                         setPid(id);
-                        setRecordCallback(() => recordCallbackFunc);
                         setModalContent(prevModalContent);
                         setModalBottomContent(prevModalBottomContent);
                         setVideoOrder(videoOrder === "1" ? 1 : 0);
@@ -984,7 +985,39 @@ export default function App() {
                         }
 
                         reader.onload = (e) => {
-                            setFileData(JSON.parse(e.target.result, reviver));
+                            // Check if file is CSV or JSON
+
+                            if (file.name.endsWith(".csv")) {             
+                                //    Skip first two lines
+                                let lines = e.target.result.split("\n");
+
+                                let data = [];
+
+                                lines.forEach((line) => {
+                                    let row = line.split(",");
+
+                                    if (row.length === 7) {
+                                        data.push({
+                                            "x": Number(row[0]),
+                                            "y": Number(row[1]),
+                                            "dt": Number(row[2]),
+                                            "index": Number(row[3]),
+                                            "headDistance": Number(row[4]),
+                                            "radius": Number(row[5]),
+                                            "timestamp": Number(row[6]),
+                                        });
+                                    } else {
+                                        data.push({
+                                            "message": row,
+                                        });
+                                    }
+                                });
+
+                                setFileData(data);
+                            } else {
+                                setFileData(JSON.parse(e.target.result, reviver));
+
+                            }                            
                         }
                         reader.readAsText(file);
                     }
@@ -1145,7 +1178,7 @@ export default function App() {
                 toggleDefinitions={ toggleDefinitions }
                 showDefinitions={ showDefinitions }
                 record = { ifRecord }
-                recordCallback = { recordCallback }
+                recordCallback = { recordCallbackFunc }
                 fileData={ fileData }
             />
             <div id={"gazeCursor"} ref={gazeRef} xoffset={0} yoffset={0}></div>

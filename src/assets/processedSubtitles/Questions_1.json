@@ -5,7 +5,9 @@
         "choiceB": "Mix crushed limestone and coal and fired",
         "choiceC": "Separate sodium carbonate from black ash by washing it with water",
         "choiceD": "Mix sodium carbonate and calcium sulfide",
-        "answer": "C"
+        "answer": "C",
+        "startTime": 136,
+        "endTime": 142
     },
     {
         "question": "What happened after when Leblanc began large-scale production of soda ash? ",
@@ -13,7 +15,9 @@
         "choiceB": "Taken over by revolutionaries because it was bad for the environment",
         "choiceC": "Made a handbook on chemical engineering",
         "choiceD": "Gave a series of lectures at the Manchester School of Technology",
-        "answer": "B"
+        "answer": "B",
+        "startTime": 151,
+        "endTime": 159
     },
     {
         "question": "Why was George Davis’s work unique?",
@@ -21,7 +25,9 @@
         "choiceB": "On how best to deliver drugs into our bodies",
         "choiceC": "Extract energy from biomass",
         "choiceD": "Organized basic operations like transporting liquids and gases or distillation",
-        "answer": "D"
+        "answer": "D",
+        "startTime": 214,
+        "endTime": 224
     },
     {
         "question": "How does one manage large-scale chemical production?",
@@ -29,7 +35,10 @@
         "choiceB": "Hire more graduating chemical engineers",
         "choiceC": "Make chemical processes more economically viable, efficient and cheaper",
         "choiceD": "Consider momentum transfer, mass transfer and thermodynamics",
-        "answer": "A"
+        "answer": "A",
+        "startTime": 286,
+        "endTime": 301
+        
     },
     {
         "question": "Why did the French Royal Academy offer a prize?",
@@ -37,6 +46,8 @@
         "choiceB": "Produce sodium carbonate due to lack of sodium carbonate during the American Revolutionary War",
         "choiceC": "Extracting energy from biomass",
         "choiceD": "Improved the process of making gasoline",
-        "answer": "B"
+        "answer": "B",
+        "startTime": 102,
+        "endTime": 111
     }
 ]

@@ -151,8 +151,6 @@ export async function getComplexity(word) {
     }
 }
 
-// getComplexity("quantum").then(data => console.log(data));
-
 export async function generateQuestion(text, word, initRequestOptions = "", file = "") {
 //     const messages = [
 //         {
@@ -659,7 +657,7 @@ export async function getPhrase(term1, term2) {
     
         const JSONRun = await openai.beta.threads.runs.create(thread.id, {
             assistant_id: process.env.PHRASE_ASSISTANT_ID,
-            instructions: `Output your answer as a JSON object like so:
+            additional_instructions: `Output your answer as a JSON object like so:
 {
     "definitionTerm1": {
         "term": [enter first term],
@@ -679,7 +677,7 @@ export async function getPhrase(term1, term2) {
 
         await retrieveRun(thread.id, JSONRun.id);
         const m = await openai.beta.threads.messages.list(thread.id);
-        // console.log(m);
+        console.log(m);
         console.log(m.data[0].content[0].text.value);
 
         if (m.data[0].content[0].text.value) {

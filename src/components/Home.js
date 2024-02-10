@@ -498,14 +498,16 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             let endTime = rawCaptions.current[i].data.end;
             let delayEndTime = rawCaptions.current[i].data.end + 500;
 
-            if (t * 1000 >= startTime && t * 1000 <= endTime) {
+            if (t * 1000 >= startTime && t * 1000 <= endTime && index.current === -1) {
                 index.current = i;
             }
 
-            if (t * 1000 >= startTime && t * 1000 <= delayEndTime) {
+            if (t * 1000 >= startTime && t * 1000 <= delayEndTime && delayIndex.current === -1) {
                 delayIndex.current = i;
-                break;
-            } else if (t * 1000 < startTime) {
+                // break;
+            }
+            
+            if (t * 1000 < startTime + 500) {
                 break;
             }
         }
@@ -699,9 +701,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             let sortScores = new Map();
 
             for (let [word, scores] of map) {
-                if (names.current.has(word)) {
-                    continue;
-                }
+                // if (names.current.has(word)) {
+                //     continue;
+                // }
 
                 for (let [index, score] of scores) {
                     if (sortScores.has(word + index)) {
@@ -717,7 +719,23 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         let videoFrameScores = addScores(frameScores.current);
         let videoDefinitionScores = addScores(definitionScores.current);
 
-        let sortScores = new Map([...videoWordScores, ...videoDefinitionScores]);
+        let sortScores = new Map();
+
+        for (let [key, value] of videoWordScores) {
+            if (sortScores.has(key)) {
+                sortScores.get(key).score += value.score;
+            } else {
+                sortScores.set(key, {word: value.word, index: value.index, score: value.score});
+            }
+        }
+
+        for (let [key, value] of videoDefinitionScores) {
+            if (sortScores.has(key)) {
+                sortScores.get(key).score += value.score;
+            } else {
+                sortScores.set(key, {word: value.word, index: value.index, score: value.score});
+            }
+        }
         
         if (ifRecord.current) {
             let scoresRecordBackup = {wordScores: [...wordScores.current], frameScores: [...frameScores.current], definitionScores: [...definitionScores.current]}
@@ -775,6 +793,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             for (let [key, value] of sortScores) {
                 let index = value.index;
                 let score = value.score;
+                
+                if (index < 0 || index >= rawCaptions.current.length) {
+                    continue;
+                }
 
                 if (subtitleScores.has(index)) {
                     subtitleScores.get(index).score += score;
@@ -782,11 +804,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     subtitleScores.set(index, {score: score});
                 }
             }
+            console.log([...subtitleScores.entries()].sort((a, b) => b[1].score - a[1].score));
 
             for (let [key, value] of subtitleScores) {
-                if (index < 0 || index >= rawCaptions.current.length) {
-                    continue;
-                }
                 let index = key;
                 let score = value.score;
                 let startTime = rawCaptions.current[index].data.start;
@@ -798,7 +818,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             
             let topSubtitles = [...subtitleScores.entries()];
             topSubtitles.sort((a, b) => b[1].score - a[1].score);
-            console.log(subtitleScores);
+            console.log(topSubtitles);
 
             let topWordsFromSubtitles = new Map();
 
@@ -900,7 +920,13 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         let questionData = getQuestionData(topWords);
 
         if (questionData.length < 5) {
-            sortScores = new Map([...videoFrameScores, ...videoDefinitionScores, ...videoWordScores]);
+            for (let [key, value] of videoFrameScores) {
+                if (sortScores.has(key)) {
+                    sortScores.get(key).score += value.score;
+                } else {
+                    sortScores.set(key, {word: value.word, index: value.index, score: value.score});
+                }
+            }
             topWords = [...getTopWords(sortScores).entries()];
 
             let newQuestionData = getQuestionData(topWords, true);
@@ -971,13 +997,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 {
                     position: "bottom-center",
                     autoClose: 5000,
-                    closeOnClick: true,
+                    closeOnClick: false,
                     pauseOnHover: true,
-                    draggable: true,
+                    draggable: false,
                     theme: "dark",
-                    toastId: "questionToast"
+                    toastId: "questionToast",
+                    style: {userSelect: "none"}
                 }
-            )
+            );
             await p;
             questions.sort((a, b) => JSON.stringify(a).length - JSON.stringify(b).length);
         } else {
@@ -1027,6 +1054,30 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                         break;
                 }
             }
+            let p = new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve();
+                }, 3);
+            });
+
+            toast.promise(
+                p,
+                {
+                  pending: "One second please...",
+                  success: 'Please answer the following questions',
+                },
+                {
+                    position: "bottom-center",
+                    autoClose: 5000,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: false,
+                    theme: "dark",
+                    toastId: "questionToast",
+                    style: {userSelect: "none"}
+                }
+            );
+            await p;
             questions = [...shuffle(questions)];
         }
         setShowDefinitionContainer(false);
@@ -1108,11 +1159,15 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     };
 
     useEffect(() => {
-        let heatmap = h337.create({
-            container: d3.select("main").node(),
-            radius: 60,
-        });
-        heatmap.setData({min: 0, max: 0, data: []});
+        // let heatmap = h337.create({
+        //     container: d3.select("main").node(),
+        //     radius: 60,
+        // });
+        // heatmap.setData({min: 0, max: 0, data: []});
+
+        // for (let i = 0; i < 100; i++) {
+        //     heatmap.addData({x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, value: 1});
+        // }
 
         // document.onkeydown = function (e) {
         //     if (e.ctrlKey && e.key === 'r') {
@@ -1120,10 +1175,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         //     }
         // }            
 
-        return () => {
-            d3.select(".heatmap-canvas").remove();
-            document.onkeydown = null;
-        };
+        // return () => {
+        //     d3.select(".heatmap-canvas").remove();
+        //     document.onkeydown = null;
+        // };
     }, []);
 
     useEffect(() => {
@@ -1159,8 +1214,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
             console.log(phraseList);
             
-            // let testPhraseList = phraseList.slice(0, 7);
-            let testPhraseList = phraseList;
+            let testPhraseList = phraseList.slice(0, 2);
+            // let testPhraseList = phraseList;
             // let finisedPhrases = 0;
             // let newPhrases = new Map();
             // console.log(testPhraseList);
@@ -1170,14 +1225,14 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             });
 
             let batchPhraseFunction = (b) => {
-                if (fs.existsSync("./data/chem/phrases" + b.index + ".json")) {
+                if (fs.existsSync("./data/elec/phrases/phrases" + b.index + ".json")) {
                     console.log("Exists " + b.index);
                     return null;
                 }
 
                 return b.f().then((result) => {
                     console.log("Finished " + b.index);
-                    fs.writeFileSync("./data/chem/phrases" + b.index + ".json", JSON.stringify(result, replacer));
+                    fs.writeFileSync("./data/elec/phrases/phrases" + b.index + ".json", JSON.stringify(result, replacer));
                 });
             };
 
@@ -1198,7 +1253,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
             // let newPhrases = new Map(); 
 
-            // readFiles("./data/chem/phrases", (data) => {
+            // readFiles("./data/elec/phrases", (data) => {
             //     const json = JSON.parse(data, reviver);
             //     newPhrases = new Map([...newPhrases, ...json]);
             // }).then(() => {
@@ -1581,12 +1636,31 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             
             if (definition.definitionPhrase.definition.toLowerCase().replace("’", "'").includes(collocation.replace("’", "'").toLowerCase())) {
                 let startIndex = definition.definitionPhrase.definition.toLowerCase().replace("’", "'").search(collocation.replace("’", "'").toLowerCase());
+                let commaIndex = definition.definitionPhrase.definition.toLowerCase().replace("’", "'").search(",");
                 let originalDefinition = definition.definitionPhrase.definition;
-                definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(startIndex + collocation.length).trim();
-                definition.definitionPhrase.definition.split(" ")[0].search(/[a-zA-Z]/) === -1 ? definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(definition.definitionPhrase.definition.split(" ")[0].length).trim() : null;
-                
+
+                if (commaIndex > -1 && commaIndex < startIndex && commaIndex < definition.definitionPhrase.definition.length / 2) {
+                    startIndex = commaIndex + 1;
+                } else {
+                    startIndex += collocation.length;
+                }
+
+                if (startIndex < definition.definitionPhrase.definition.length / 2) {
+                    definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(startIndex).trim();
+                    definition.definitionPhrase.definition.split(" ")[0].search(/[a-zA-Z]/) === -1 ? definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(definition.definitionPhrase.definition.split(" ")[0].length).trim() : null;
+                }
+
                 if (definition.definitionPhrase.definition == "") {
                     definition.definitionPhrase.definition = originalDefinition
+                }
+            }
+
+            if (definition.definitionPhrase.definition.toLowerCase().replace("’", "'").includes("phrase")) {
+                let startIndex = definition.definitionPhrase.definition.toLowerCase().replace("’", "'").search("phrase");
+
+                if (startIndex < definition.definitionPhrase.definition.length / 4) {
+                    definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(startIndex + "phrase".length).trim();
+                    definition.definitionPhrase.definition.split(" ")[0].search(/[a-zA-Z]/) === -1 ? definition.definitionPhrase.definition = definition.definitionPhrase.definition.slice(definition.definitionPhrase.definition.split(" ")[0].length).trim() : null;
                 }
             }
 
@@ -1660,16 +1734,16 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         //     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
         // });
 
-        let addScores = (map, word, score) => {
+        let addScores = (map, word, score, i) => {
             if (map.has(word)) {
-                if (map.get(word).has(index.current)) {
-                    map.get(word).get(index.current).score.push(score)
-                    map.get(word).get(index.current).dt.push(dt.current)
+                if (map.get(word).has(i)) {
+                    map.get(word).get(i).score.push(score)
+                    map.get(word).get(i).dt.push(dt.current)
                 } else {
-                    map.get(word).set(index.current, {score: [score], dt: [dt.current]});
+                    map.get(word).set(i, {score: [score], dt: [dt.current]});
                 }
             } else {
-                map.set(word, new Map().set(index.current, {score: [score], dt: [dt.current]}));
+                map.set(word, new Map().set(i, {score: [score], dt: [dt.current]}));
             }
         }
 
@@ -1762,7 +1836,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                 for (let word of words) {
                                     if (complexityMap.current.has(word)) {
                                         let score = (1 / words.length) * Math.sqrt(dt.current) * (complexityMap.current.get(word) / 5) * 1000;
-                                        addScores(definitionScores.current, word, score);
+                                        addScores(definitionScores.current, word, score, delayIndex.current);
                                     }
                                 }
                             }
@@ -1802,7 +1876,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                     for (let word of text) { 
                                         if (complexityMap.current.has(word)) {
                                             let frameScore = (Math.log10(nodes.length) + 1) * Math.sqrt(dt.current) * (complexityMap.current.get(word) / 5) * 1000;
-                                            addScores(frameScores.current, word, frameScore);
+                                            addScores(frameScores.current, word, frameScore, index.current);
                                         }
                                     }
                                 }
@@ -1813,7 +1887,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                                     for (let word of text) {                                    
                                         if (complexityMap.current.has(word)) {
                                             let score = (1 / nodes.length) * Math.sqrt(dt.current) * (1 / (d + 1)) * (complexityMap.current.get(word) / 5) * 1000;
-                                            addScores(wordScores.current, word, score);
+                                            addScores(wordScores.current, word, score, index.current);
                                         }
                                     }
                                 }
@@ -1933,36 +2007,83 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
     useEffect(() => {
         if (fileData) {
-            let data = {...fileData};
-
-            wordScores.current = new Map(data.wordScores);
-            frameScores.current = new Map(data.frameScores);
-            definitionScores.current = new Map(data.definitionScores);
-            fileUploadRef.current = true;
-            onQuestions.current = false;
-            questionRecordData.current = [];
-
-            playerEndCallback();
-
-            endCallbackRef.current = () => {
-                if (questionRecordData.current.length > 0) {
-                    let duplicateNum = 1;
-                    let dir = "./data/backup/(" + duplicateNum + ") questionData.json";
-                    
-                    while (fs.existsSync(dir)) {
-                        duplicateNum++;
-                        dir = "./data/backup/(" + duplicateNum + ") questionData.json";
+            if (fileData instanceof Array) {
+                let heatmap = h337.create({
+                    container: d3.select("main").node(),
+                    radius: 60,
+                });
+                let data = fileData.map(d => ({ x: Math.round(d.x), y: Math.round(d.y), value: d.dt / 1000, index: d.index })).filter(d => d.x && d.y && d.value);
+                
+                for (let i = 0; i < data.length; i++) {
+                    if (data[i].index === 6 || data[i].index === -1) {
+                        data.shift();
+                        i--;
+                    } else {
+                        break;
                     }
-                    fs.writeFileSync(dir, JSON.stringify(questionRecordData.current, replacer));
-                    questionRecordData.current = [];
                 }
-                fileUploadRef.current = false;
-                endCallbackRef.current = endCallback;
+                let index = 0;
+                let maxIndex = d3.max(data, d => d.index);
+
+                let filteredData = data.filter(d => d.index === index);
+
+                let max = d3.max(filteredData, d => d.value);
+                heatmap.setData({min: 0, max: max, data: filteredData});
+
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "ArrowRight") {
+                        index = Math.min(index + 1, maxIndex);
+                        filteredData = data.filter(d => d.index === index);
+                        max = d3.max(filteredData, d => d.value);
+                        heatmap.setData({min: 0, max: max, data: filteredData});
+                    } else if (e.key === "ArrowLeft") {
+                        index = Math.max(index - 1, 0);
+                        filteredData = data.filter(d => d.index === index);
+                        max = d3.max(filteredData, d => d.value);
+                        heatmap.setData({min: 0, max: max, data: filteredData});
+                    }
+
+                    let startTime = rawCaptions.current[index].data.start / 1000 + 1;
+                    let player = videojs.getAllPlayers()[0];
+
+                    player.currentTime(startTime);
+                });
+            } else if (fileData instanceof Object) {
+                let data = {...fileData};
+
+                wordScores.current = new Map(data.wordScores);
+                frameScores.current = new Map(data.frameScores);
+                definitionScores.current = new Map(data.definitionScores);
+                fileUploadRef.current = true;
+                onQuestions.current = false;
+                questionRecordData.current = [];
+
+                playerEndCallback();
+
+                endCallbackRef.current = () => {
+                    if (questionRecordData.current.length > 0) {
+                        let duplicateNum = 1;
+                        let dir = "./data/backup/(" + duplicateNum + ") questionData.json";
+                        
+                        while (fs.existsSync(dir)) {
+                            duplicateNum++;
+                            dir = "./data/backup/(" + duplicateNum + ") questionData.json";
+                        }
+                        fs.writeFileSync(dir, JSON.stringify(questionRecordData.current, replacer));
+                        questionRecordData.current = [];
+                    }
+                    fileUploadRef.current = false;
+                    endCallbackRef.current = endCallback;
+                }
             }
         } else {
             onQuestions.current = false;
             fileUploadRef.current = false;
             setQuestion([]);
+        }
+
+        return () => {
+            d3.select(".heatmap-canvas").remove();
         }
     }, [fileData]);
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "../assets/css/QuestionForm.css"
 import * as d3 from "d3";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faThumbsUp, faThumbsDown } from "@fortawesome/free-solid-svg-icons";
 
 export default function QuestionForm({ questionData, questionCallback, endCallback, reviewCallback }) {
     let [ question, setQuestion ] = useState([]);
@@ -36,7 +38,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 
                 // if (submittedAnswers.current.size === answer[index].length) {
                     d3.select(".questionForm")
-                    .selectAll(".bottom")
+                    .selectAll(".rating")
                     .transition()
                     .style("opacity", "1")
                     .style("pointer-events", "all");
@@ -70,6 +72,29 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         }
     }
 
+    let handleRating = (like) => {
+        if (like) {
+            d3.select(".like")
+            .classed("active", true);
+
+            d3.select(".dislike")
+            .classed("active", false);
+        } else {
+            d3.select(".dislike")
+            .classed("active", true);
+
+            d3.select(".like")
+            .classed("active", false);
+        }
+        questionData[index].like = like;
+        
+        d3.select(".questionForm")
+        .selectAll(".bottom")
+        .transition()
+        .style("opacity", "1")
+        .style("pointer-events", "all");
+    }
+
     let nextHandler = () => {
         correct = false;
 
@@ -80,14 +105,14 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         
         let submittedTime = new Date().getTime();
 
-        questionData[index].startTime = startTimeRef.current;
+        questionData[index].startQuestionTime = startTimeRef.current;
         questionData[index].submittedTime = submittedTime;
         startTimeRef.current = submittedTime;
 
         if (index < question.length - 1) {
             setIndex(index + 1);
             d3.select(".questionForm")
-            .selectAll(".bottom, .top")
+            .selectAll(".bottom, .top, .rating")
             .transition()
             .style("opacity", "0")
             .style("pointer-events", "none");
@@ -95,6 +120,9 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
             d3.select(".additional")
             .transition()
             .style("opacity", "0");
+
+            d3.selectAll(".like, .dislike")
+            .classed("active", false);
 
             if (questionCallback instanceof Function)
                 questionCallback(questionData[index], [...submittedAnswers.current]);
@@ -149,7 +177,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         let explanation = [];
         
         d3.select(".questionForm")
-        .selectAll(".bottom, .top, .additional")
+        .selectAll(".bottom, .top, .additional, .rating")
         .style("opacity", "0")
         .style("pointer-events", "none");
 
@@ -157,6 +185,9 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         .style("background-color", "white")
         .style("color", "black")
         .style("pointer-events", "all");
+
+        d3.selectAll(".like, .dislike")
+        .classed("active", false);
 
         let leave = true;
 
@@ -239,26 +270,40 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                     </div>
                 </div>
 
-                <div className={"question"}>
-                    {question[index]}
-                </div>
+                <div className={"questionDiv"}>
+                    <div className={"question"}>
+                        {question[index]}
+                    </div>
 
-                <div className={"choices"}>
-                    <div ref={refA} className={"choice"} onClick={() => checkChoice("A", refA)}>
-                        {choiceA[index]}
-                    </div>
-                    <div ref={refB} className={"choice"} onClick={() => checkChoice("B", refB)}>
-                        {choiceB[index]}
-                    </div>
-                    <div ref={refC} className={"choice"} onClick={() => checkChoice("C", refC)}>
-                        {choiceC[index]}
-                    </div>
-                    <div ref={refD} className={"choice"} onClick={() => checkChoice("D", refD)}>
-                        {choiceD[index]}
+                    <div className={"choices"}>
+                        <div ref={refA} className={"choice"} onClick={() => checkChoice("A", refA)}>
+                            {choiceA[index]}
+                        </div>
+                        <div ref={refB} className={"choice"} onClick={() => checkChoice("B", refB)}>
+                            {choiceB[index]}
+                        </div>
+                        <div ref={refC} className={"choice"} onClick={() => checkChoice("C", refC)}>
+                            {choiceC[index]}
+                        </div>
+                        <div ref={refD} className={"choice"} onClick={() => checkChoice("D", refD)}>
+                            {choiceD[index]}
+                        </div>
                     </div>
                 </div>
                 <div className="additional">
                     More than one answer is correct
+                </div>
+
+                <div className="rating">
+                    <div className="like grow">
+                        <FontAwesomeIcon icon={faThumbsUp} onClick={() => handleRating(true)} />
+                    </div>
+                    <div className="dislike grow">
+                        <FontAwesomeIcon icon={faThumbsDown} onClick={() => handleRating(false)} />
+                    </div>
+                    <div>
+                        Please rate the question
+                    </div>
                 </div>
 
                 <div className={"bottom"}>

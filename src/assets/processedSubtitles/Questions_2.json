@@ -5,7 +5,9 @@
         "choiceB": "Described electrically charged particles through a transmission medium",
         "choiceC": "Patented the first electric telegraph",
         "choiceD": "Uses an electromagnet with a pen to make a mark on paper",
-        "answer": "A"
+        "answer": "A",
+        "startTime": 60,
+        "endTime": 90
     },
     {
         "question": "What did the engineers discover after the transatlantic telegraph line was laid down?",
@@ -13,7 +15,9 @@
         "choiceB": "Fluctuate an electric current to induce different sound vibrations",
         "choiceC": "Use magnetic needles to sway right or left to indicate specific letters",
         "choiceD": "Able to produce alternating current and direct current",
-        "answer": "B"
+        "answer": "B",
+        "startTime": 226,
+        "endTime": 250        
     },
     {
         "question": "Why was Sir Humphry Davy’s arc lighting not successful?",
@@ -21,7 +25,9 @@
         "choiceB": "It consumed too much energy",
         "choiceC": "Davy’s battery was not able to produce a stable arc",
         "choiceD": "It was too bright for home usage",
-        "answer": "C"
+        "answer": "C",
+        "startTime": 335,
+        "endTime": 353
     },
     {
         "question": "How did the computers gain a broader audience?",
@@ -29,7 +35,9 @@
         "choiceB": "Edison tried to discredit AC currents",
         "choiceC": "Computers were part of “radio engineering”",
         "choiceD": "The transistor was developed",
-        "answer": "D"
+        "answer": "D",
+        "startTime": 460,
+        "endTime": 478                
     },
     {
         "question": "What led to the discovery of the radio?",
@@ -37,6 +45,8 @@
         "choiceB": "Conversion of light to electrical impulses",
         "choiceC": "Two carbon rods in a battery circuit",
         "choiceD": "Continuous-current electrical generator",
-        "answer": "A"
+        "answer": "A",
+        "startTime": 299,
+        "endTime": 319        
     }
 ]

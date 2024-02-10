@@ -195,7 +195,10 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
         if (player) {
             player.src({src: src, type: "video/mp4"});
             player.addRemoteTextTrack({ src: track, kind: "subtitles", srclang: "en", label: "English", default: true }, false);
-            player.trigger("reset");
+
+            if (!src.includes("#t=")) {
+                player.trigger("reset");
+            }
             // player.currentTime(240)
         }
     }, [src, track]);
