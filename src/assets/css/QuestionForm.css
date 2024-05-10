@@ -10,8 +10,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 25vw;
+    justify-content: space-evenly;
+    gap: 10px;
+    width: 28vw;
     height: 100%;
     border-radius: 10px;
     padding: 20px;
@@ -21,49 +22,73 @@
     background-color: rgba(57, 57, 58, 0.5);
     backdrop-filter: saturate(180%) blur(5px);
     box-shadow: inset 0 0px 20px 50px hsla(0, 0%, 100%, 0.1);
+    container: questionForm / size;
 }
 
 .questionContainer .questionDiv {
-    position: absolute;
-    margin-bottom: 100px;
+    width: 100cqw;
+    height: min-content;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
 }
 
 .questionContainer .question {
-    font-size: 1.2rem;
+    width: 100%;
     font-weight: 600;
-    margin-bottom: 1rem;
     text-align: center;
+    min-height: 8cqh;
+    max-height: 8cqh;
 }
 
 .questionContainer .choices {
-    display: grid;
-    overflow: hidden;
-    /* grid-template-rows: repeat(4, minmax(0, 1fr));
-    grid-template-columns: repeat(1, minmax(0, 1fr)); */
-    grid-column-gap: 10px;
-    grid-row-gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     width: 100%;
-    height: min-content;
-    justify-content: center;
-    align-content: center;
-    font-size: 1em;
-    /* max-height: 50%; */
 }
 
 .questionContainer .choices .choice {
     width: 100%;
-    height: 100%;
+    height: 80px;
     border-radius: 10px;
     background-color: #f0f0f0;
     display: flex;
     justify-content: center;
     text-align: center;
     align-items: center;
-    padding: 15px;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     word-wrap: break-word;
     white-space: break-spaces;
+    container: choice / inline-size;
+}
+
+.textFit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.questionContainer .choices .choice .textFit {
+    padding: 10px;
+}
+
+.explanation {
+    width: 100%;
+    max-height: 10cqh;
+    min-height: 10cqh;
+}
+
+@container questionForm (width > 0px) {
+    .choice {
+        max-height: 12cqh;
+        min-height: 10cqh;
+    }
 }
 
 .round {
@@ -154,9 +179,10 @@
 
 .top {
     text-align: center;
-    font-size: 0.9em;
-    margin-top: initial;
-    margin-bottom: auto;
+    width: 100%;
+    min-height: 8cqh;
+    max-height: 8cqh;
+    margin: 0;
 }
 
 .top p {
@@ -164,7 +190,29 @@
 }
 
 .bottom {
+    width: 100%;
     margin: 0;
+    height: 8cqh;
+    container: bottom / inline-size;
+}
+
+@container bottom (width > 0px) {
+    .round {
+        width: 7cqh;
+        min-height: 7cqh;
+        border-radius: 2cqh;
+    }
+
+    .round #cta {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .round #cta .arrow {
+        width: 1.5cqh;
+        height: 2.1cqh;
+    }
 }
 
 .review {
@@ -173,6 +221,11 @@
     text-align: center;
     border-radius: 10px;
     color: #fff;
+    height: 5cqh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .review:hover div {
@@ -190,17 +243,38 @@
 }
 
 .rating {
-    display: inline-block;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     width: 100%;
+    height: 6cqh;
     text-align: center;
-    margin-top: auto;
+    z-index: 2;
+    gap: 5px;
+}
+
+.rating svg {
+    width: 4cqh;
+    height: 4cqh;
+}
+
+.rating > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    height: 4cqh;
+    width: 100%;
+}
+
+.rating > div:nth-child(2) {
+    width: 40%;
 }
 
 .like, .dislike {
     display: inline-block;
     cursor: pointer;
-    margin: 10px;
-    font-size: 2.5em;
     transition: all 0.2s ease-in-out;
 }
 

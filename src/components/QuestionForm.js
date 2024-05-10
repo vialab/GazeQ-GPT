@@ -3,6 +3,7 @@ import "../assets/css/QuestionForm.css"
 import * as d3 from "d3";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faThumbsUp, faThumbsDown } from "@fortawesome/free-solid-svg-icons";
+import { Textfit } from 'react-textfit';
 
 export default function QuestionForm({ questionData, questionCallback, endCallback, reviewCallback }) {
     let [ question, setQuestion ] = useState([]);
@@ -50,15 +51,11 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
                     d3.selectAll(".top")
                     .transition()
-                    .style("opacity", "0")
-                    .on("end", () => {
-                        if (explanation[index])
-                            setDisplayExplanation(explanation[index][choice]);
+                    .style("opacity", "1");
+                    
+                    if (explanation[index])
+                        setDisplayExplanation(explanation[index][choice]);
 
-                        d3.selectAll(".top")
-                        .transition()
-                        .style("opacity", "1");
-                    });
                 // } else {
                 //     d3.select(".additional")
                 //     .transition()
@@ -68,6 +65,13 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 d3.select(ref.current)
                 .style("background-color", "rgb(239, 35, 60, 0.5)")
                 .style("color", "white");
+                
+                if (explanation[index])
+                    setDisplayExplanation(explanation[index][choice]);
+
+                d3.selectAll(".top")
+                .transition()
+                .style("opacity", "1");
             }
         }
     }
@@ -160,12 +164,12 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
         d3.select("#container")
         .transition()
         .duration(1000)
-        .style("gap", "20px")
+        .style("gap", "10px")
 
         d3.select(".questionContainer")
         .transition()
         .duration(1000)
-        .style("width", "25%");
+        .style("width", "28%");
     }
 
     useEffect(() => {
@@ -257,8 +261,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
             d3.select(".arrow")
             .on("animationend", null);
-        }   
-
+        }
     }, [questionData]);
 
     return (
@@ -266,43 +269,46 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
             <div className={"questionForm"}>
                 <div className={"top"}>
                     <div className={"explanation"}>
-                        {displayExplanation}
+                        <Textfit mode="multi" className="textFit">{displayExplanation}</Textfit>
                     </div>
                 </div>
 
                 <div className={"questionDiv"}>
                     <div className={"question"}>
-                        {question[index]}
+                        <Textfit mode="multi" className="textFit">{question[index]}</Textfit>
                     </div>
 
                     <div className={"choices"}>
                         <div ref={refA} className={"choice"} onClick={() => checkChoice("A", refA)}>
-                            {choiceA[index]}
+                            <Textfit mode="multi" className="textFit" max={16}>{choiceA[index]}</Textfit>
                         </div>
+                        
                         <div ref={refB} className={"choice"} onClick={() => checkChoice("B", refB)}>
-                            {choiceB[index]}
+                            <Textfit mode="multi" className="textFit" max={16}>{choiceB[index]}</Textfit>
                         </div>
                         <div ref={refC} className={"choice"} onClick={() => checkChoice("C", refC)}>
-                            {choiceC[index]}
+                            <Textfit mode="multi" className="textFit" max={16}>{choiceC[index]}</Textfit>
                         </div>
                         <div ref={refD} className={"choice"} onClick={() => checkChoice("D", refD)}>
-                            {choiceD[index]}
+                            <Textfit mode="multi" className="textFit" max={16}>{choiceD[index]}</Textfit>
                         </div>
                     </div>
                 </div>
-                <div className="additional">
+                {/* <div className="additional">
                     More than one answer is correct
-                </div>
+                </div> */}
 
                 <div className="rating">
-                    <div className="like grow">
-                        <FontAwesomeIcon icon={faThumbsUp} onClick={() => handleRating(true)} />
-                    </div>
-                    <div className="dislike grow">
-                        <FontAwesomeIcon icon={faThumbsDown} onClick={() => handleRating(false)} />
+                    <div>
+                        <div className="like grow">
+                            <FontAwesomeIcon icon={faThumbsUp} onClick={() => handleRating(true)} />
+                        </div>
+                        <div className="dislike grow">
+                            <FontAwesomeIcon icon={faThumbsDown} onClick={() => handleRating(false)} />
+                        </div>
                     </div>
                     <div>
-                        Please rate the question
+                        <Textfit mode="single" className="textFit" forceSingleModeWidth={true}>Please rate the question</Textfit>
                     </div>
                 </div>
 
@@ -315,9 +321,9 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                     </button>
 
                     <div className={"review"} onClick={trim}>
-                        <div>
+                        <Textfit mode="single" className="textFit">
                             Review the video
-                        </div>
+                        </Textfit>
                     </div>
                 </div>
             </div>

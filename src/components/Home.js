@@ -1016,6 +1016,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 let choiceC = question.choiceC;
                 let choiceD = question.choiceD;
                 let answer;
+                let explanation = {...question.explanation};
 
                 switch (question.answer) {
                     case "A":
@@ -1031,13 +1032,29 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                         answer = choiceD;
                         break;
                 }
-                let choices = [choiceA, choiceB, choiceC, choiceD];
+                let choices = [
+                    { choice: choiceA, explanation: question.explanation.A },
+                    { choice: choiceB, explanation: question.explanation.B },
+                    { choice: choiceC, explanation: question.explanation.C },
+                    { choice: choiceD, explanation: question.explanation.D }
+                ];
                 let shuffled = shuffle(choices);
+                
+                let newChoices = shuffled.next().value; 
+                question.choiceA = newChoices.choice;
+                question.explanation.A = newChoices.explanation.replace(/Option [A-D]/g, "Option A");
 
-                question.choiceA = shuffled.next().value;
-                question.choiceB = shuffled.next().value;
-                question.choiceC = shuffled.next().value;
-                question.choiceD = shuffled.next().value;
+                newChoices = shuffled.next().value;
+                question.choiceB = newChoices.choice;
+                question.explanation.B = newChoices.explanation.replace(/Option [A-D]/g, "Option B");
+
+                newChoices = shuffled.next().value;
+                question.choiceC = newChoices.choice;
+                question.explanation.C = newChoices.explanation.replace(/Option [A-D]/g, "Option C");
+
+                newChoices = shuffled.next().value;
+                question.choiceD = newChoices.choice;
+                question.explanation.D = newChoices.explanation.replace(/Option [A-D]/g, "Option D");
                 
                 switch (answer) {
                     case question.choiceA:
@@ -1113,7 +1130,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     }
 
     let questionEndCallback = () => {
-        forcePauseRef.current = false;
+        forcePauseRef.current = true;
         onQuestions.current = false;
         fileUploadRef.current = false;
 
@@ -1758,17 +1775,25 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 let yOffset = new Number(d3.select("#gazeCursor").attr("yoffset"));
                 let x = oneeuroX.current.filter(arg.x + xOffset, currentTime.current);
                 let y = oneeuroY.current.filter(arg.y + yOffset, currentTime.current);
-                let nodes = d3.selectAll(".vjs-text-track-cue div span").nodes();
+                let nodes = d3.selectAll(".vjs-text-track-cue div span").nodes().filter(d => !d.classList.contains("highlight") && !d.classList.contains("copyCollocation"));
                 let userCenterRadius = headDistancesRef.current * Math.tan(4 * Math.PI/180) * 0.393701 * 127 / 2;
                 // console.log(screen.height - document.documentElement.clientHeight)
 
                 if (x && y) {
+                    let input_data = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                    let probability = rbfchain.current.add_element(input_data);
+                    let is_fixation = probability >= rbfchain.current.delta;
+                    let probabilityFrame = rbfchainFrame.current.add_element(input_data);
+                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.current.delta;
+
                     if (ifRecord.current) {
                         if (eyeGazeRecordData.current.length === 0) {
                             console.log("start");
                             eyeGazeRecordData.current.push({xOffset: xOffset, yOffset: yOffset});
                         }
-                        eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime.current, index: index.current, dt: dt.current, headDistance: headDistancesRef.current, radius: userCenterRadius});
+                        let player = videojs.getAllPlayers()[0];
+                        let playerTime = player ? player.currentTime() : -1;
+                        eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime.current, index: index.current, dt: dt.current, headDistance: headDistancesRef.current, radius: userCenterRadius, playerTime: playerTime, is_fixation: is_fixation, is_fixationFrame: is_fixationFrame});
                     }
                     // heatmap.addData({ x: x, y: y });
 
@@ -1776,12 +1801,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     .style("width", userCenterRadius * 2 + "px")
                     .style("height", userCenterRadius * 2 + "px")
                     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
-
-                    let input_data = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-                    let probability = rbfchain.current.add_element(input_data);
-                    let is_fixation = probability >= rbfchain.current.delta;
-                    let probabilityFrame = rbfchainFrame.current.add_element(input_data);
-                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.current.delta;
 
                     // d3.select("body")
                     // .append("div")
@@ -1866,6 +1885,19 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             let player = d3.select("video").node();
                             let playerBBox = player.getBoundingClientRect();
                             let playerArea = playerBBox.x <= x && x <= playerBBox.x + playerBBox.width && playerBBox.y <= y && y <= playerBBox.y + playerBBox.height;
+                            let wordsInGaze = 0;
+
+                            for (let wordNode of nodes) {
+                                let text = tokenize.extract(d3.select(wordNode).text(), { toLowercase: true, regex: [tokenize.words] });
+
+                                if (text instanceof Array) {
+                                    for (let word of text) {
+                                        if (complexityMap.current.has(word) && rectCircleColliding(circle, wordNode.getBoundingClientRect())) {
+                                            wordsInGaze++;
+                                        }
+                                    }
+                                }
+                            }
 
                             for (let wordNode of nodes) {
                                 d3.select(wordNode).style("background-color", null);
@@ -1886,7 +1918,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                                     for (let word of text) {                                    
                                         if (complexityMap.current.has(word)) {
-                                            let score = (1 / nodes.length) * Math.sqrt(dt.current) * (1 / (d + 1)) * (complexityMap.current.get(word) / 5) * 1000;
+                                            let score = (1 / wordsInGaze) * Math.sqrt(dt.current) * (1 / (d + 1)) * (complexityMap.current.get(word) / 5) * 1000;
                                             addScores(wordScores.current, word, score, index.current);
                                         }
                                     }
@@ -2012,6 +2044,21 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     container: d3.select("main").node(),
                     radius: 60,
                 });
+                let svg;
+
+                if (d3.select("#gazeSVG").empty()) {
+                    svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", window.innerWidth)
+                    .attr("height", window.innerHeight)
+                    .attr("id", "gazeSVG")
+                    .style("position", "absolute")
+                    .style("top", 0)
+                    .style("left", 0)
+                    .style("pointer-events", "none");
+                } else {
+                    svg = d3.select("#gazeSVG");
+                }
                 let data = fileData.map(d => ({ x: Math.round(d.x), y: Math.round(d.y), value: d.dt / 1000, index: d.index })).filter(d => d.x && d.y && d.value);
                 
                 for (let i = 0; i < data.length; i++) {
@@ -2021,32 +2068,89 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     } else {
                         break;
                     }
+                }                
+                let rbfchain = new RBFChain(0.01, 0.95, 0.175, 1.0);
+                let rbfchainFrame = new RBFChain(0.01, 0.95, 0.665, 1.0);
+
+                for (let i = 0; i < data.length; i++) {
+                    let input_data = Math.sqrt(Math.pow(data[i].x, 2) + Math.pow(data[i].y, 2));
+                    let probability = rbfchain.add_element(input_data);
+                    let is_fixation = probability >= rbfchain.delta;
+                    let probabilityFrame = rbfchainFrame.add_element(input_data);
+                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.delta;
+
+                    if (!(is_fixationFrame)) {
+                        data.splice(i, 1);
+                        i--;
+                    }
                 }
                 let index = 0;
                 let maxIndex = d3.max(data, d => d.index);
-
                 let filteredData = data.filter(d => d.index === index);
-
                 let max = d3.max(filteredData, d => d.value);
                 heatmap.setData({min: 0, max: max, data: filteredData});
+                svg.selectAll("*").remove();
+                let timeoutArr = [];
 
                 document.addEventListener("keydown", (e) => {
-                    if (e.key === "ArrowRight") {
-                        index = Math.min(index + 1, maxIndex);
-                        filteredData = data.filter(d => d.index === index);
-                        max = d3.max(filteredData, d => d.value);
-                        heatmap.setData({min: 0, max: max, data: filteredData});
-                    } else if (e.key === "ArrowLeft") {
-                        index = Math.max(index - 1, 0);
-                        filteredData = data.filter(d => d.index === index);
-                        max = d3.max(filteredData, d => d.value);
-                        heatmap.setData({min: 0, max: max, data: filteredData});
+                    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                        timeoutArr.forEach(d => clearTimeout(d));
+                        timeoutArr = [];
+
+                        if (e.key === "ArrowRight") {
+                            index = Math.min(index + 1, maxIndex);
+                            filteredData = data.filter(d => d.index === index);
+                            max = d3.max(filteredData, d => d.value);
+                        } else if (e.key === "ArrowLeft") {
+                            index = Math.max(index - 1, 0);
+                            filteredData = data.filter(d => d.index === index);
+                            max = d3.max(filteredData, d => d.value);
+                        }
+                        let startTime = rawCaptions.current[index].data.start / 1000 + 1;
+                        let player = videojs.getAllPlayers()[0];
+                        player.currentTime(startTime);
+                        player.controls(false);
+                        
+                        let delay = 0;
+                        svg.selectAll("*").remove();
+                        heatmap.setData({min: 0, max: max, data: []});
+
+                        for (let i = 0; i < filteredData.length; i++) {
+                            let tData = filteredData[i];
+                            // let tDelay = delay;
+
+                            let timeout = setTimeout(() => {
+                                svg.append("circle")
+                                .attr("cx", tData.x)
+                                .attr("cy", tData.y)
+                                .attr("r", 10)
+                                .style("fill", "none")
+                                .style("stroke", "#FF5733")
+                                .style("stroke-width", 2);
+
+                                if (i > 0)
+                                    svg.append("line")
+                                    .attr("x1", filteredData[i - 1].x)
+                                    .attr("y1", filteredData[i - 1].y)
+                                    .attr("x2", tData.x)
+                                    .attr("y2", tData.y)
+                                    .style("stroke", "black")
+                                    .style("stroke-width", 2)
+                                    .style("opacity", 0.5);
+
+                                let circles = svg.selectAll("circle");
+
+                                circles.each(function() {
+                                    this.parentNode.appendChild(this);
+                                });
+                                heatmap.addData({ x: tData.x, y: tData.y, value: tData.value });
+                                // player.currentTime(startTime + delay);
+                            }, delay * 1000);
+                            timeoutArr.push(timeout);
+                            delay += filteredData[i].value;
+                        }
                     }
 
-                    let startTime = rawCaptions.current[index].data.start / 1000 + 1;
-                    let player = videojs.getAllPlayers()[0];
-
-                    player.currentTime(startTime);
                 });
             } else if (fileData instanceof Object) {
                 let data = {...fileData};

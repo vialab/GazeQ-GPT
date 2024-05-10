@@ -1,53 +1,83 @@
 [
     {
-        "question": "What was the final step of the Leblanc process?",
-        "choiceA": "Heat sodium chloride with sulfuric acid to produce sodium sulfate",
-        "choiceB": "Mix crushed limestone and coal and fired",
-        "choiceC": "Separate sodium carbonate from black ash by washing it with water",
-        "choiceD": "Mix sodium carbonate and calcium sulfide",
-        "answer": "C",
-        "startTime": 136,
-        "endTime": 142
-    },
-    {
-        "question": "What happened after when Leblanc began large-scale production of soda ash? ",
-        "choiceA": "He received an award for his revolutionary process",
-        "choiceB": "Taken over by revolutionaries because it was bad for the environment",
-        "choiceC": "Made a handbook on chemical engineering",
-        "choiceD": "Gave a series of lectures at the Manchester School of Technology",
+        "question": "In the evolution of chemical engineering, the development and application of \"Unit Operations\" represented a significant advancement. How did this concept fundamentally change chemical engineering processes?",
+        "choiceA": "By introducing standardized chemical reactions applicable to all manufacturing sectors, thus limiting the need for specialized knowledge.",
+        "choiceB": "By segmenting chemical manufacturing into isolated units that could be independently optimized, fostering innovative approaches to production.",
+        "choiceC": "By mandating the implementation of environmental protection measures in all chemical plants, leading to safer but less efficient processes.",
+        "choiceD": "By focusing exclusively on the chemical composition of products rather than the processes used to produce them, simplifying the field.",
         "answer": "B",
-        "startTime": 151,
-        "endTime": 159
-    },
-    {
-        "question": "Why was George Davis’s work unique?",
-        "choiceA": "It formed the foundation for acid production and brewing",
-        "choiceB": "On how best to deliver drugs into our bodies",
-        "choiceC": "Extract energy from biomass",
-        "choiceD": "Organized basic operations like transporting liquids and gases or distillation",
-        "answer": "D",
-        "startTime": 214,
-        "endTime": 224
-    },
-    {
-        "question": "How does one manage large-scale chemical production?",
-        "choiceA": "Break down each part of a chemical plant into individual units",
-        "choiceB": "Hire more graduating chemical engineers",
-        "choiceC": "Make chemical processes more economically viable, efficient and cheaper",
-        "choiceD": "Consider momentum transfer, mass transfer and thermodynamics",
-        "answer": "A",
+        "explanation": {
+            "A": "Option A is incorrect as it inaccurately suggests a uniformity in chemical reactions across industries, overlooking the diversification and customization essential in chemical engineering advancements.",
+            "B": "Option B is correct because it encapsulates the principle of decomposing intricate manufacturing workflows into simpler, standalone segments for enhancement and creative solution exploration.",
+            "C": "Option C is inaccurate because it misrepresents the primary focus of the concept by attributing an environmental regulatory motive rather than an operational efficiency or process innovation perspective.",
+            "D": "Option D is incorrect because it misconstrues the emphasis on procedural methodologies over the substance properties, sidestepping the core objective of enhancing manufacturing techniques."
+        },
         "startTime": 286,
-        "endTime": 301
+        "endTime": 326
+    },
+    {
+        "question": "In the context of chemical engineering's progressive integration with sustainable energy sources, which development best exemplifies chemical engineering's pivotal role in advancing renewable energy solutions?",
+        "choiceA": "The Leblanc process, marking the dawn of chemical manufacturing by converting sodium chloride into sodium carbonate.",
+        "choiceB": "The adaptation of polymerization and cracking methods to refine petroleum into gasoline, significantly impacting the automotive industry.",
+        "choiceC": "The utilization of biomass, including wood, agricultural residues, and manure, as a renewable source for energy production, underscoring chemical engineering's commitment to sustainability.",
+        "choiceD": "The advancement of unit operations methodology by Arthur D. Little, promoting the efficient design and operation of chemical plants through fundamental principles like momentum and mass transfer.",
+        "answer": "C",
+        "explanation": {
+            "A": "Option A is incorrect because it describes an early industrial chemical process not directly related to the development of renewable energy technologies.",
+            "B": "Option B is incorrect because it pertains to advancements in petroleum processing, which does not align with the sustainable or renewable energy focus.",
+            "C": "Option C is correct as it exemplifies how the discipline has played a crucial role in employing organic materials for generating environmentally friendly energy.",
+            "D": "Option D is incorrect because it focuses on improving manufacturing efficiency within the sector, not on the direct facilitation of eco-friendly power sources."
+        },
+        "startTime": 434,
+        "endTime": 463
+    },
+    {
+        "question": "What innovation is attributed to Nicolas Leblanc and marked a significant advancement in the field of chemical engineering?",
+        "choiceA": "He was the first to suggest the use of biotechnology in chemical processes, leading to modern environmental engineering practices.",
+        "choiceB": "Leblanc developed a process that heated sodium chloride with sulfuric acid to produce sodium sulfate, known as the salt cake, thereby creating a new method for sodium carbonate production.",
+        "choiceC": "He introduced the concept of unit operations in chemical engineering, which broke down chemical processes into basic operations like distillation and transportation of liquids and gases. ",
+        "choiceD": "Nicolas Leblanc founded the first chemical engineering degree program at a university, setting the standard for chemical engineering education worldwide.",
+        "answer": "B",
+        "explanation": {
+            "A": "Option A is incorrect because it inaccurately attributes the integration of biotechnology into chemical engineering to Nicolas Leblanc.",
+            "B": "Option B is correct as it summarizes Leblanc's contribution to industrial chemistry through inventing a pivotal method for producing a key industrial chemical from common raw materials.",
+            "C": "Option C is incorrect because it misassociates the groundwork of categorizing fundamental chemical engineering practices with Nicolas Leblanc.",
+            "D": "Option D is incorrect because it inaccurately credits Nicolas Leblanc with establishing academic programs."
+        },
+        "startTime": 117,
+        "endTime": 145
+    },
+    {
+        "question": "How has the chemical engineering field expanded beyond its initial focus since the 1970s?",
+        "choiceA": "The introduction of digital simulation techniques has eliminated the need for physical prototypes in chemical plant design.",
+        "choiceB": "Chemical engineering now incorporates principles of quantum chemistry to predict reactions without experimental validation.",
+        "choiceC": "Since the 1970s, the application of chemical engineering has broadened significantly to include biotechnology and pharmaceuticals, diversifying career options for graduates. ",
+        "choiceD": "The emphasis has shifted entirely from industrial applications to environmental sustainability, focusing on renewable energy sources exclusively.",
+        "answer": "C",
+        "explanation": {
+            "A": "Option A is incorrect because it overstates the impact of computational advancements by suggesting they've completely replaced traditional experimental methods in process design.",
+            "B": "Option B is incorrect because it misrepresents the scope of the field by suggesting it fully integrates theoretical chemistry methods for all process validations.",
+            "C": "Option C is correct as it accurately reflects the expansion of the discipline into life sciences and medicine, reflecting its evolving and interdisciplinary nature.",
+            "D": "Option D is incorrect because it inaccurately implies that the field has shifted its focus solely towards environmental and renewable energy concerns, neglecting its broader range of applications."
+        },
+        "startTime": 375,
+        "endTime": 401
         
     },
     {
-        "question": "Why did the French Royal Academy offer a prize?",
-        "choiceA": "They need more glass, paper and soap during the American Revolutionary War",
-        "choiceB": "Produce sodium carbonate due to lack of sodium carbonate during the American Revolutionary War",
-        "choiceC": "Extracting energy from biomass",
-        "choiceD": "Improved the process of making gasoline",
+        "question": "What role did George Davis play in the formalization of chemical engineering education?",
+        "choiceA": "He pioneered the study of biochemical engineering, blending biological sciences with engineering principles. ",
+        "choiceB": "Davis led the development of safety protocols in chemical plants, which later became part of engineering curricula.",
+        "choiceC": "His lectures laid the foundation for chemical engineering as an academic discipline, directly influencing its teaching in universities.",
+        "choiceD": "He was the first to apply chemical engineering principles to the pharmaceutical industry, setting a precedent for future academic programs.",
         "answer": "B",
-        "startTime": 102,
-        "endTime": 111
+        "explanation": {
+            "A": "Option A is incorrect because it inaccurately assigns the initiation of combining engineering with biology to an individual whose major contribution was foundational to the educational structure within the field.",
+            "B": "Option B is incorrect as it misattributes the establishment of industry safety standards to a figure primarily influential in the academic sphere of the profession.",
+            "C": "Option C is correct because it identifies the person's pivotal role in creating the educational underpinnings for a new academic discipline through pioneering lectures.",
+            "D": "Option D is incorrect because it falsely attributes the pioneering application of the field's principles to one specific industry to a person celebrated for foundational academic and theoretical contributions."
+        },
+        "startTime": 198,
+        "endTime": 224
     }
 ]

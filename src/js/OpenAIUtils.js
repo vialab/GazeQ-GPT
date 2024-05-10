@@ -13,6 +13,7 @@ async function retrieveRun(threadId, runId) {
 
         retrievingRun = await openai.beta.threads.runs.retrieve(threadId, runId);
     }
+    console.log(retrievingRun.status);
     return retrievingRun;
 }
 
@@ -109,13 +110,13 @@ export async function getComplexity(word) {
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Make sure to find all sentences that uses the word before giving an answer.`});
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Let's work this out in a step by step way to be sure we have the right answer.`});
     
-        const run = await openai.beta.threads.runs.create(thread.id, { 
+        const run = await openai.beta.threads.runs.createAndPoll(thread.id, { 
             assistant_id: process.env.COMPLEXITY_ASSISTANT_ID,
         });
 
-        await retrieveRun(thread.id, run.id);
+        // await retrieveRun(thread.id, run.id);
     
-        const JSONRun = await openai.beta.threads.runs.create(thread.id, {
+        const JSONRun = await openai.beta.threads.runs.createAndPoll(thread.id, {
             assistant_id: process.env.COMPLEXITY_ASSISTANT_ID,
             instructions: `Output your answer as a JSON object like so:
 {
@@ -123,7 +124,7 @@ export async function getComplexity(word) {
 }`
         });
 
-        await retrieveRun(thread.id, JSONRun.id);
+        // await retrieveRun(thread.id, JSONRun.id);
         const m = await openai.beta.threads.messages.list(thread.id);
         console.log(m);
     
@@ -284,54 +285,55 @@ export async function generateQuestion(text, word, initRequestOptions = "", file
     //     };
     // }
 
-    let rand = Math.random() * -1;
+    // let rand = Math.random() * -1;
 
-    return new Promise((resolve, reject) => {
-        resolve(JSON.parse(
-            `{
-                "question": "What is one way we study matter?",
-                "choiceA": "Through biology",
-                "choiceB": "Through psychology",
-                "choiceC": "Through chemistry",
-                "choiceD": "Through physics",
-                "explanation": {
-                    "A": "Biology is the study of living things, not matter.",
-                    "B": "Psychology is the study of the mind, not matter.",
-                    "C": "Correct! Chemistry is the study of matter.",
-                    "D": "Physics is the study of energy and matter, not just matter."
-                },
-                "answer": "A"
-            }`
-        ));
-    });
+    // return new Promise((resolve, reject) => {
+    //     resolve(JSON.parse(
+    //         `{
+    //             "question": "What is one way we study matter?",
+    //             "choiceA": "Through biology",
+    //             "choiceB": "Through psychology",
+    //             "choiceC": "Through chemistry",
+    //             "choiceD": "Through physics",
+    //             "explanation": {
+    //                 "A": "Biology is the study of living things, not matter.",
+    //                 "B": "Psychology is the study of the mind, not matter.",
+    //                 "C": "Correct! Chemistry is the study of matter.",
+    //                 "D": "Physics is the study of energy and matter, not just matter."
+    //             },
+    //             "answer": "A"
+    //         }`
+    //     ));
+    // });
     
     try {
         const thread = await openai.beta.threads.create();
     
+        await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Create an advanced multiple-choice question about the video given with four choices. Give the correct answer at the end of the question.
+
+Here are the criteria for the question:
+
+1. The question must have the word: ${word}.
+
+2. All choices should explain a concept or an idea in one sentence.
+
+3. All incorrect choices must be from the video and related to the correct choice.
+
+4. All choices should have similar number of words to each other.`});
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Video:\n${text}`});
-        await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Let's work this out in a step by step way to be sure we have the right question that fits the criteria that you have been given.`});
+        await openai.beta.threads.messages.create(thread.id, { role: "assistant", content: `Let's work this out in a step by step way to be sure we have the right question that fits the criteria that you have been given.`});
     
-        const run = await openai.beta.threads.runs.create(
+        const run = await openai.beta.threads.runs.createAndPoll(
             thread.id,
             { 
                 assistant_id: process.env.QUESTION_ASSISTANT_ID,
-                additional_instructions: `Create an advanced multiple-choice question about the video given with four choices. Give the correct answer at the end of the question.
-                
-                Here are the criteria for the question:
-                
-                1. The question must have the word: ${word}.
-                
-                2. All choices should explain a concept or an idea in one sentence.
-                
-                3. All incorrect choices must be plausible and related to the correct choice.
-    
-                4. All choices should have similar number of words to each other.`
+                tool_choice: { type: "file_search" }
             }
         );
     
-        await retrieveRun(thread.id, run.id);
+        // await retrieveRun(thread.id, run.id);
     
-        const JSONRun = await openai.beta.threads.runs.create(thread.id, { 
+        const JSONRun = await openai.beta.threads.runs.createAndPoll(thread.id, { 
             assistant_id: process.env.QUESTION_ASSISTANT_ID,
             instructions: `Output your answer as a JSON object like so:
 {
@@ -344,11 +346,12 @@ export async function generateQuestion(text, word, initRequestOptions = "", file
 }`
         });
     
-        await retrieveRun(thread.id, JSONRun.id);
+        // await retrieveRun(thread.id, JSONRun.id);
         const m = await openai.beta.threads.messages.list(thread.id);
     
         console.log(m);
         console.log(m.data[0].content[0].text.value);
+        console.log(word)
 
         if (m.data[0].content[0].text.value) {
             let content = m.data[0].content[0].text.value;
@@ -356,8 +359,8 @@ export async function generateQuestion(text, word, initRequestOptions = "", file
             let match = content.match(regex);
     
             if (!match && initRequestOptions === "") {
-                const run = await openai.beta.threads.runs.create(thread.id);
-                await retrieveRun(thread.id, run.id);
+                const run = await openai.beta.threads.runs.createAndPoll(thread.id);
+                // await retrieveRun(thread.id, run.id);
                 const m = await openai.beta.threads.messages.list(thread.id);
 
                 content = m.data[0].content[0].text.value;
@@ -386,36 +389,52 @@ export async function generateQuestion(text, word, initRequestOptions = "", file
             // }
             let incorrectAnswers = ["A", "B", "C", "D"].filter(x => !correctAnswers.includes(x));
             let explanationData = {};
-            // let settleFetch = []
+            let settleFetch = [];
     
             let fetchExplanation = async (answer, ifCorrect) => {
-                const run = await openai.beta.threads.runs.create(thread.id, { 
-                    assistant_id: process.env.QUESTION_ASSISTANT_ID,
-                    instructions: `Explain in one sentence why option "${answer}" is ${ifCorrect ? "correct" : "incorrect"}. Do not use words in any of the choice.`
-                });
+                try {
 
-                await retrieveRun(thread.id, run.id);
-                const explainData = await openai.beta.threads.messages.list(thread.id);
-                console.log(explainData.data[0].content[0].text.value)
+                    const t = await openai.beta.threads.create();
+                    // Readd the question and choices
+                    await openai.beta.threads.messages.create(t.id, { role: "user", content: `Question: ${questionData.question}\n\nA) ${questionData.choiceA}\nB) ${questionData.choiceB}\nC) ${questionData.choiceC}\nD) ${questionData.choiceD}\n\nAnswer: ${questionData.answer}`});
+                    await openai.beta.threads.messages.create(t.id, { role: "user", content: `Explain in one sentence why option "${answer}" is ${ifCorrect ? "correct" : "incorrect"}. Do not use words in any of the choices.`});
     
-                if (explainData.data[0].content[0].text.value) {
-                    explanationData[answer] = explainData.data[0].content[0].text.value;
-                } else {
-                    throw new Error("No explanation data found.");
+                    const run = await openai.beta.threads.runs.createAndPoll(t.id, { 
+                        assistant_id: process.env.QUESTION_ASSISTANT_ID,
+                        tool_choice: { type: "file_search" },
+                    });
+    
+                    // await retrieveRun(t.id, run.id);
+                    const explainData = await openai.beta.threads.messages.list(t.id);
+                    console.log(explainData)
+        
+                    if (explainData.data[0].content[0].text.value && run.status === "completed") {
+                        explanationData[answer] = explainData.data[0].content[0].text.value.replace(/【(\s|.)*†source】/g, "");
+                    } else {
+                        throw new Error("No explanation data found.");
+                    }
+                } catch (error) {
+                    console.log("error", error);
+                    
+                    return new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            resolve(fetchExplanation(answer, ifCorrect));
+                        }, 1000);
+                    });
                 }
             }
     
             for (let answer of correctAnswers) {
-                // settleFetch.push(fetchExplanation(answer, true));
-                await fetchExplanation(answer, true)
+                settleFetch.push(fetchExplanation(answer, true));
+                // await fetchExplanation(answer, true)
             }
     
             for (let answer of incorrectAnswers) {
-                await fetchExplanation(answer, false)
-                // settleFetch.push(fetchExplanation(answer, false));
+                // await fetchExplanation(answer, false)
+                settleFetch.push(fetchExplanation(answer, false));
                 // settleFetch.push(() => "");
             }
-            // await Promise.all(settleFetch);
+            await Promise.all(settleFetch);
             
             questionData.explanation = explanationData;
             return questionData;
@@ -423,6 +442,8 @@ export async function generateQuestion(text, word, initRequestOptions = "", file
             throw new Error("Error generating question");
         }
     } catch (error) {
+        console.log("error", error);
+
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 resolve(generateQuestion(text, word, initRequestOptions, file));
@@ -649,14 +670,15 @@ export async function getPhrase(term1, term2) {
 
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `"${term1} ${term2}" is a phrase\n\nA) True\nB) False`});
     
-        const run = await openai.beta.threads.runs.create(thread.id, {
+        const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
             assistant_id: process.env.PHRASE_ASSISTANT_ID,
         });
 
-        await retrieveRun(thread.id, run.id);
+        // await retrieveRun(thread.id, run.id);
     
-        const JSONRun = await openai.beta.threads.runs.create(thread.id, {
+        const JSONRun = await openai.beta.threads.runs.createAndPoll(thread.id, {
             assistant_id: process.env.PHRASE_ASSISTANT_ID,
+            response_format: {type: "json_object"},
             additional_instructions: `Output your answer as a JSON object like so:
 {
     "definitionTerm1": {
@@ -675,7 +697,7 @@ export async function getPhrase(term1, term2) {
     "example": [enter example]
 }`});
 
-        await retrieveRun(thread.id, JSONRun.id);
+        // await retrieveRun(thread.id, JSONRun.id);
         const m = await openai.beta.threads.messages.list(thread.id);
         console.log(m);
         console.log(m.data[0].content[0].text.value);

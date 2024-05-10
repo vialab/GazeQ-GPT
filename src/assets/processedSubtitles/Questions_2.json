@@ -1,52 +1,82 @@
 [
     {
-        "question": "Why was Willian Gilbert considered the father of electrical engineering?",
-        "choiceA": "Described electrical attraction and magnetic poles",
-        "choiceB": "Described electrically charged particles through a transmission medium",
-        "choiceC": "Patented the first electric telegraph",
-        "choiceD": "Uses an electromagnet with a pen to make a mark on paper",
-        "answer": "A",
-        "startTime": 60,
-        "endTime": 90
-    },
-    {
-        "question": "What did the engineers discover after the transatlantic telegraph line was laid down?",
-        "choiceA": "Able to make a system of dashes and dots, known as Morse code, using an electromagnet",
-        "choiceB": "Fluctuate an electric current to induce different sound vibrations",
-        "choiceC": "Use magnetic needles to sway right or left to indicate specific letters",
-        "choiceD": "Able to produce alternating current and direct current",
+        "question": "How did the development of the microprocessor transform the field of computer engineering?",
+        "choiceA": "It enabled the creation of larger, more powerful mainframe computers which centralized data processing.",
+        "choiceB": "The microprocessor led to the development of personal computers by significantly reducing their size and cost.",
+        "choiceC": "Microprocessors allowed for the advent of cloud computing, facilitating remote data storage and processing.",
+        "choiceD": "It introduced the concept of digital signal processing, enhancing audio and video communications technology.",
         "answer": "B",
-        "startTime": 226,
-        "endTime": 250        
+        "explanation": {
+            "A": "Option A is incorrect because the microprocessor's innovation primarily made computing devices more compact and affordable, not larger or more centralized.",
+            "B": "Option B is accurate because the advent of the microprocessor brought forth a significant reduction in both the physical size and the financial cost of computing units, directly facilitating the emergence of desktop devices for individual use.",
+            "C": "Option C is incorrect because cloud technology, concerning off-site data management and computational services, emerged from advances in internet and server technologies, not directly from the invention of the microprocessor.",
+            "D": "Option D is incorrect because the principle contribution of this innovation was in miniaturizing and economizing computing units, not specifically advancing audio and visual communication technologies."
+        },
+        "startTime": 477,
+        "endTime": 500
     },
     {
-        "question": "Why was Sir Humphry Davy’s arc lighting not successful?",
-        "choiceA": "It was too expensive to make",
-        "choiceB": "It consumed too much energy",
-        "choiceC": "Davy’s battery was not able to produce a stable arc",
-        "choiceD": "It was too bright for home usage",
+        "question": "In the development of electrical engineering, which invention significantly demonstrated the potential of telecommunication technology for practical and urgent applications? ",
+        "choiceA": "The development of the transistor, which allowed electrical engineers to replace bulky vacuum tubes, thereby reducing power consumption and the size of electrical devices.",
+        "choiceB": "The invention of the electric telegraph by Sir William Fothergill Cooke and Charles Wheatstone, which was initially deemed impractical due to cost but later gained popularity after solving a high-profile murder case.",
+        "choiceC": "Alexander Graham Bell's invention of the telephone, which was a breakthrough in transferring human voice over a distance, laying the groundwork for future telecommunication advances.",
+        "choiceD": "The establishment of the first permanent telegraph line across the Atlantic Ocean by the British ship Great Eastern, marking a pivotal moment in global communication by overcoming the challenge of large bodies of water.",
+        "answer": "B",
+        "explanation": {
+            "A": "Option A is incorrect because it focuses on advancements in computing technology rather than demonstrating the potential of telecommunication technology through practical applications.",
+            "B": "Option B is correct because it highlights an early use of communication technology that showed its practical value in solving real-world problems, thereby underscoring the utility and impact of early telecommunication advancements.",
+            "C": "Option C is incorrect because it describes a milestone in the evolution of voice transmission technology rather than a specific instance where this technology's practical and urgent applications were demonstrated.",
+            "D": "Option D is incorrect because it emphasizes the achievement of overcoming physical barriers in communication rather than showing an immediate practical application that demonstrated the technology's potential in urgent situations."
+        },
+        "startTime": 130,
+        "endTime": 160        
+    },
+    {
+        "question": "The \"War of Currents\" was a pivotal period in electrical engineering history, characterized by a fierce competition to dictate the future of electrical power supply. What was the primary issue at stake during this conflict?",
+        "choiceA": "The challenge was primarily about determining the most efficient method of producing electrical power to maximize output and minimize costs.",
+        "choiceB": "The conflict centered on the debate between whether direct current (DC) or alternating current (AC) would become the standard for electrical power transmission.",
+        "choiceC": "The main contention was over the safety of electrical power, with major advocates on each side presenting their methods as the safer option for public adoption.",
+        "choiceD": "It was a dispute over the technological superiority of electrical transmission methods, with a focus on which could support longer-distance transmission without significant power loss.",
+        "answer": "B",
+        "explanation": {
+            "A": "Option A is incorrect because the conflict was not about the production efficiency of electricity but rather the mode of its delivery to consumers.",
+            "B": "Option B is correct because the key issue was whether to use a system that sends electricity in a single direction or one that reverses direction periodically for power distribution.",
+            "C": "Option C is incorrect because while safety concerns were highlighted, the core of the debate revolved around the technical format for distributing electricity, not its safety implications.",
+            "D": "Option D is incorrect because the argument was not primarily focused on the capacity for long-range conveyance without loss, but rather on the foundational system for delivering electric service."
+        },
+        "startTime": 391,
+        "endTime": 415
+    },
+    {
+        "question": "How did Heinrich Hertz contribute to the advancement of wireless communication technologies in the late 19th century?",
+        "choiceA": "By developing the first practical telegraph system that allowed for transatlantic communication, paving the way for instantaneous global messaging.",
+        "choiceB": "By inventing the radio, which enabled audio transmission over long distances without the need for physical connectors, fundamentally altering mass communication.",
+        "choiceC": "By discovering electromagnetic waves and demonstrating their ability to carry signals, leading to innovations such as radio and wireless telegraphy.",
+        "choiceD": "By creating the first telephone able to transmit the human voice clearly across continents, revolutionizing personal and business communications.",
         "answer": "C",
-        "startTime": 335,
-        "endTime": 353
+        "explanation": {
+            "A": "Option A is incorrect because Heinrich Hertz is known for his experiments on electromagnetic waves, not for creating telegraph systems.",
+            "B": "Option B is incorrect because Hertz's work laid the foundational theory for wireless communication but he did not invent the technology for audio broadcasting.",
+            "C": "Option C is correct because Hertz's experiments verified the existence of electromagnetic radiation, enabling later technologies that transmit information without physical connections.",
+            "D": "Option D is incorrect because Hertz's contributions were in validating electromagnetic wave theories, not in the development of telephonic devices for long-distance voice transmission."
+        },
+        "startTime": 294,
+        "endTime": 311                
     },
     {
-        "question": "How did the computers gain a broader audience?",
-        "choiceA": "Westinghouse won the contract to supply electricity",
-        "choiceB": "Edison tried to discredit AC currents",
-        "choiceC": "Computers were part of “radio engineering”",
-        "choiceD": "The transistor was developed",
-        "answer": "D",
-        "startTime": 460,
-        "endTime": 478                
-    },
-    {
-        "question": "What led to the discovery of the radio?",
-        "choiceA": "Manipulation of electromagnetic waves ",
-        "choiceB": "Conversion of light to electrical impulses",
-        "choiceC": "Two carbon rods in a battery circuit",
-        "choiceD": "Continuous-current electrical generator",
-        "answer": "A",
-        "startTime": 299,
-        "endTime": 319        
+        "question": "What was a significant effect of Alexander Graham Bell's invention of the telephone in 1876 on telecommunications technology?",
+        "choiceA": "The invention marked the first use of digital signals over a network, enabling data and voice to be transmitted simultaneously.",
+        "choiceB": "Bell's invention fundamentally changed communication by allowing direct voice transmission between distant parties without the need for physical mail.",
+        "choiceC": "It introduced the concept of wireless communication, leading to the rapid development and deployment of mobile phone technology.",
+        "choiceD": "The telephone set the stage for the development of the internet by demonstrating the practicality of transmitting complex data over long distances.",
+        "answer": "B",
+        "explanation": {
+            "A": "Option A is incorrect because the initial usage of the telephone involved analog signals to transmit voice across distances, not digital signals, marking a transformation in how communication was conducted rather than the first application of digital transmission.",
+            "B": "Option B is accurate because it initiated an era where individuals could directly exchange spoken words over significant distances, eliminating the reliance on written correspondence for immediate communication.",
+            "C": "Option C is incorrect because the initial invention emphasized wire-based voice communication and did not encompass the methodologies or technologies associated with mobile or cordless transmissions.",
+            "D": "Option D is incorrect because while it facilitated real-time oral exchanges over wires, it did not specifically introduce or demonstrate the protocols for data transmission that underpin modern internet infrastructure."
+        },
+        "startTime": 265,
+        "endTime": 288
     }
 ]
