@@ -2212,7 +2212,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             </div>
             
             <DefinitionsContainer collocations={collocations} show={showDefinitionContainer} showDefinition={showDefinition} showMoreInfo={showMoreInfo} onPrev={onPrev} definitionCallback={definitionCallbackState} />
-            <ToastContainer transition={Flip} />
         </>
     );
 }

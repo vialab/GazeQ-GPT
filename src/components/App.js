@@ -8,6 +8,9 @@ import "../assets/css/App.css";
 import { Tooltip } from 'react-tooltip';
 import { ImMail4, ImInfo } from "react-icons/im";
 import fs from "fs";
+import OpenAI from "openai";
+
+import { ToastContainer, toast, Flip } from 'react-toastify';
 
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
@@ -23,7 +26,8 @@ const video1 = {
     track: "file:///src/assets/videos/en_The_History_of_Chemical_Engineering__Crash_Course_Engineering_5_-_English.vtt",
     complexityData: complexityData1,
     phraseDefinitions: phraseDefinitions1,
-    questions: questionData1
+    questions: questionData1,
+    fileID: "file-hHYZ16HmGr3WrFnTyXOyLhE3",
 }
 
 const video2 = {
@@ -31,7 +35,8 @@ const video2 = {
     track: "file:///src/assets/videos/en_The_History_of_Electrical_Engineering__Crash_Course_Engineering_4_-_English.vtt",
     complexityData: complexityData2,
     phraseDefinitions: phraseDefinitions2,
-    questions: questionData2
+    questions: questionData2,
+    fileID: "file-li5xzzxRzYoResoXjvSQ1rd9",
 }
 
 let videoList = [
@@ -689,6 +694,56 @@ export default function App() {
             videoList[0].llm = false;
             videoList[1].llm = true;
         }
+
+        async function updateFile() {
+            try {
+                const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY, dangerouslyAllowBrowser: true });
+
+                let assistant = await openai.beta.assistants.retrieve(process.env.QUESTION_ASSISTANT_ID);
+                let vectorStoreID = assistant.tool_resources.file_search?.vector_store_ids[0];
+                let vectorStore = await openai.beta.vectorStores.retrieve(vectorStoreID);
+                console.log("Checking vector store status...", vectorStore.status);
+                
+                while (vectorStore.status !== "completed") {
+                    await new Promise(r => setTimeout(r, 1000));
+                    vectorStore = await openai.beta.vectorStores.retrieve(vectorStoreID);
+                    console.log("Checking vector store status...", vectorStore.status);
+                }
+                let vectorStoreFiles = await openai.beta.vectorStores.files.list(vectorStoreID);
+        
+                for (let file of vectorStoreFiles.data) {
+                    if (file.id !== videoList[index.current].fileID) {
+                        await openai.beta.vectorStores.files.del(vectorStoreID, file.id);
+                    }
+                }
+        
+                await openai.beta.vectorStores.files.createAndPoll(
+                    vectorStoreID,
+                    {
+                        file_id: videoList[index.current].fileID
+                    }
+                );
+                console.log("File updated successfully");
+            } catch (e) {
+                console.log(e);
+
+                toast.error("Failed to update file: " + e, {
+                    position: "bottom-center",
+                    autoClose: 5000,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: false,
+                    theme: "dark",
+                    toastId: "failedUpdateFile",
+                    style: {userSelect: "none"}
+                });
+                
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                updateFile();
+            }
+        };
+        updateFile();
+
         setSrc(videoList[index.current].video);
         setTrack(videoList[index.current].track);
         setQuestions(videoList[index.current].questions);
@@ -1183,6 +1238,7 @@ export default function App() {
             />
             <div id={"gazeCursor"} ref={gazeRef} xoffset={0} yoffset={0}></div>
             <div id={"fixationCursor"} ref={fixationRef}></div>
+            <ToastContainer transition={Flip} />
         </main>
     );
 }

@@ -275,7 +275,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
 
                 <div className={"questionDiv"}>
                     <div className={"question"}>
-                        <Textfit mode="multi" className="textFit">{question[index]}</Textfit>
+                        <Textfit mode="multi" className="textFit" max={20}>{question[index]}</Textfit>
                     </div>
 
                     <div className={"choices"}>

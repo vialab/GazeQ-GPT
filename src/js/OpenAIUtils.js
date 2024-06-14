@@ -4,101 +4,7 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY, dangerouslyAllowBrowser: true });
 
-async function retrieveRun(threadId, runId) {
-    let retrievingRun = await openai.beta.threads.runs.retrieve(threadId, runId);
-
-    while (retrievingRun.status === "queued" || retrievingRun.status === "in_progress") {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log(retrievingRun.status);
-
-        retrievingRun = await openai.beta.threads.runs.retrieve(threadId, runId);
-    }
-    console.log(retrievingRun.status);
-    return retrievingRun;
-}
-
 export async function getComplexity(word) {
-//     let complexityMessages = [{
-//         role: "system",
-//         content: `You are an expert on NLP. You analyze the word's complexity using a scale of 1 to 5, with 1 being the least complex and 5 being the most complex.
-
-// Here is some information to analyze the word's complexity:
-
-// 1. Words having multiple meanings are more complex.
-    
-// 2. The word's higher cognitive load or demand is more complex.
-    
-// 3. Higher acquisition difficulty of the word is more complex.
-    
-// 4. Rarer words are more complex.
-
-// Consider that the person reading this word is a university student.`
-//         },
-//         {
-//             role: "user",
-//             content: `Word: ${word}`
-//         },
-//         {
-//             role: "assistant",
-//             content: `Let's work this out in a step by step way to be sure we have the right answer.`
-//         }
-//     ]
-
-//     const requestOptions = {
-//         method: "POST",
-//         headers: {
-//             "Content-Type": "application/json",
-//             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
-//         },
-//         body: JSON.stringify({
-//             model: "gpt-4",
-//             messages: complexityMessages,
-//             functions: [
-//                 {
-//                     "name": "getComplexity",
-//                     "description": "Get the word's complexity.",
-//                     "parameters": {
-//                         "type": "object",
-//                         "properties": {
-//                             "complexity": {
-//                                 "type": "number",
-//                                 "description": "The complexity of the word (1-5)",
-//                             },
-//                         },
-//                         "required": ["complexity"],
-//                     },
-//                 }
-//             ],
-//             function_call: {"name": "getComplexity"},
-//             temperature: 0,
-//         }),
-//     };
-
-//     return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
-//     .then(response => response.json())
-//     .then(data => {
-//         if (!data.error && data.choices[0].message.function_call) {
-//             let score = Number(JSON.parse(data.choices[0].message.function_call.arguments).complexity);
-
-//             if (score < 1 || score > 5) {
-//                 console.log(word, score)
-//                 throw new Error("Error getting complexity");
-//             }
-//             return score;
-//         } else {
-//             console.log(data.error)
-//             throw new Error("Error getting complexity");
-//         }
-//     })
-//     .catch(error => {
-//         return new Promise((resolve, reject) => {
-//             console.log(word)
-//             setTimeout(() => {
-//                 resolve(getComplexity(word));
-//             }, 15000);
-//         });
-//     });
-
     return new Promise((resolve, reject) => {
         return resolve(0.5);
     })
@@ -153,138 +59,6 @@ export async function getComplexity(word) {
 }
 
 export async function generateQuestion(text, word, initRequestOptions = "", file = "") {
-//     const messages = [
-//         {
-//             role: "system",
-//             content: `You are a professor making a multiple-choice test about a video.
-            
-// Create an advanced multiple-choice question about the video given with four choices. Give the correct answer at the end of the question.
-
-// Here are the criteria for the question:
-
-// 1. The question must have the word: "${word}".
-
-// 2. All choices should explain a concept or an idea in one sentence and be similar in length to each other.
-
-// 3. All incorrect choices must be plausible and related to the correct choice.
-
-// Output your answer as a JSON object like so:
-// {
-//  "question": [enter question],
-//  "choiceA": [enter choice A],
-//  "choiceB": [enter choice B],
-//  "choiceC": [enter choice C],
-//  "choiceD": [enter choice D],
-//  "answer": [enter answer (A, B, C, or D)]
-// }`
-//         },
-//         {
-//             role: "user",
-//             content: `Video:
-// ${text}}`,
-//         },
-//         {
-//             role: "assistant",
-//             content: `Let's work this out in a step by step way to be sure we have the right question that fits the criteria.`
-//         }
-//     ];
-
-    // const explanationMessages = (choice, correct = false) => {
-    //     return [{
-    //         role: "user",
-    //         content: `Explain in one sentence why option "${choice}" is ${correct ? "correct" : "incorrect"}. Do not use words in the correct choice.`
-    //     },
-    //     {
-    //         role: "assistant",
-    //         content: `Let's work this out in a step by step way to be sure we have the right answer.`
-    //     }]
-    // }
-
-    // let requestOptions = {
-    //     method: "POST",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //         Authorization: "Bearer " + process.env.OPENAI_API_KEY,
-    //     },
-    //     body: JSON.stringify({
-    //         model: "gpt-4",
-    //         messages: messages,
-    //         // functions: [
-    //         //     {
-    //         //         "name": "displayQuestion",
-    //         //         "description": "Display question and choices.",
-    //         //         "parameters": {
-    //         //             "type": "object",
-    //         //             "properties": {
-    //         //                 "question": {
-    //         //                     "type": "string",
-    //         //                     "description": "The question to ask",
-    //         //                 },
-    //         //                 "choiceA": {
-    //         //                     "type": "string",
-    //         //                     "description": "Choice A to the question",
-    //         //                 },
-    //         //                 "choiceB": {
-    //         //                     "type": "string",
-    //         //                     "description": "Choice B to the question",
-    //         //                 },
-    //         //                 "choiceC": {
-    //         //                     "type": "string",
-    //         //                     "description": "Choice C to the question",
-    //         //                 },
-    //         //                 "choiceD": {
-    //         //                     "type": "string",
-    //         //                     "description": "Choice D to the question",
-    //         //                 },
-    //         //                 "answer": {
-    //         //                     "type": "string",
-    //         //                     "description": "The answer to the question (A, B, C, or D)",
-    //         //                 },
-    //         //             },
-    //         //             "required": ["question", "choiceA", "choiceB", "choiceC", "choiceD", "answer"],
-    //         //         },
-    //         //     }
-    //         // ],
-    //         max_tokens: 2048,
-    //         // function_call: {"name": "displayQuestion"},
-    //     }),
-    // };
-
-    // let requestOptions2 = (choice, questionData, correct = false) => {
-    //     let m = [...messages];
-    //     m.push(questionData);
-    //     m.push(...explanationMessages(choice, correct));
-
-    //     return {
-    //         method: "POST",
-    //         headers: {
-    //             "Content-Type": "application/json",
-    //             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
-    //         },
-    //         body: JSON.stringify({
-    //             model: "gpt-4",
-    //             messages: m,
-    //             functions: [
-    //                 {
-    //                     "name": "explainChoice",
-    //                     "description": "Exaplain why a choice is correct or incorrect.",
-    //                     "parameters": {
-    //                         "type": "object",
-    //                         "properties": {
-    //                             "explanation": {
-    //                                 "type": "string",
-    //                                 "description": "Explanation of why the choice is correct or incorrect",
-    //                             },
-    //                         },
-    //                         "required": ["explanation"],
-    //                     },
-    //                 }
-    //             ],
-    //             function_call: {"name": "explainChoice"},
-    //         }),
-    //     };
-    // }
-
     // let rand = Math.random() * -1;
 
     // return new Promise((resolve, reject) => {
@@ -322,7 +96,18 @@ Here are the criteria for the question:
 4. All choices should have similar number of words to each other.`});
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Video:\n${text}`});
         await openai.beta.threads.messages.create(thread.id, { role: "assistant", content: `Let's work this out in a step by step way to be sure we have the right question that fits the criteria that you have been given.`});
+        
+        let assistant = await openai.beta.assistants.retrieve(process.env.QUESTION_ASSISTANT_ID);
+        let vectorStoreID = assistant.tool_resources.file_search?.vector_store_ids[0];
+        let vectorStore = await openai.beta.vectorStores.retrieve(vectorStoreID);
+        console.log("Checking vector store status...", vectorStore.status);
     
+        while (vectorStore.status !== "completed") {
+            await new Promise(r => setTimeout(r, 1000));
+            vectorStore = await openai.beta.vectorStores.retrieve(vectorStoreID);
+            console.log("Checking vector store status...", vectorStore.status);
+        }
+
         const run = await openai.beta.threads.runs.createAndPoll(
             thread.id,
             { 
@@ -450,200 +235,9 @@ Here are the criteria for the question:
             }, 5000);
         });
     }
-
-    // return fetch("https://api.openai.com/v1/chat/completions", initRequestOptions === "" ? requestOptions : initRequestOptions)
-    // .then(response => response.json())
-    // .then(async data =>  {
-    //     if (data.error) {
-    //         throw new Error(data.error);
-    //     }
-    //     if (data.choices[0] && data.choices[0].message) {
-    //         let content = data.choices[0].message.content;
-    //         let regex = /{(\s|.)*}/g;
-    //         let match = content.match(regex);
-
-    //         if (!match && initRequestOptions === "") {
-    //             let addRequestOptions = {...requestOptions};
-    //             console.log(data.choices[0].message);
-
-    //             addRequestOptions.body = JSON.stringify({
-    //                 model: "gpt-4",
-    //                 messages: [...messages, data.choices[0].message],
-    //                 max_tokens: 2048,
-    //             });
-
-    //             return new Promise((resolve, reject) => {
-    //                 resolve(generateQuestion(text, word, addRequestOptions));
-    //             });
-    //         }
-    //         let questionData = JSON5.parse(match[0]);
-    //         // let questionData = JSON5.parse(data.choices[0].message.function_call.arguments);
-    //         let answer = questionData.answer;
-    //         let correctAnswers = [];
-    //         if (questionData.choiceA.toLowerCase().trim() === "" || questionData.choiceB.toLowerCase().trim() === "" || questionData.choiceC.toLowerCase().trim() === "" || questionData.choiceD.toLowerCase().trim() === "") {
-    //             throw new Error("One of the choices is empty.");
-    //         }
-            
-    //         // for (let answer of answers) {
-    //             if (answer === "A" || answer.toLowerCase() === questionData.choiceA.toLowerCase()) {
-    //                 correctAnswers.push("A");
-    //             } else if (answer === "B" || answer.toLowerCase() === questionData.choiceB.toLowerCase()) {
-    //                 correctAnswers.push("B");
-    //             } else if (answer === "C" || answer.toLowerCase() === questionData.choiceC.toLowerCase()) {
-    //                 correctAnswers.push("C");
-    //             } else if (answer === "D" || answer.toLowerCase() === questionData.choiceD.toLowerCase()) {
-    //                 correctAnswers.push("D");
-    //             } else {
-    //                 throw new Error("No correct answer found.");
-    //             }
-    //         // }
-    //         let incorrectAnswers = ["A", "B", "C", "D"].filter(x => !correctAnswers.includes(x));
-    //         let explanationData = {};
-    //         let settleFetch = []
-
-    //         let fetchExplanation = async (answer, q, ifCorrect) => {
-    //             return fetch("https://api.openai.com/v1/chat/completions", requestOptions2(answer, q, ifCorrect))
-    //             .then(response => response.json())
-    //             .then(explainData => {
-    //                 if (explainData.error) {
-    //                     throw new Error(explainData.error);
-    //                 }
-    //                 if (explainData.choices[0] && explainData.choices[0].message) {
-    //                     let eData = JSON5.parse(explainData.choices[0].message.function_call.arguments).explanation;
-    //                     explanationData[answer] = eData;
-    //                 } else {
-    //                     throw new Error("No explanation data found.");
-    //                 }
-    //             }).catch(error => {
-    //                 console.log("error", error)
-                    
-    //                 return new Promise((resolve, reject) => {
-    //                     setTimeout(() => {
-    //                         resolve(fetchExplanation(answer, q, ifCorrect));
-    //                     }, 5000);
-    //                 });
-    //             });
-    //         }
-
-    //         for (let answer of correctAnswers) {
-    //             settleFetch.push(fetchExplanation(answer, data.choices[0].message, true));
-    //         }
-
-    //         for (let answer of incorrectAnswers) {
-    //             // settleFetch.push(fetchExplanation(answer, data.choices[0].message, false));
-    //             settleFetch.push(() => "");
-    //         }
-
-    //         await Promise.all(settleFetch);
-           
-    //         questionData.explanation = explanationData;
-    //         return questionData;
-    //     } else {
-    //         throw new Error("Error generating question");
-    //     }
-    // })
-    // .catch(error => {
-    //     console.log("error", error)
-        
-    //     return new Promise((resolve, reject) => {
-    //         setTimeout(() => {
-    //             resolve(generateQuestion(text, word));
-    //         }, 5000);
-    //     });
-    // });
 }
 
-export async function getPhrase(term1, term2) {
-//     let requestOptions = {
-//         method: "POST",
-//         headers: {
-//             "Content-Type": "application/json",
-//             Authorization: "Bearer " + process.env.OPENAI_API_KEY,
-//         },
-//         body: JSON.stringify({
-//             model: "gpt-4",
-//             temperature: 0,
-//             messages: [
-//                 {
-//                     role: "system",
-//                     content: `You are a language expert. Check if when combining two terms forms a phrase. If so, provide one-sentence definition for each term in the given context and the whole phrase so that a 6 year old can understand. Also, you must provide example sentences using the phrase.`
-//                 },
-//                 {
-//                     role: "user",
-//                     content: `"${term1} ${term2}" is a phrase
-
-// A) True
-// B) False`,
-//                 },
-//             ],
-//             functions: [
-                // {
-                //     "name": "displayPhrase",
-                //     "description": "Display a simple definition about a given phrase.",
-                //     "parameters": {
-                //         "type": "object",
-                //         "properties": {
-                //             "definitionTerm1": {
-                //                 "type": "object",
-                //                 "description": "The simplified definition of the first term.",
-                //                 "properties": {
-                //                     "term": {
-                //                         "type": "string",
-                //                         "description": "The term to define",
-                //                     },
-                //                     "definition": {
-                //                         "type": "string",
-                //                         "description": "The simplified definition of the term without using any of the words in the term",
-                //                     }
-                //                 }
-                //             },
-                //             "definitionTerm2": {
-                //                 "type": "object",
-                //                 "description": "The simplified definition of the second term.",
-                //                 "properties": {
-                //                     "term": {
-                //                         "type": "string",
-                //                         "description": "The term to define",
-                //                     },
-                //                     "definition": {
-                //                         "type": "string",
-                //                         "description": "The simplified definition of the term without using any of the words in the term",
-                //                     }
-                //                 }
-                //             },
-                //             "definitionPhrase": {
-                //                 "type": "object",
-                //                 "description": "A one-sentence definition of the phrase without using any of the words in the phrase",
-                //                 "properties": {
-                //                     "isPhrase": {
-                //                         "type": "boolean",
-                //                         "description": "Whether the given phrase is a phrase or not",
-                //                     },
-                //                     "phrase": {
-                //                         "type": "string",
-                //                         "description": "The phrase to define",
-                //                     },
-                //                     "definition": {
-                //                         "type": "string",
-                //                         "description": "A one-sentence definition of the phrase without using any of the words in the phras",
-                //                     }
-                //                 }
-                //             },
-                //             "example": {
-                //                 "type": "array",
-                //                 "description": "An array of examples of the phrase. Do not change the phrase in any way.",
-                //                 "items": {}
-                //             }
-                //         },
-    //                     "required": ["definitionTerm1", "definitionTerm2", "definitionPhrase", "example"],
-    //                 },
-    //             }
-    //         ],
-    //         function_call: {"name": "displayPhrase"},
-    //     }),
-    // };
-
-    
+export async function getPhrase(term1, term2) {    
     let rand = Math.random() * -1;
 
     return new Promise((resolve, reject) => {
@@ -732,30 +326,6 @@ export async function getPhrase(term1, term2) {
             }, 10000);
         });
     }
-
-    // return fetch("https://api.openai.com/v1/chat/completions", requestOptions)
-    // .then(response => response.json())
-    // .then(data => {
-    //     if (data.error) {
-    //         console.log(data.error);
-    //         return new Promise((resolve, reject) => {
-    //             setTimeout(() => {
-    //                 resolve(getPhrase(term1, term2));
-    //             }, 15000);
-    //         });
-    //     }
-    //     if (data.choices[0] && data.choices[0].message) {
-    //         console.log(term1, term2, data.choices[0].message.function_call);
-    //         return data.choices[0].message.function_call;
-    //     } else {
-    //         return new Promise((resolve, reject) => {
-    //             setTimeout(() => {
-    //                 resolve(getPhrase(term1, term2));
-    //             }, 15000);
-    //         });
-    //     }
-    // })
-    // .catch(error => console.log("error", error));
 }
 
 export async function parsePhrase(text) {
