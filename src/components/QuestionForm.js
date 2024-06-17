@@ -269,7 +269,7 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
             <div className={"questionForm"}>
                 <div className={"top"}>
                     <div className={"explanation"}>
-                        <Textfit mode="multi" className="textFit">{displayExplanation}</Textfit>
+                        <Textfit mode="multi" className="textFit" max={16}>{displayExplanation}</Textfit>
                     </div>
                 </div>
 

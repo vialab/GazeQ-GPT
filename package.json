@@ -39,7 +39,7 @@
   ],
   "main": "main.js",
   "scripts": {
-    "prod": "cross-env NODE_ENV=production webpack --mode production --config webpack.build.config.js && electron --noDevServer .",
+    "prod": "concurrently -k \"cross-env NODE_ENV=production webpack --mode production --config webpack.build.config.js && electron --noDevServer .\" && \"cd .\\Tobii Server\\ && TobiiServer.exe\"",
     "dev": "cross-env NODE_ENV=development webpack serve --hot --host 0.0.0.0 --config=./webpack.dev.config.js --mode development",
     "build": "cross-env NODE_ENV=production webpack --config webpack.build.config.js --mode production",
     "package": "npm run build",

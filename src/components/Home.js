@@ -1042,19 +1042,19 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 
                 let newChoices = shuffled.next().value; 
                 question.choiceA = newChoices.choice;
-                question.explanation.A = newChoices.explanation.replace(/Option [A-D]/g, "Option A");
+                question.explanation.A = newChoices.explanation.replace(/Option "?[A-D]"?/g, "Option A");
 
                 newChoices = shuffled.next().value;
                 question.choiceB = newChoices.choice;
-                question.explanation.B = newChoices.explanation.replace(/Option [A-D]/g, "Option B");
+                question.explanation.B = newChoices.explanation.replace(/Option "?[A-D]"?/g, "Option B");
 
                 newChoices = shuffled.next().value;
                 question.choiceC = newChoices.choice;
-                question.explanation.C = newChoices.explanation.replace(/Option [A-D]/g, "Option C");
+                question.explanation.C = newChoices.explanation.replace(/Option "?[A-D]"?/g, "Option C");
 
                 newChoices = shuffled.next().value;
                 question.choiceD = newChoices.choice;
-                question.explanation.D = newChoices.explanation.replace(/Option [A-D]/g, "Option D");
+                question.explanation.D = newChoices.explanation.replace(/Option "?[A-D]"?/g, "Option D");
                 
                 switch (answer) {
                     case question.choiceA:
@@ -1074,7 +1074,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             let p = new Promise((resolve, reject) => {
                 setTimeout(() => {
                     resolve();
-                }, 3);
+                }, 25000);
             });
 
             toast.promise(

@@ -57,6 +57,26 @@ export async function getComplexity(word) {
         });
     }
 }
+// Create an advanced multiple-choice question about the video given with four choices. Give the correct answer at the end of the question.
+
+
+
+// Here are the criteria for the question:
+
+
+
+// 1. All choices should explain a concept or an idea in a 15-20 words. 
+
+// 2. All incorrect choices must be from the video and related to the correct choice. 
+
+// 3. All choices should have a similar number of words.
+
+// Let's work this out in a step by step way to be sure we have the right question that fits the criteria that you have been given.
+
+// Explain in one sentence why option "A" is incorrect. Do not use words in any of the choices.
+// Explain in one sentence why option "B" is incorrect
+// Explain in one sentence why option "C" is incorrect
+// Explain in one sentence why option "D" is incorrect
 
 export async function generateQuestion(text, word, initRequestOptions = "", file = "") {
     // let rand = Math.random() * -1;
@@ -89,11 +109,11 @@ Here are the criteria for the question:
 
 1. The question must have the word: ${word}.
 
-2. All choices should explain a concept or an idea in one sentence.
+2. All choices should explain a concept or an idea in a 15-word sentence without giving away the answer.
 
 3. All incorrect choices must be from the video and related to the correct choice.
 
-4. All choices should have similar number of words to each other.`});
+4. All choices should have a similar number of words.`});
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Video:\n${text}`});
         await openai.beta.threads.messages.create(thread.id, { role: "assistant", content: `Let's work this out in a step by step way to be sure we have the right question that fits the criteria that you have been given.`});
         
@@ -182,7 +202,7 @@ Here are the criteria for the question:
                     const t = await openai.beta.threads.create();
                     // Readd the question and choices
                     await openai.beta.threads.messages.create(t.id, { role: "user", content: `Question: ${questionData.question}\n\nA) ${questionData.choiceA}\nB) ${questionData.choiceB}\nC) ${questionData.choiceC}\nD) ${questionData.choiceD}\n\nAnswer: ${questionData.answer}`});
-                    await openai.beta.threads.messages.create(t.id, { role: "user", content: `Explain in one sentence why option "${answer}" is ${ifCorrect ? "correct" : "incorrect"}. Do not use words in any of the choices.`});
+                    await openai.beta.threads.messages.create(t.id, { role: "user", content: `Explain in one sentence why option "${answer}" is ${ifCorrect ? "correct" : "incorrect"}. Do not use words in any of the choices. Output the explanation.`});
     
                     const run = await openai.beta.threads.runs.createAndPoll(t.id, { 
                         assistant_id: process.env.QUESTION_ASSISTANT_ID,

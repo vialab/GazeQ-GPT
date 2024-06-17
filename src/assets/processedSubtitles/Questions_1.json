@@ -1,83 +1,83 @@
 [
     {
-        "question": "In the evolution of chemical engineering, the development and application of \"Unit Operations\" represented a significant advancement. How did this concept fundamentally change chemical engineering processes?",
-        "choiceA": "By introducing standardized chemical reactions applicable to all manufacturing sectors, thus limiting the need for specialized knowledge.",
-        "choiceB": "By segmenting chemical manufacturing into isolated units that could be independently optimized, fostering innovative approaches to production.",
-        "choiceC": "By mandating the implementation of environmental protection measures in all chemical plants, leading to safer but less efficient processes.",
-        "choiceD": "By focusing exclusively on the chemical composition of products rather than the processes used to produce them, simplifying the field.",
+        "question": "What was Arthur D. Little's significant contribution to the field of chemical engineering?",
+        "choiceA": "He created methods for refining crude oil into gasoline, boosting the automotive industry significantly.",
+        "choiceB": "He established the concept of \"Unit Operations\" to streamline and optimize chemical plant processes.",
+        "choiceC": "He developed the Leblanc Process for producing sodium carbonate from sodium chloride.",
+        "choiceD": "He advocated for the use of biomass as a renewable energy source to provide sustainable energy solutions.",
         "answer": "B",
         "explanation": {
-            "A": "Option A is incorrect as it inaccurately suggests a uniformity in chemical reactions across industries, overlooking the diversification and customization essential in chemical engineering advancements.",
-            "B": "Option B is correct because it encapsulates the principle of decomposing intricate manufacturing workflows into simpler, standalone segments for enhancement and creative solution exploration.",
-            "C": "Option C is inaccurate because it misrepresents the primary focus of the concept by attributing an environmental regulatory motive rather than an operational efficiency or process innovation perspective.",
-            "D": "Option D is incorrect because it misconstrues the emphasis on procedural methodologies over the substance properties, sidestepping the core objective of enhancing manufacturing techniques."
+            "A": "Option \"A\" is incorrect because Arthur D. Little did not create methods for refining crude oil into gasoline; this process was developed by other chemical engineers.",
+            "B": "Option \"B\" is correct because Arthur D. Little first introduced the concept of \"Unit Operations\" in chemical engineering in 1915, which involves breaking down each part of a chemical plant into individual units to streamline and optimize processes.",
+            "C": "Option \"C\" is incorrect because the Leblanc Process for producing sodium carbonate from sodium chloride was developed by Nicolas Leblanc, not Arthur D. Little",
+            "D": "Option \"D\" is incorrect because although chemical engineers do play a significant role in biomass and renewable energy, Arthur D. Little did not specifically advocate for biomass as a sustainable energy source"
         },
-        "startTime": 286,
+        "startTime": 292,
         "endTime": 326
     },
     {
-        "question": "In the context of chemical engineering's progressive integration with sustainable energy sources, which development best exemplifies chemical engineering's pivotal role in advancing renewable energy solutions?",
-        "choiceA": "The Leblanc process, marking the dawn of chemical manufacturing by converting sodium chloride into sodium carbonate.",
-        "choiceB": "The adaptation of polymerization and cracking methods to refine petroleum into gasoline, significantly impacting the automotive industry.",
-        "choiceC": "The utilization of biomass, including wood, agricultural residues, and manure, as a renewable source for energy production, underscoring chemical engineering's commitment to sustainability.",
-        "choiceD": "The advancement of unit operations methodology by Arthur D. Little, promoting the efficient design and operation of chemical plants through fundamental principles like momentum and mass transfer.",
-        "answer": "C",
+        "question": "Which of the following best describes the role of chemical engineers in the development of biomass as a renewable energy source?",
+        "choiceA": "They focus on preserving existing resources and discovering new sustainable energy solutions.",
+        "choiceB": "They developed processes like cracking and polymerization in oil refineries to make gasoline.",
+        "choiceC": "They contributed to the emergence of biotechnology, applying technology to biological systems.",
+        "choiceD": "They played a vital role in the creation of unit operations for industrial chemical processes.",
+        "answer": "A",
         "explanation": {
-            "A": "Option A is incorrect because it describes an early industrial chemical process not directly related to the development of renewable energy technologies.",
-            "B": "Option B is incorrect because it pertains to advancements in petroleum processing, which does not align with the sustainable or renewable energy focus.",
-            "C": "Option C is correct as it exemplifies how the discipline has played a crucial role in employing organic materials for generating environmentally friendly energy.",
-            "D": "Option D is incorrect because it focuses on improving manufacturing efficiency within the sector, not on the direct facilitation of eco-friendly power sources."
+            "A": "Option \"A\" is correct because chemical engineers play a significant role in preserving existing resources and discovering new sustainable energy solutions, specifically through the development and utilization of biomass as a renewable energy source",
+            "B": "Option \"B\" is incorrect because it describes the role of chemical engineers in developing processes like cracking and polymerization to produce gasoline in oil refineries, rather than focusing on renewable energy sources like biomass.",
+            "C": "Option \"C\" is incorrect because it describes chemical engineers' involvement in biotechnology by applying technology to biological systems and living organisms, focusing on research and development, rather than the development of biomass as a renewable energy source.",
+            "D": "Option \"D\" is incorrect because it highlights the creation of unit operations by Arthur D. Little to streamline industrial chemical processes, which is not directly related to the development of biomass as a renewable energy source."
         },
         "startTime": 434,
-        "endTime": 463
+        "endTime": 450
     },
     {
-        "question": "What innovation is attributed to Nicolas Leblanc and marked a significant advancement in the field of chemical engineering?",
-        "choiceA": "He was the first to suggest the use of biotechnology in chemical processes, leading to modern environmental engineering practices.",
-        "choiceB": "Leblanc developed a process that heated sodium chloride with sulfuric acid to produce sodium sulfate, known as the salt cake, thereby creating a new method for sodium carbonate production.",
-        "choiceC": "He introduced the concept of unit operations in chemical engineering, which broke down chemical processes into basic operations like distillation and transportation of liquids and gases. ",
-        "choiceD": "Nicolas Leblanc founded the first chemical engineering degree program at a university, setting the standard for chemical engineering education worldwide.",
-        "answer": "B",
+        "question": "Which of the following best describes a major contribution of George Davis to the field of chemical engineering?",
+        "choiceA": "His teachings stimulated new ways of thinking about chemical processes and helped create chemical engineering degrees.",
+        "choiceB": "He introduced the concept of unit operations, breaking down chemical plants into manageable units for easier engineering.",
+        "choiceC": "His work in biochemistry paved the way for developments in drug delivery systems and medical treatments.",
+        "choiceD": "He developed methods like cracking and polymerization to enhance the economical production of gasoline from crude oil.",
+        "answer": "A",
         "explanation": {
-            "A": "Option A is incorrect because it inaccurately attributes the integration of biotechnology into chemical engineering to Nicolas Leblanc.",
-            "B": "Option B is correct as it summarizes Leblanc's contribution to industrial chemistry through inventing a pivotal method for producing a key industrial chemical from common raw materials.",
-            "C": "Option C is incorrect because it misassociates the groundwork of categorizing fundamental chemical engineering practices with Nicolas Leblanc.",
-            "D": "Option D is incorrect because it inaccurately credits Nicolas Leblanc with establishing academic programs."
-        },
-        "startTime": 117,
-        "endTime": 145
-    },
-    {
-        "question": "How has the chemical engineering field expanded beyond its initial focus since the 1970s?",
-        "choiceA": "The introduction of digital simulation techniques has eliminated the need for physical prototypes in chemical plant design.",
-        "choiceB": "Chemical engineering now incorporates principles of quantum chemistry to predict reactions without experimental validation.",
-        "choiceC": "Since the 1970s, the application of chemical engineering has broadened significantly to include biotechnology and pharmaceuticals, diversifying career options for graduates. ",
-        "choiceD": "The emphasis has shifted entirely from industrial applications to environmental sustainability, focusing on renewable energy sources exclusively.",
-        "answer": "C",
-        "explanation": {
-            "A": "Option A is incorrect because it overstates the impact of computational advancements by suggesting they've completely replaced traditional experimental methods in process design.",
-            "B": "Option B is incorrect because it misrepresents the scope of the field by suggesting it fully integrates theoretical chemistry methods for all process validations.",
-            "C": "Option C is correct as it accurately reflects the expansion of the discipline into life sciences and medicine, reflecting its evolving and interdisciplinary nature.",
-            "D": "Option D is incorrect because it inaccurately implies that the field has shifted its focus solely towards environmental and renewable energy concerns, neglecting its broader range of applications."
-        },
-        "startTime": 375,
-        "endTime": 401
-        
-    },
-    {
-        "question": "What role did George Davis play in the formalization of chemical engineering education?",
-        "choiceA": "He pioneered the study of biochemical engineering, blending biological sciences with engineering principles. ",
-        "choiceB": "Davis led the development of safety protocols in chemical plants, which later became part of engineering curricula.",
-        "choiceC": "His lectures laid the foundation for chemical engineering as an academic discipline, directly influencing its teaching in universities.",
-        "choiceD": "He was the first to apply chemical engineering principles to the pharmaceutical industry, setting a precedent for future academic programs.",
-        "answer": "B",
-        "explanation": {
-            "A": "Option A is incorrect because it inaccurately assigns the initiation of combining engineering with biology to an individual whose major contribution was foundational to the educational structure within the field.",
-            "B": "Option B is incorrect as it misattributes the establishment of industry safety standards to a figure primarily influential in the academic sphere of the profession.",
-            "C": "Option C is correct because it identifies the person's pivotal role in creating the educational underpinnings for a new academic discipline through pioneering lectures.",
-            "D": "Option D is incorrect because it falsely attributes the pioneering application of the field's principles to one specific industry to a person celebrated for foundational academic and theoretical contributions."
+            "A": "Option A is correct because George Davis’ lectures, which formed the basis for his \"Handbook of Chemical Engineering,\" organized basic operations common to many industries and sparked the creation of chemical engineering degrees at universities in the US",
+            "B": "Option B is incorrect because the concept of unit operations was introduced by Arthur D. Little in 1915, not by George Davis",
+            "C": "Option C is incorrect because advancements in drug delivery systems and medical treatments are linked to the expansion of the chemical engineering field due to biotechnology and pharmaceutical developments, not specifically to George Davis",
+            "D": "Option D is incorrect because methods like cracking and polymerization to improve gasoline production were developed by chemical engineers other than George Davis"
         },
         "startTime": 198,
         "endTime": 224
+    },
+    {
+        "question": "How did the emergence of biotechnology in the late 20th century impact the chemical engineering profession?",
+        "choiceA": "Biotechnology expanded the field by incorporating research and development into biological systems and processes.",
+        "choiceB": "It limited chemical engineering to traditional chemical processing, excluding advancements in pharmaceuticals.",
+        "choiceC": "The introduction of biotechnology removed the focus from environmental and sustainable energy solutions.",
+        "choiceD": "Biotechnology led to a decline in the importance of chemical engineering in the food and beverage industry.",
+        "answer": "A",
+        "explanation": {
+            "A": "This accurately captures how biotechnology broadened the chemical engineering field by focusing on research and biological systems",
+            "B": "This is incorrect as biotechnology expanded chemical engineering into areas like pharmaceuticals and healthcare",
+            "C": "This is incorrect because biotechnology and chemical engineering also focused on environmental and sustainable energy solutions",
+            "D": "This is incorrect since chemical engineering continued to play a significant role in the food and beverage industry, even with the emergence of biotechnology"
+        },
+        "startTime": 363,
+        "endTime": 383
+        
+    },
+    {
+        "question": "What was the purpose of the British Alkali Act, and who played a significant role in its implementation?",
+        "choiceA": "It was designed to regulate the amount of sulfur dioxide released, with George Davis as an inspector.",
+        "choiceB": "It focused on reducing hydrochloric acid emissions into the atmosphere, where George Davis served as an inspector.",
+        "choiceC": "It aimed at monitoring industrial waste disposal into water bodies, with George Davis as its chief enforcer.",
+        "choiceD": "It introduced controls on carbon monoxide from factories, with George Davis overseeing compliance.",
+        "answer": "B",
+        "explanation": {
+            "A": "Option A is incorrect because the Alkali Act aimed to regulate hydrochloric acid emissions, not sulfur dioxide emissions[",
+            "B": "Option B is correct as it accurately reflects the purpose of the Alkali Act, which focused on reducing hydrochloric acid emissions into the atmosphere",
+            "C": "Option C is incorrect because the Alkali Act did not focus on industrial waste disposal into water bodies; its primary concern was reducing hydrochloric acid emissions from soda manufacturers into the atmosphere",
+            "D": "Option D is incorrect because the Alkali Act did not introduce controls on carbon monoxide emissions from factories; it specifically addressed the reduction of hydrochloric acid gas emissions from soda manufacturers"
+        },
+        "startTime": 182,
+        "endTime": 199
     }
 ]
