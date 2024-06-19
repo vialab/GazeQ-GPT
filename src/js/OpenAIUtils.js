@@ -109,7 +109,7 @@ Here are the criteria for the question:
 
 1. The question must have the word: ${word}.
 
-2. All choices should explain a concept or an idea in a 15-word sentence without giving away the answer.
+2. All choices should explain a concept or an idea in a sentence about 15 words long without giving away the answer.
 
 3. All incorrect choices must be from the video and related to the correct choice.
 
