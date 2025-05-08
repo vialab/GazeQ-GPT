@@ -1,17 +1,13 @@
-import React, { useRef } from "react";
-import { useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";   
 import RBFChain from "../js/RBFChain";
 import { parseSync } from 'subtitle';
-import h337 from 'heatmap.js';
 import * as tokenize from 'words-n-numbers';
 import { removeStopwords } from 'stopword';
-import JSON5 from 'json5';
 import { ipcRenderer } from "electron";
-import { generateQuestion, getComplexity, getPhrase, parsePhrase } from "../js/OpenAIUtils";
+import { generateQuestion } from "../js/OpenAIUtils";
 import OneEuroFilter from "../js/oneeuro.js";
-import { ToastContainer, toast, Flip } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.min.css';
+import { toast } from 'react-toastify';
 import "../assets/css/Home.css";
 
 import Player from "./Player";
@@ -73,7 +69,7 @@ function replacer(key, value) {
     if (value instanceof Map) {
         return {
             dataType: "Map",
-            value: Array.from(value.entries()), // or with spread: value: [...value]
+            value: Array.from(value.entries()),
         };
     } else {
         return value;
@@ -145,26 +141,18 @@ function getCollocation(text, phrases, complexityMap, secondary = false, additio
                 continue;
             }
             phrase = [phrase[0] + " " + phrase[1]];
-            // console.log(phrase[0]);
-            // console.log(phrases.has(phrase[0]))
-            // console.log(text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0]))
             let complexity = wordPhrase.map(word => complexityMap.get(word) || 0).reduce((a, b) => a + b, 0) / wordPhrase.length;
 
             if (phrase[0] !== text.toLowerCase() && (phrases.has(phrase[0]) || (secondary && additionalPhrases.has(phrase[0]))) && text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ").includes(phrase[0])) {
                 let add = true;
 
                 if (Math.round(complexity * 10) / 10 <= 1  && checkComplexity) {
-                    // console.log("Removed", wordPhrase, complexity);
                     add = false;
                     break;
                 }
 
                 if (add) {
                     uniquePhrases.add([...wordPhrase]);
-                    // if (secondary) {
-                    //     i += j - i + 1;
-                    //     break;
-                    // }
                 }
             }
         }
@@ -220,7 +208,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let scoresRecordData = useRef({});
     
     let checkOverlap = (uniquePhrases, text) => {
-        // console.log("Start", [...uniquePhrases]);
         if (uniquePhrases.length <= 1) {
             return uniquePhrases;
         }
@@ -233,8 +220,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             loop: for (let j = 0; j < tPhrase.length; j++) {
                 let cutPrevPhrase = prevPhrase.slice(prevPhrase.length - 1 - j, prevPhrase.length);
                 let cutNextPhrase = nextPhrase.slice(0, j + 1);
-
-                // console.log(cutPrevPhrase, cutNextPhrase);
                 
                 for (let i = 0; i < cutPrevPhrase.length; i++) {
                     if (cutPrevPhrase[i] !== cutNextPhrase[i]) {
@@ -270,13 +255,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             let [secondBlock, secondIndex] = getBlock(firstIndex + 1);
             let optimalIndex = 0, noOverlap = false;
 
-            // console.log("Block", firstBlock, secondBlock);
-            // console.log("BlockIndex", firstIndex, secondIndex);
-
             if (firstIndex + 1 < uniquePhrases.length) {
                 for (let i = 0; i < firstBlock.length; i++) {                    
-                    // console.log("Check", firstBlock[i], secondBlock[secondBlock.length - 1]);
-
                     if (
                         firstBlock[i].join(" ").endsWith(secondBlock[secondBlock.length - 1].join(" "))
                     ) {
@@ -285,20 +265,15 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     
                             if (cutIndex > 0) {
                                 uniquePhrases.splice(firstIndex - firstBlock.length, firstBlock.length);
-                                
-                                // console.log("Changed Post3", [...uniquePhrases]);
-                                // console.log(secondBlockIndex - firstBlock.length);
+
                                 if (secondBlockIndex - firstBlock.length + 1 === uniquePhrases.length && startSecondIndex === 0) {
                                     newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
                                 }
                                 secondBlockIndex -= firstBlock.length - 1;
-                                // console.log(secondBlockIndex)
                                 continue main;
                             }
                         }
-
                         uniquePhrases.splice(firstIndex + 1, secondBlock.length);
-                        // console.log("Changed Post1", [...uniquePhrases]);
 
                         if (secondBlockIndex === uniquePhrases.length && startSecondIndex === 0) {
                             newPhrases.push(uniquePhrases[uniquePhrases.length - 1]);
@@ -311,45 +286,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 break main;
             }
             
-            // // console.log("Check2", secondIndex, uniquePhrases.length);
-            // if (secondIndex + 1 < uniquePhrases.length) {
-            //     let [thirdBlock, thirdIndex] = getBlock(secondIndex + 1);
-
-            //     // console.log("Block2", thirdBlock);
-
-            //     if (thirdBlock.length > 0) {
-            //         for (let i = 0; i < secondBlock.length; i++) {
-            //             // console.log("Check2", secondBlock[i], thirdBlock[thirdBlock.length - 1]);
-            //             // console.log("Check", prevCutIndex, nextCutIndex);
-
-            //             if (thirdBlock.length > 0 && thirdIndex !== uniquePhrases.length && 
-            //                 secondBlock[i].join(" ").endsWith(thirdBlock[thirdBlock.length - 1].join(" "))
-            //             ) {
-            //                 for (let j = 0; j < firstBlock.length; j++) {
-            //                     let cutIndex = getCutIndex(firstBlock[j], secondBlock[i]);
-                                
-            //                     if (cutIndex === 0 && thirdIndex + thirdBlock.length === uniquePhrases.length) {
-            //                         break;
-            //                     }
-
-            //                     if (cutIndex === 1) {
-            //                         uniquePhrases.splice(firstIndex + 1, secondBlock.length);
-            //                         // console.log("Changed Post2", [...uniquePhrases]);
-            //                         continue main;
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-
-            // console.log(firstBlock, secondBlock);
-            
             while (startFirstIndex < firstBlock.length && startSecondIndex < secondBlock.length) {
                 let firstPhrase = firstBlock[startFirstIndex];
                 let secondPhrase = secondBlock[startSecondIndex];
 
-                // console.log(firstPhrase, secondPhrase);
                 let cutIndex = getCutIndex(firstPhrase, secondPhrase);
 
                 if (cutIndex === 0 && !firstPhrase.includes(secondPhrase)) {
@@ -363,27 +303,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                         optimalIndex = startFirstIndex;
                         startSecondIndex++;
                     } else {
-                        // optimalIndex = startFirstIndex;
                         startFirstIndex++;
                     }
-
-                    // if (startSecondIndex === secondBlock.length) {
-                    //     optimalIndex = firstBlock.length - 1;
-                    // }
                 } else {
                     if (optimalIndex > 0 && firstPhrase.includes(secondPhrase))
                         optimalIndex--;
                     break;
-                    startFirstIndex++;
                 }
-                // console.log("Optimal", firstBlock[optimalIndex]);
             }
-            // console.log(startFirstIndex, startSecondIndex);
-            // console.log(firstBlock[optimalIndex]);
 
             if (startFirstIndex === firstBlock.length - 1 && startSecondIndex === secondBlock.length) {
                 uniquePhrases.splice(firstIndex + 1, secondBlock.length);
-                // console.log("Changed", [...uniquePhrases]);
                 secondBlockIndex = firstIndex + 1;
 
                 if (secondBlockIndex === uniquePhrases.length) {
@@ -399,7 +329,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 newPhrases.push(secondBlock[secondBlock.length - 1]);
             }
         }
-        // console.log("New", [...newPhrases]);
         let change = true;
 
         while (change) {
@@ -444,10 +373,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                 let cutIndex = getCutIndex(prevPhrase, currPhrase);
 
-                // console.log(prevPhrase, currPhrase);
-                // console.log(cutPrevPhrase.reduce((a, b) => a + b, 0));
-                // console.log(curCurrPhrase1.reduce((a, b) => a + b, 0));
-
                 if (cutIndex > 0) {
                     let cutPrevPhrase = [...prevPhrase].slice(0, prevPhrase.length - cutIndex).map(word => complexityMap.current.get(word) || 0);
                     let cutCurrPhrase = [...currPhrase].slice(cutIndex).map(word => complexityMap.current.get(word) || 0);
@@ -461,20 +386,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     }
                 }
             }
-            
-            // for (let i = 0; i < newPhrases.length - 1; i++) {
-            //     let firstPhrase = newPhrases[i];
-            //     let secondPhrase = newPhrases[i + 1];
-
-            //     if (firstPhrase.join(" ").includes(secondPhrase.join(" "))) {
-            //         newPhrases.splice(i + 1, 1);
-            //         change = true;
-            //         // console.log("removed", secondPhrase);
-            //         // i--;
-            //     }
-            // }
         }
-        // console.log(newPhrases);
         return newPhrases;
     }
     
@@ -485,13 +397,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         
         if (t > 0) {
             end.current = false;
-        } 
-        // else if (t === 0 && !onQuestions.current) {
-        //     wordScores.current.clear();
-        //     frameScores.current.clear();
-        //     definitionScores.current.clear();
-        //     console.log("reset")
-        // }
+        }
 
         for (let i = 0; i < rawCaptions.current.length; i++) {
             let startTime = rawCaptions.current[i].data.start;
@@ -504,7 +410,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
             if (t * 1000 >= startTime && t * 1000 <= delayEndTime && delayIndex.current === -1) {
                 delayIndex.current = i;
-                // break;
             }
             
             if (t * 1000 < startTime + 500) {
@@ -513,7 +418,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         }
         
         if (prevIndex !== delayIndex.current && delayIndex.current >= 0 && rawCaptions.current[delayIndex.current]) {
-            // let filteredWords = words.map(word => removeStopwords([word])[0]);
             let subTitle = rawCaptions.current[delayIndex.current].data.text.toLowerCase().replace(/(?:\r\n|\r|\n)/g, ' ').replace("-", " ");
             let uniquePhrases = checkOverlap([...getCollocation(rawCaptions.current[delayIndex.current].data.text, phrases.current, complexityMap.current)], rawCaptions.current[delayIndex.current].data.text.replace(/(?:\r\n|\r|\n)/g, ' '));
             
@@ -527,14 +431,12 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             
             let definitionsList = new Map();
             let startIndex = 0;
-            // console.clear()
             
             let slicePhrase = (phrase, subTitle, map, startIndex, ifSlice = false) => {
                 let slice = subTitle.search(phrase.join(" ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
                 let sliceSubtitle = ifSlice ? phrase.join(" ") : subTitle.slice(startIndex, slice);
                 let chunkWords = tokenize.extract(sliceSubtitle, { toLowercase: true, regex: [tokenize.words] });
                 startIndex = slice + phrase.join(" ").length;
-                // let averageComplexity = uniquePhrases.map(phrase => phrase.map(word => complexityMap.current.get(word) || 0).reduce((a, b) => a + b, 0) / phrase.length).reduce((a, b) => a + b, 0) / uniquePhrases.length;
                 
                 if (chunkWords) {
                     let setWords = new Map()
@@ -587,85 +489,7 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 definitions.complexity = complexity;
                 let additional = new Map();
                 startIndex = slicePhrase(phrase, subTitle, definitionsList, startIndex);
-                // let combineString = "";
-                // let skipTerms = [];
-
-                // for (let i = 1; "definitionTerm" + i in definitions; i++) {
-                //     definitions["definitionTerm" + i].term = definitions["definitionTerm" + i].term.toLowerCase();
-                //     definitions["definitionTerm" + i].collocation = tokenize.extract(definitions["definitionTerm" + i].term, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] }) || [];
-                //     definitions["definitionTerm" + i].complexity = definitions["definitionTerm" + i].collocation.map(word => complexityMap.current.get(word) || 0);
-                //     definitions["definitionTerm" + i].complexity = definitions["definitionTerm" + i].complexity.reduce((a, b) => a + b, 0) / definitions["definitionTerm" + i].complexity.length;
-                //     combineString += definitions["definitionTerm" + i].term + " ";
-                //     skipTerms.push(false);
-                // }
-
-                // // definitions.definitionTerm1.collocation = tokenize.extract(definitions.definitionTerm1.term, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] }) || [];
-                // // definitions.definitionTerm1.complexity = definitions.definitionTerm1.collocation.map(word => complexityMap.current.get(word) || 0);
-                // // definitions.definitionTerm1.complexity = definitions.definitionTerm1.complexity.reduce((a, b) => a + b, 0) / definitions.definitionTerm1.complexity.length;
-                // // definitions.definitionTerm2.collocation = tokenize.extract(definitions.definitionTerm2.term, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] }) || [];
-                // // definitions.definitionTerm2.complexity = definitions.definitionTerm2.collocation.map(word => complexityMap.current.get(word) || 0);
-                // // definitions.definitionTerm2.complexity = definitions.definitionTerm2.complexity.reduce((a, b) => a + b, 0) / definitions.definitionTerm2.complexity.length;
-                // // console.log(phrase)
-
-                // // if ((definitions.definitionTerm1.term + " " + definitions.definitionTerm2.term).toLowerCase() !== definitions.definitionPhrase.phrase.toLowerCase()) {
-                // if (combineString.trim().toLowerCase() !== definitions.definitionPhrase.phrase.toLowerCase()) {
-                //     let uniqueSecondPhrases = checkOverlap([...getCollocation(phrase.join(" "), phrases.current, complexityMap.current, true, additionalPhrases.current)], phrase.join(" "));
-                //     let secondStartIndex = 0;
-
-                //     for (let secondPhrase of uniqueSecondPhrases) {
-                //         let secondDefinitions = phrases.current.get(secondPhrase.join(" ")) || additionalPhrases.current.get(secondPhrase.join(" "));
-                //         let secondComplexity = secondPhrase.map(word => complexityMap.current.get(word) || 0).reduce((a, b) => a + b, 0) / secondPhrase.length;
-                //         let secondSlice = phrase.join(" ").search(secondPhrase.join(" ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-                //         let secondSliceSubtitle = sliceSubtitle.slice(secondSlice, secondSlice + secondPhrase.join(" ").length);
-                        
-                //         secondDefinitions.complexity = secondComplexity;
-                //         secondDefinitions.collocation = secondPhrase;
-                //         secondDefinitions.subtitle = secondSliceSubtitle;
-                //         additional.set(secondPhrase.join(" "), secondDefinitions);
-
-                //         secondStartIndex = slicePhrase(secondPhrase, phrase.join(" "), additional, secondStartIndex);
-
-                //         for (let i = 1; "definitionTerm" + i in definitions; i++) {
-                //             if (secondPhrase.join(" ").includes(definitions["definitionTerm" + i].term.toLowerCase())) {
-                //                 skipTerms[i - 1] = secondDefinitions;
-                //                 additional.delete(secondPhrase.join(" "));
-                //             }
-                //         }
-                        
-                //         // if (!skipTerm1 && secondPhrase.join(" ").includes(definitions.definitionTerm1.term.toLowerCase())) {
-                //         //     skipTerm1 = secondDefinitions;
-                //         //     additional.delete(secondPhrase.join(" "));
-                //         // }
-
-                //         // if (!skipTerm2 && secondPhrase.join(" ").includes(definitions.definitionTerm2.term.toLowerCase())) {
-                //         //     skipTerm2 = secondDefinitions;
-                //         //     additional.delete(secondPhrase.join(" "));
-                //         // }
-                //     }
-                    
-                //     if (uniqueSecondPhrases.length > 0) {
-                //         slicePhrase([phrase.join(" ").slice(secondStartIndex)], phrase.join(" "), additional, secondStartIndex, true);
-                //     } else {
-                //         slicePhrase(phrase, phrase.join(" "), additional, secondStartIndex, true);
-                //     }
-                // }
-                
-                // // if (skipTerm1 && skipTerm2 && skipTerm1.definitionPhrase.phrase.toLowerCase() === skipTerm2.definitionPhrase.phrase.toLowerCase()) {
-                // //     skipTerm2 = true;
-                // // }
-
-                // for (let i = 0; i < skipTerms.length; i++) {
-                //     for (let j = i + 1; j < skipTerms.length; j++) {
-                //         if (skipTerms[i] instanceof Object && skipTerms[j] instanceof Object && skipTerms[i].definitionPhrase.phrase.toLowerCase() === skipTerms[j].definitionPhrase.phrase.toLowerCase()) {
-                //             skipTerms[j] = true;
-                //         }
-                //     }
-                // }
                 let d = {"subtitle": sliceSubtitle, "collocation": phrase, "definitions": definitions, "additional": additional};
-
-                // for (let i = 1; i <= skipTerms.length; i++) {
-                //     d["skipTerm" + i] = skipTerms[i - 1];
-                // }
                 definitionsList.set(phrase.join(" "), d);
             }
 
@@ -693,18 +517,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         end.current = true;
         forcePauseRef.current = true;
 
-        console.log(wordScores.current);
-        console.log(frameScores.current);
-        console.log(definitionScores.current);
-
         let addScores = (map) => {
             let sortScores = new Map();
 
             for (let [word, scores] of map) {
-                // if (names.current.has(word)) {
-                //     continue;
-                // }
-
                 for (let [index, score] of scores) {
                     if (sortScores.has(word + index)) {
                         sortScores.get(word + index).score += score.score.reduce((a, b) => a + b, 0);
@@ -804,7 +620,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     subtitleScores.set(index, {score: score});
                 }
             }
-            console.log([...subtitleScores.entries()].sort((a, b) => b[1].score - a[1].score));
 
             for (let [key, value] of subtitleScores) {
                 let index = key;
@@ -818,7 +633,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             
             let topSubtitles = [...subtitleScores.entries()];
             topSubtitles.sort((a, b) => b[1].score - a[1].score);
-            console.log(topSubtitles);
 
             let topWordsFromSubtitles = new Map();
 
@@ -835,11 +649,9 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     }
                 }
             }
-            console.log(topWordsFromSubtitles);
             return topWordsFromSubtitles;
         }
         let topWords = [...getTopWords(sortScores).entries()];
-        // topWords.sort((a, b) => b[1].score - a[1].score);
         
         function getQuestionData(topWords, secondRun = false) {
             let questionData = [];
@@ -886,22 +698,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                         break;
                     }
                 }
-                console.log(subtitle);
     
                 let collocation = word.word;
-                // let collocations = getCollocation(subtitle, phrases);
-                // let occurence = 0;
-    
-                // for (let phrase of collocations) {
-                //     if (phrase.includes(word.word)) {
-                //         if (occurence === word.wordIndex) {
-                //             collocation = phrase;
-                //             break;
-                //         } else {
-                //             occurence++;
-                //         }
-                //     }
-                // }
                 questionData.push({subtitle: subtitle, collocation: collocation, startTime: startAllTime, endTime: endAllTime, secondRun: secondRun});
     
                 if (questionData.length === 5 || (i === topWords.length - 1 && questionTime.size === 0)) {
@@ -915,7 +713,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
             return questionData;
         }
-        console.log("LLM", llmRef.current);
         let questions = [];
         let questionData = getQuestionData(topWords);
 
@@ -948,7 +745,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 }
             }
         }
-        console.log(questionData);
 
         if (llmRef.current) {
             if (questionData.length === 0) {
@@ -961,27 +757,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             for (let i = 0; i < questionData.length; i++) {
                 let subtitle = questionData[i].subtitle;
                 let collocation = questionData[i].collocation;
-            // for (let i = 0; i < 1; i++) {
-            //     let subtitle = `It could be some new kind of personal water
-            //     purifier, or makeup that lasts as long as you want
-            //     it to, or a revolutionary clothing material.`;
-            //     let collocation = "";
 
                 promises.push(
                     generateQuestion(subtitle, collocation)
                     .then(qData => {
                         qData.subtitle = subtitle;
-                        // qData.startTime = Math.random() * 5 + 1;
-                        // qData.endTime = Math.random() * 5 + 6;
                         qData.startTime = questionData[i].startTime / 1000;
                         qData.endTime = questionData[i].endTime / 1000;
                         qData.collocation = collocation;
                         qData.secondRun = questionData[i].secondRun;
 
                         questions.push(qData);
-                        console.log(qData);
-                        // if (questionData) 
-                        //     console.log(questionData.arguments);
                     })
                 );
 
@@ -1016,7 +802,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 let choiceC = question.choiceC;
                 let choiceD = question.choiceD;
                 let answer;
-                let explanation = {...question.explanation};
 
                 switch (question.answer) {
                     case "A":
@@ -1120,7 +905,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
         definitionScores.current.clear();
         onQuestions.current = false;
         setQuestion([]);
-        console.log("reset")
     };
 
     let questionCallback = (questionData, submittedAnswer) => {
@@ -1176,148 +960,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     };
 
     useEffect(() => {
-        // let heatmap = h337.create({
-        //     container: d3.select("main").node(),
-        //     radius: 60,
-        // });
-        // heatmap.setData({min: 0, max: 0, data: []});
-
-        // for (let i = 0; i < 100; i++) {
-        //     heatmap.addData({x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, value: 1});
-        // }
-
-        // document.onkeydown = function (e) {
-        //     if (e.ctrlKey && e.key === 'r') {
-        //         e.preventDefault();
-        //     }
-        // }            
-
-        // return () => {
-        //     d3.select(".heatmap-canvas").remove();
-        //     document.onkeydown = null;
-        // };
-    }, []);
-
-    useEffect(() => {
-        // playerEndCallback();
-
         fetch(track)
         .then(response => response.text())
         .then(async data => {
             rawCaptions.current = parseSync(data).filter(n => n.type === "cue");
-            let phraseList = [];
-
-            for (let i = 0; i < rawCaptions.current.length; i++) {
-                let words = tokenize.extract(rawCaptions.current[i].data.text, { toLowercase: true, regex: [tokenize.words, tokenize.numbers] });
-                phraseList.push(words);
-                // let filteredWords = words.map(word => removeStopwords([word])[0]);
-                // console.log(filteredWords);
-                // let phrase = [];
-                
-                // for (let fw of filteredWords) {
-                //     if (fw) {
-                //         phrase.push(fw);
-                //     } else {
-                //         if (phrase.length > 1) {
-                //             console.log(phrase);
-                //             phraseList.push(phrase);
-                //         }
-                //         phrase = [];
-                //     }
-                // }
-                // if (phrase.length > 1) {
-                //     phraseList.push(phrase);
-                // }
-            }
-            console.log(phraseList);
-            
-            let testPhraseList = phraseList.slice(0, 2);
-            // let testPhraseList = phraseList;
-            // let finisedPhrases = 0;
-            // let newPhrases = new Map();
-            // console.log(testPhraseList);
-
-            let promisePhraseFunctions = testPhraseList.map((phrase, index) => {
-                return {index: index, f: () => parsePhrase(phrase)};
-            });
-
-            let batchPhraseFunction = (b) => {
-                if (fs.existsSync("./data/elec/phrases/phrases" + b.index + ".json")) {
-                    console.log("Exists " + b.index);
-                    return null;
-                }
-
-                return b.f().then((result) => {
-                    console.log("Finished " + b.index);
-                    fs.writeFileSync("./data/elec/phrases/phrases" + b.index + ".json", JSON.stringify(result, replacer));
-                });
-            };
-
-            // runPromisesInBatches(promisePhraseFunctions, 5, batchPhraseFunction).then(() => {
-            //     console.log("Finished");
-            // });
-
-            async function readFiles(folderPath, callback = () => {}) {     
-                const path = require('path');      
-                const files = await fs.promises.readdir(folderPath);
-
-                await Promise.all(files.map(async (file) => {
-                    const filePath = path.join(folderPath, file);
-                    const data = await fs.promises.readFile(filePath, 'utf8');
-                    callback(data);
-                }));
-
-            }
-            // let newPhrases = new Map(); 
-
-            // readFiles("./data/elec/phrases", (data) => {
-            //     const json = JSON.parse(data, reviver);
-            //     newPhrases = new Map([...newPhrases, ...json]);
-            // }).then(() => {
-            //     console.log(JSON.stringify(newPhrases, replacer));
-            // });
-
-            let uniqueWords = new Set();
-            
-            for (let i = 0; i < rawCaptions.current.length; i++) {
-                let words = tokenize.extract(rawCaptions.current[i].data.text.replace("-", " "), { toLowercase: true, regex: [tokenize.words] });
-                words = removeStopwords(words);
-
-                for (let word of words) {
-                    if (word.replace(/[^a-zA-Z ]/g, "") !== "")
-                        uniqueWords.add(word);
-                }
-            }
-            uniqueWords = [...uniqueWords].slice(0, 1);
-
-            let promiseComplexityFunctions = [...uniqueWords].map((word, index) => {
-                return {index: index, f: () => getComplexity(word), word: word};
-            });
-
-            let batchComplexityFunction = (b) => {
-                if (fs.existsSync("./data/chem/complexity/" + b.word + ".json")) {
-                    console.log("Exists " + b.word);
-                    return null;
-                }
-
-                return b.f().then((result) => {
-                    console.log("Finished " + b.word);
-                    fs.writeFileSync("./data/chem/complexity/" + b.word + ".json", JSON.stringify(new Map().set(b.word, result), replacer));
-                });
-            };
-
-            // runPromisesInBatches(promiseComplexityFunctions, 25, batchComplexityFunction).then(() => {
-            //     console.log("Finished");
-            // });
-            // let complexityData = new Map();
-
-            // readFiles("./data/chem/complexity", (data) => {
-            //     const json = JSON.parse(data, reviver);
-            //     complexityData = new Map([...complexityData, ...json]);
-            // }).then(() => {
-            //     console.log(complexityData)
-            //     console.log(JSON.stringify(complexityData, replacer));
-            // });
         });
     }, [track]);
 
@@ -1446,7 +1092,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                     if (text.innerText.trim() !== "") {
                         let innerText = text.innerText.toLowerCase();
-                        // console.log(innerText, collocation, collocation[index]);
                         
                         if (innerText.includes(collocation[index])) {
                             if (innerText.includes("-")) {
@@ -1502,7 +1147,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             if (innerText.startsWith(collocation[0]) || innerText.endsWith(collocation[0]))
                                 i--;
                         }
-                        // console.log([...subtitleNodes].map(d => d.innerText))
 
                         if (subtitleNodes.size - addLength === collocation.length) {
                             if (containsHighlight) {
@@ -1568,7 +1212,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     d3.select(collocationContainer)
                     .html(d3.select(collocationContainer).html().slice(0, -1));
                 } else {
-                    console.log("fail", collocation);
                     f = true;
                     break;
                 }
@@ -1623,18 +1266,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     definition["definitionTerm" + i].definition.includes("first name") ||
                     definition["definitionTerm" + i].definition.includes("surname"))
                 ) {
-                    // let nameWords = tokenize.extract(definition["definitionTerm" + i].term, { toLowercase: true, regex: [tokenize.words] });
-
-                    // for (let nameWord of nameWords) {
-                    //     if (nameWord.length > 2) {
-                    //         names.current.add(nameWord);
-                    //         // console.log(nameWord);
-                    //     }
-                    // }
                     if (definition["definitionTerm" + i].term.length > 2) {
                         names.current.add(definition["definitionTerm" + i].term.toLowerCase());
-                        
-                        // console.log(definition["definitionTerm" + i].term);
                     }
                 }
             }
@@ -1647,7 +1280,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 ) {
                     definition["definitionTerm" + i].term = "";
                     definition["definitionTerm" + i].definition = "";
-                    // phrases.current.delete(collocation);
                 }
             }
             
@@ -1682,24 +1314,8 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             }
 
             for (let name of names.current) {
-                // let startIndex = collocation.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-                // let endIndex = startIndex + name.length;
-                // name = startIndex === 0 ? name + " " : name;
-                // name = endIndex === collocation.length ? " " + name : name;
-
-                // startIndex = definition.definitionTerm1.term.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-                // let term1 = startIndex === 0 ? definition.definitionTerm1.term.toLowerCase() + " " : definition.definitionTerm1.term.toLowerCase();
-                // term1 = startIndex + name.length === definition.definitionTerm1.term.length ? term1 + " " : term1;
-
-                // startIndex = definition.definitionTerm2.term.toLowerCase().search(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-                // let term2 = startIndex === 0 ? definition.definitionTerm2.term.toLowerCase() + " " : definition.definitionTerm2.term.toLowerCase();
-                // term2 = startIndex + name.length === definition.definitionTerm2.term.length ? term2 + " " : term2;
                 let c = phrases.current.get(collocation);
                 if (
-                    // (collocation.toLowerCase().includes(name) && 
-                    // (c.definitionPhrase.definition.includes("person's name") ||
-                    // c.definitionPhrase.definition.includes("person with the name") ||
-                    // c.definitionPhrase.definition.includes("surname")))
                     (definition.definitionTerm1.term.toLowerCase().includes(name) ||
                     definition.definitionPhrase.phrase.toLowerCase().includes(name) ||
                     definition.definitionTerm2.term.toLowerCase().includes(name)) &&
@@ -1718,8 +1334,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                     c.definitionPhrase.definition.toLowerCase().includes("first name") ||
                     c.definitionPhrase.definition.toLowerCase().includes(name))
                 ) {
-                    // console.log("removed:", collocation, phrases.current.get(collocation), name)
-                    // phrases.current.delete(collocation);
                     continue loop;
                 }
             }
@@ -1727,8 +1341,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             for (let i = 1; "definitionTerm" + i in definition; i++) {
                 additionalPhrases.current.set(definition["definitionTerm" + i].term, { definitionPhrase: {phrase: definition["definitionTerm" + i].term, definition: definition["definitionTerm" + i].definition}});
             }
-            // additionalPhrases.current.set(definition.definitionTerm1.term, { definitionPhrase: {phrase: definition.definitionTerm1.term, definition: definition.definitionTerm1.definition}});
-            // additionalPhrases.current.set(definition.definitionTerm2.term, { definitionPhrase: {phrase: definition.definitionTerm2.term, definition: definition.definitionTerm2.definition}});
         }
     }, [phraseDefinitions]);
 
@@ -1740,17 +1352,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
     let timeout = useRef(null);
     
     useEffect(() => {
-
-        // ipcRenderer.on('fixation-pos', (event, arg) => {
-        //     let x = oneeuroFixationX.filter(arg.x, arg.timestamp);
-        //     let y = oneeuroFixationY.filter(arg.y, arg.timestamp);
-
-        //     d3.select("#fixationCursor")
-        //     .style("width", userCenterRadius * 2 + "px")
-        //     .style("height", userCenterRadius * 2 + "px")
-        //     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
-        // });
-
         let addScores = (map, word, score, i) => {
             if (map.has(word)) {
                 if (map.get(word).has(i)) {
@@ -1777,7 +1378,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                 let y = oneeuroY.current.filter(arg.y + yOffset, currentTime.current);
                 let nodes = d3.selectAll(".vjs-text-track-cue div span").nodes().filter(d => !d.classList.contains("highlight") && !d.classList.contains("copyCollocation"));
                 let userCenterRadius = headDistancesRef.current * Math.tan(4 * Math.PI/180) * 0.393701 * 127 / 2;
-                // console.log(screen.height - document.documentElement.clientHeight)
 
                 if (x && y) {
                     let input_data = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
@@ -1788,32 +1388,17 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                     if (ifRecord.current) {
                         if (eyeGazeRecordData.current.length === 0) {
-                            console.log("start");
                             eyeGazeRecordData.current.push({xOffset: xOffset, yOffset: yOffset});
                         }
                         let player = videojs.getAllPlayers()[0];
                         let playerTime = player ? player.currentTime() : -1;
                         eyeGazeRecordData.current.push({x: x, y: y, timestamp: currentTime.current, index: index.current, dt: dt.current, headDistance: headDistancesRef.current, radius: userCenterRadius, playerTime: playerTime, is_fixation: is_fixation, is_fixationFrame: is_fixationFrame});
                     }
-                    // heatmap.addData({ x: x, y: y });
 
                     d3.select("#gazeCursor")
                     .style("width", userCenterRadius * 2 + "px")
                     .style("height", userCenterRadius * 2 + "px")
                     .style("transform", "translate(" + (x  - userCenterRadius) + "px, " + (y - userCenterRadius) + "px)");
-
-                    // d3.select("body")
-                    // .append("div")
-                    // .style("transform", "translate(" + (x - 5) + "px, " + (y - 5) + "px)")
-                    // .style("width", "10px")
-                    // .style("height", "10px")
-                    // .style("position", "absolute")
-                    // .style("top", "0")
-                    // .style("left", "0")
-                    // .style("border-radius", "50%")
-                    // .style("pointer-events", "none")
-                    // .style("background-color", is_fixation ? "red" : "green")
-                    // .style("z-index", 999)
                     
                     if (is_fixationFrame) {
                         let definitions = d3.selectAll("#definitionsContainer .collocation").nodes();
@@ -1938,7 +1523,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
 
                                     if (definitionToggle.current)
                                         setShowDefinitionContainer(false);
-                                    // setShowDefinition(null);
                                     setShowMoreInfo(false);
         
                                     if (caption) {
@@ -1962,37 +1546,10 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
                             } else {
                                 if (definitionToggle.current)
                                     setShowDefinitionContainer(false);
-                                // setShowDefinition(null);
                                 setShowMoreInfo(false);
                             }
                         }
                     }
-
-                    // for (let wordNode of nodes) {
-                    //     let text = tokenize.extract(d3.select(wordNode).text(), { toLowercase: true, regex: [tokenize.words] });
-
-                    //     if (text instanceof Array) {
-                    //         for (let word of text) {
-                    //             if (wordScores.current.has(word) && wordScores.current.get(word).has(index.current)) {
-                    //                 // console.log(wordScores.current.get(word).get(index.current));
-                    //                 let score = wordScores.current.get(word).get(index.current).score.reduce((a, b) => a + b, 0);
-                    //                 let totalScores = [];
-
-                    //                 for (let [_, value1] of wordScores.current) {
-                    //                     for (let [_, value] of value1) {
-                    //                         totalScores.push(value.score.reduce((a, b) => a + b, 0));
-                    //                     }
-                    //                 }
-                    //                 let color = d3.scaleSequentialLog().interpolator(d3.interpolateTurbo).domain(d3.extent(totalScores));
-                    //                 d3.select(wordNode)
-                    //                 .style("background-color", color(score))
-                    //                 .style("color", isTooLight(color(score).slice(1)) ? "#000" : "#fff");
-                    //             } else {
-                    //                 d3.select(wordNode).style("background-color", null);
-                    //             }
-                    //         }
-                    //     }
-                    // }
                 } else {
                     clearInterval(timeout.current);
                     timeout.current = null;
@@ -2007,7 +1564,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             ipcRenderer.on('gaze-pos', (e, a) => {
                 let args = a;
 
-                // args.x -= (screen.width - document.documentElement.clientWidth);
                 args.y -= (screen.height - document.documentElement.clientHeight);
                 args.x -= window.screenLeft
                 args.y -= window.screenTop 
@@ -2036,160 +1592,6 @@ export default function Home({ srcInit, trackInit, complexityData, phraseDefinit
             d3.select(document).on("mousemove", null);
         }
     }, [mouseEnabled, showDefinitions]);
-
-    useEffect(() => {
-        if (fileData) {
-            if (fileData instanceof Array) {
-                let heatmap = h337.create({
-                    container: d3.select("main").node(),
-                    radius: 60,
-                });
-                let svg;
-
-                if (d3.select("#gazeSVG").empty()) {
-                    svg = d3.select("body")
-                    .append("svg")
-                    .attr("width", window.innerWidth)
-                    .attr("height", window.innerHeight)
-                    .attr("id", "gazeSVG")
-                    .style("position", "absolute")
-                    .style("top", 0)
-                    .style("left", 0)
-                    .style("pointer-events", "none");
-                } else {
-                    svg = d3.select("#gazeSVG");
-                }
-                let data = fileData.map(d => ({ x: Math.round(d.x), y: Math.round(d.y), value: d.dt / 1000, index: d.index })).filter(d => d.x && d.y && d.value);
-                
-                for (let i = 0; i < data.length; i++) {
-                    if (data[i].index === 6 || data[i].index === -1) {
-                        data.shift();
-                        i--;
-                    } else {
-                        break;
-                    }
-                }                
-                let rbfchain = new RBFChain(0.01, 0.95, 0.175, 1.0);
-                let rbfchainFrame = new RBFChain(0.01, 0.95, 0.665, 1.0);
-
-                for (let i = 0; i < data.length; i++) {
-                    let input_data = Math.sqrt(Math.pow(data[i].x, 2) + Math.pow(data[i].y, 2));
-                    let probability = rbfchain.add_element(input_data);
-                    let is_fixation = probability >= rbfchain.delta;
-                    let probabilityFrame = rbfchainFrame.add_element(input_data);
-                    let is_fixationFrame = probabilityFrame >= rbfchainFrame.delta;
-
-                    if (!(is_fixationFrame)) {
-                        data.splice(i, 1);
-                        i--;
-                    }
-                }
-                let index = 0;
-                let maxIndex = d3.max(data, d => d.index);
-                let filteredData = data.filter(d => d.index === index);
-                let max = d3.max(filteredData, d => d.value);
-                heatmap.setData({min: 0, max: max, data: filteredData});
-                svg.selectAll("*").remove();
-                let timeoutArr = [];
-
-                document.addEventListener("keydown", (e) => {
-                    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                        timeoutArr.forEach(d => clearTimeout(d));
-                        timeoutArr = [];
-
-                        if (e.key === "ArrowRight") {
-                            index = Math.min(index + 1, maxIndex);
-                            filteredData = data.filter(d => d.index === index);
-                            max = d3.max(filteredData, d => d.value);
-                        } else if (e.key === "ArrowLeft") {
-                            index = Math.max(index - 1, 0);
-                            filteredData = data.filter(d => d.index === index);
-                            max = d3.max(filteredData, d => d.value);
-                        }
-                        let startTime = rawCaptions.current[index].data.start / 1000 + 1;
-                        let player = videojs.getAllPlayers()[0];
-                        player.currentTime(startTime);
-                        player.controls(false);
-                        
-                        let delay = 0;
-                        svg.selectAll("*").remove();
-                        heatmap.setData({min: 0, max: max, data: []});
-
-                        for (let i = 0; i < filteredData.length; i++) {
-                            let tData = filteredData[i];
-                            // let tDelay = delay;
-
-                            let timeout = setTimeout(() => {
-                                svg.append("circle")
-                                .attr("cx", tData.x)
-                                .attr("cy", tData.y)
-                                .attr("r", 10)
-                                .style("fill", "none")
-                                .style("stroke", "#FF5733")
-                                .style("stroke-width", 2);
-
-                                if (i > 0)
-                                    svg.append("line")
-                                    .attr("x1", filteredData[i - 1].x)
-                                    .attr("y1", filteredData[i - 1].y)
-                                    .attr("x2", tData.x)
-                                    .attr("y2", tData.y)
-                                    .style("stroke", "black")
-                                    .style("stroke-width", 2)
-                                    .style("opacity", 0.5);
-
-                                let circles = svg.selectAll("circle");
-
-                                circles.each(function() {
-                                    this.parentNode.appendChild(this);
-                                });
-                                heatmap.addData({ x: tData.x, y: tData.y, value: tData.value });
-                                // player.currentTime(startTime + delay);
-                            }, delay * 1000);
-                            timeoutArr.push(timeout);
-                            delay += filteredData[i].value;
-                        }
-                    }
-
-                });
-            } else if (fileData instanceof Object) {
-                let data = {...fileData};
-
-                wordScores.current = new Map(data.wordScores);
-                frameScores.current = new Map(data.frameScores);
-                definitionScores.current = new Map(data.definitionScores);
-                fileUploadRef.current = true;
-                onQuestions.current = false;
-                questionRecordData.current = [];
-
-                playerEndCallback();
-
-                endCallbackRef.current = () => {
-                    if (questionRecordData.current.length > 0) {
-                        let duplicateNum = 1;
-                        let dir = "./data/backup/(" + duplicateNum + ") questionData.json";
-                        
-                        while (fs.existsSync(dir)) {
-                            duplicateNum++;
-                            dir = "./data/backup/(" + duplicateNum + ") questionData.json";
-                        }
-                        fs.writeFileSync(dir, JSON.stringify(questionRecordData.current, replacer));
-                        questionRecordData.current = [];
-                    }
-                    fileUploadRef.current = false;
-                    endCallbackRef.current = endCallback;
-                }
-            }
-        } else {
-            onQuestions.current = false;
-            fileUploadRef.current = false;
-            setQuestion([]);
-        }
-
-        return () => {
-            d3.select(".heatmap-canvas").remove();
-        }
-    }, [fileData]);
 
     return (
         <>

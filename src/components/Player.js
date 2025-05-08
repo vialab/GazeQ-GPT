@@ -2,8 +2,6 @@ import { useEffect } from "react";
 import * as React from "react";
 import videojs from "video.js";
 import * as d3 from "d3";
-// import "video.js/dist/video-js.css";
-// import "@videojs/themes/dist/fantasy/index.css";
 import "../assets/css/Player.css";
 
 const Component = videojs.getComponent('Component');
@@ -26,7 +24,7 @@ class Gradient extends Component {
 
 videojs.registerComponent('Gradient', Gradient);
 
-export default function Player({clickCallback, timerCallback, textTrackChangeCallback, resizeCallback, endCallback, paused, time, src, track, toggleDefinitions, resetCallback}) {
+export default function Player({clickCallback, timerCallback, textTrackChangeCallback, resizeCallback, endCallback, paused, src, track, toggleDefinitions, resetCallback}) {
     useEffect(() => {
         if (videojs.getAllPlayers().length === 0) {
             let player = videojs("video", {
@@ -109,14 +107,12 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
     useEffect(() => {
         let player = videojs.getAllPlayers()[0];
 
-        let textCallback = function () {     
-            // console.log("texttrackchange");           
+        let textCallback = function () {
             if (d3.select(".vjs-text-track-cue").empty()) {
                 return;
             }
             let text = d3.select(".vjs-text-track-cue").select("div").text();
             d3.select(".vjs-text-track-cue").select("div").text("");
-            // d3.selectAll(".vjs-text-track-cue div span").style("background-color", null);
             let lines = text.split("\n");
 
             for (let i = 0; i < lines.length; i++) {
@@ -181,9 +177,6 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
             if (paused) {
                 player.pause();
             } else {
-                // if (time >= 0) {
-                //     player.currentTime(time);
-                // }
                 player.play();
             }
         }
@@ -199,7 +192,6 @@ export default function Player({clickCallback, timerCallback, textTrackChangeCal
             if (!src.includes("#t=")) {
                 player.trigger("reset");
             }
-            // player.currentTime(240)
         }
     }, [src, track]);
 

@@ -53,7 +53,7 @@ function createWindow() {
     });
     // mainWindow.removeMenu();
     mainWindow.maximize();
-    mainWindow.setTitle("GazeGPT");
+    mainWindow.setTitle("GazeQ-GPT");
 
     // and load the index.html of the app.
     let indexPath;

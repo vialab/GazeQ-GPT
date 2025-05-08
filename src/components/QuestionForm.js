@@ -37,30 +37,23 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 .style("color", "white")
                 .style("pointer-events", "none");
                 
-                // if (submittedAnswers.current.size === answer[index].length) {
-                    d3.select(".questionForm")
-                    .selectAll(".rating")
-                    .transition()
-                    .style("opacity", "1")
-                    .style("pointer-events", "all");
+                d3.select(".questionForm")
+                .selectAll(".rating")
+                .transition()
+                .style("opacity", "1")
+                .style("pointer-events", "all");
 
-                    d3.selectAll([refA.current, refB.current, refC.current, refD.current])
-                    .style("pointer-events", "none");
+                d3.selectAll([refA.current, refB.current, refC.current, refD.current])
+                .style("pointer-events", "none");
 
-                    correct = true;
+                correct = true;
 
-                    d3.selectAll(".top")
-                    .transition()
-                    .style("opacity", "1");
-                    
-                    if (explanation[index])
-                        setDisplayExplanation(explanation[index][choice]);
-
-                // } else {
-                //     d3.select(".additional")
-                //     .transition()
-                //     .style("opacity", "1")
-                // }
+                d3.selectAll(".top")
+                .transition()
+                .style("opacity", "1");
+                
+                if (explanation[index])
+                    setDisplayExplanation(explanation[index][choice]);
             } else {
                 d3.select(ref.current)
                 .style("background-color", "rgb(239, 35, 60, 0.5)")
@@ -230,7 +223,6 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                 startTimes.push(parseQuestion.startTime);
                 endTimes.push(parseQuestion.endTime);
                 explanation.push(parseQuestion.explanation);
-                // subtitles.push(parseQuestion.subtitle.replace(/(?:\r\n|\r|\n)/g, ' '));
             }
         } catch (e) {
             console.log(e);
@@ -294,9 +286,6 @@ export default function QuestionForm({ questionData, questionCallback, endCallba
                         </div>
                     </div>
                 </div>
-                {/* <div className="additional">
-                    More than one answer is correct
-                </div> */}
 
                 <div className="rating">
                     <div>

@@ -15,8 +15,8 @@ import { ToastContainer, toast, Flip } from 'react-toastify';
 import * as complexityData1 from "../assets/processedSubtitles/Complexity_1.json";
 import * as complexityData2 from "../assets/processedSubtitles/Complexity_2.json";
 
-import * as phraseDefinitions1 from "../assets/processedSubtitles/t7.json";
-import * as phraseDefinitions2 from "../assets/processedSubtitles/t8.json";
+import * as phraseDefinitions1 from "../assets/processedSubtitles/Definitions_1.json";
+import * as phraseDefinitions2 from "../assets/processedSubtitles/Definitions_2.json";
 
 import * as questionData1 from "../assets/processedSubtitles/Questions_1.json";
 import * as questionData2 from "../assets/processedSubtitles/Questions_2.json";
@@ -27,7 +27,7 @@ const video1 = {
     complexityData: complexityData1,
     phraseDefinitions: phraseDefinitions1,
     questions: questionData1,
-    fileID: "file-hHYZ16HmGr3WrFnTyXOyLhE3",
+    fileID: process.env.FILE_1_ID,
 }
 
 const video2 = {
@@ -36,7 +36,7 @@ const video2 = {
     complexityData: complexityData2,
     phraseDefinitions: phraseDefinitions2,
     questions: questionData2,
-    fileID: "file-li5xzzxRzYoResoXjvSQ1rd9",
+    fileID: process.env.FILE_2_ID,
 }
 
 let videoList = [
@@ -48,7 +48,7 @@ function replacer(_, value) {
     if (value instanceof Map) {
         return {
             dataType: "Map",
-            value: Array.from(value.entries()), // or with spread: value: [...value]
+            value: Array.from(value.entries()),
         };
     } else {
         return value;
@@ -169,7 +169,6 @@ export default function App() {
         setVideoOrder(0);
         setIfLLmFirst(true);
         setIfShowDefinitions(true);
-        // setModalContentIndex(0);
         setEndVideoCallback(() => videoCallback);
         setFileData(null);
 
@@ -231,7 +230,6 @@ export default function App() {
                 });
 
                 iframe.addEventListener('error', (e) => {
-                    console.log(e);
                     revealContent();
                 });
             } else {
@@ -552,12 +550,6 @@ export default function App() {
                             <div className="checklistItem" id="showDefinition">
                                 <div className="check"></div> Read one of the definitions
                             </div>
-                            {/* <div className="checklistItem" id="moreInfo">
-                                <div className="check"></div> Open the "more info" section
-                            </div>
-                            <div className="checklistItem" id="prev">
-                                <div className="check"></div> Close the "more info" section
-                            </div> */}
                         </div>
                     </>,
                     "prev": true,
@@ -980,149 +972,29 @@ export default function App() {
                     });
                 }
                 bottomContent = createBottomContent(cancelHandler, settingHandler);
-            } else {
-                let fileChangeHandler = () => {
-                    let file = d3.select("#file").node().files[0];
-
-                    if (file)
-                        d3.select("#fileName").text(file.name);
-                    else
-                        d3.select("#fileName").text("No file selected");
-                }
-
-                settingContent = <>
-                    <h3>Settings</h3>
-                    <div style={{ width: "min-content", display: "flex", gap: "20px", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                        <div className='settingsContainer'> 
-                            <p>Video Settings</p>
-                            <div className='settings'>
-                                <div>
-                                    <input type="radio" id="0" name="video" value="0" defaultChecked={src === video1.video}/>
-                                    <label htmlFor="0">
-                                        <div className="Video 1">Video 1</div>
-                                    </label>
-                                </div>
-                                <div>
-                                    <input type="radio" id="1" name="video" value="1" defaultChecked={src === video2.video}/>
-                                    <label htmlFor="1">
-                                        <div className="Video 2">Video 2</div>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className='settingsContainer'> 
-                            <p>File Upload</p>
-                            <div className='settings' style={{ display: "flex", width: "500px", justifyContent: "center", alignItems: "center" }}>
-                                <div style={{ gap: "10px", flexDirection: "column", marginTop: "10px" }}>
-                                    <input type="file" id="file" name="file" accept=".json, .csv" style={{ display: "none" }} onChange={fileChangeHandler} required="required" />
-                                    <label htmlFor="file">Upload File</label>
-                                    <p id="fileName">No file selected</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </>
-
-                let fileHandler = () => {
-                    let file = d3.select("#file").node().files[0];
-
-                    if (file) {
-                        let reader = new FileReader();
-
-                        function reviver(key, value) {
-                            if (typeof value === "object" && value !== null) {
-                                if (value.dataType === "Map") {
-                                    return new Map(value.value);
-                                }
-                            }
-                            return value;
-                        }
-
-                        reader.onload = (e) => {
-                            // Check if file is CSV or JSON
-
-                            if (file.name.endsWith(".csv")) {             
-                                //    Skip first two lines
-                                let lines = e.target.result.split("\n");
-
-                                let data = [];
-
-                                lines.forEach((line) => {
-                                    let row = line.split(",");
-
-                                    if (row.length === 7) {
-                                        data.push({
-                                            "x": Number(row[0]),
-                                            "y": Number(row[1]),
-                                            "dt": Number(row[2]),
-                                            "index": Number(row[3]),
-                                            "headDistance": Number(row[4]),
-                                            "radius": Number(row[5]),
-                                            "timestamp": Number(row[6]),
-                                        });
-                                    } else {
-                                        data.push({
-                                            "message": row,
-                                        });
-                                    }
-                                });
-
-                                setFileData(data);
-                            } else {
-                                setFileData(JSON.parse(e.target.result, reviver));
-
-                            }                            
-                        }
-                        reader.readAsText(file);
-                    }
-                    let videoSrc = d3.select("input[name='video']:checked").property("value");
-                    setVideoOrder(videoSrc === "1" ? 1 : 0);
-
-                    d3.select(".contentContainer")
-                    .transition()
-                    .duration(500)
-                    .style("opacity", "0")
-                    .on("start", () => {
-                        onSettings.current = false;
-                        setModalIsOpen(false);
-                    });
-                }
-
-                let cancelHandler = () => {
-                    d3.select(".contentContainer")
-                    .transition()
-                    .duration(500)
-                    .style("opacity", "0")
-                    .on("start", () => {
-                        onSettings.current = false;
-                        setModalIsOpen(false);
-                    });
-                }
-                bottomContent = createBottomContent(cancelHandler, fileHandler);
-            }
             
-            d3.select(document).on("keydown", (e) => {
-                if (e.key === "y" && e.ctrlKey && !onSettings.current) {
-                    setModalIsOpen(true);
-                    
-                    if (d3.select(".contentContainer").node()) {
-                        d3.select(".contentContainer")
-                        .transition()
-                        .duration(500)
-                        .style("opacity", "0")
-                        .on("end", () => {
+                d3.select(document).on("keydown", (e) => {
+                    if (e.key === "y" && e.ctrlKey && !onSettings.current) {
+                        setModalIsOpen(true);
+                        
+                        if (d3.select(".contentContainer").node()) {
+                            d3.select(".contentContainer")
+                            .transition()
+                            .duration(500)
+                            .style("opacity", "0")
+                            .on("end", () => {
+                                onSettings.current = true;
+                                setModalContent(settingContent);
+                                setModalBottomContent(bottomContent);
+                            });
+                        } else {
                             onSettings.current = true;
                             setModalContent(settingContent);
                             setModalBottomContent(bottomContent);
-                        });
-                    } else {
-                        onSettings.current = true;
-                        setModalContent(settingContent);
-                        setModalBottomContent(bottomContent);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
 
         return () => {

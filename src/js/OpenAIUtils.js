@@ -5,10 +5,6 @@ import OpenAI from "openai";
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY, dangerouslyAllowBrowser: true });
 
 export async function getComplexity(word) {
-    return new Promise((resolve, reject) => {
-        return resolve(0.5);
-    })
-
     try {
         const thread = await openai.beta.threads.create();
 
@@ -16,13 +12,11 @@ export async function getComplexity(word) {
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Make sure to find all sentences that uses the word before giving an answer.`});
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `Let's work this out in a step by step way to be sure we have the right answer.`});
     
-        const run = await openai.beta.threads.runs.createAndPoll(thread.id, { 
+        await openai.beta.threads.runs.createAndPoll(thread.id, { 
             assistant_id: process.env.COMPLEXITY_ASSISTANT_ID,
         });
-
-        // await retrieveRun(thread.id, run.id);
     
-        const JSONRun = await openai.beta.threads.runs.createAndPoll(thread.id, {
+        await openai.beta.threads.runs.createAndPoll(thread.id, {
             assistant_id: process.env.COMPLEXITY_ASSISTANT_ID,
             instructions: `Output your answer as a JSON object like so:
 {
@@ -30,9 +24,7 @@ export async function getComplexity(word) {
 }`
         });
 
-        // await retrieveRun(thread.id, JSONRun.id);
         const m = await openai.beta.threads.messages.list(thread.id);
-        console.log(m);
     
         if (m.data[0].content[0].text.value) {
             let regex = /{(\s|.)*}/g;
@@ -50,56 +42,15 @@ export async function getComplexity(word) {
     } catch (error) {
         console.log("error", error);
 
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve(getComplexity(word));
-            }, 10000);
-        });
+        // return new Promise((resolve, reject) => {
+        //     setTimeout(() => {
+        //         resolve(getComplexity(word));
+        //     }, 10000);
+        // });
     }
 }
-// Create an advanced multiple-choice question about the video given with four choices. Give the correct answer at the end of the question.
 
-
-
-// Here are the criteria for the question:
-
-
-
-// 1. All choices should explain a concept or an idea in a 15-20 words. 
-
-// 2. All incorrect choices must be from the video and related to the correct choice. 
-
-// 3. All choices should have a similar number of words.
-
-// Let's work this out in a step by step way to be sure we have the right question that fits the criteria that you have been given.
-
-// Explain in one sentence why option "A" is incorrect. Do not use words in any of the choices.
-// Explain in one sentence why option "B" is incorrect
-// Explain in one sentence why option "C" is incorrect
-// Explain in one sentence why option "D" is incorrect
-
-export async function generateQuestion(text, word, initRequestOptions = "", file = "") {
-    // let rand = Math.random() * -1;
-
-    // return new Promise((resolve, reject) => {
-    //     resolve(JSON.parse(
-    //         `{
-    //             "question": "What is one way we study matter?",
-    //             "choiceA": "Through biology",
-    //             "choiceB": "Through psychology",
-    //             "choiceC": "Through chemistry",
-    //             "choiceD": "Through physics",
-    //             "explanation": {
-    //                 "A": "Biology is the study of living things, not matter.",
-    //                 "B": "Psychology is the study of the mind, not matter.",
-    //                 "C": "Correct! Chemistry is the study of matter.",
-    //                 "D": "Physics is the study of energy and matter, not just matter."
-    //             },
-    //             "answer": "A"
-    //         }`
-    //     ));
-    // });
-    
+export async function generateQuestion(text, word, initRequestOptions = "", file = "") {    
     try {
         const thread = await openai.beta.threads.create();
     
@@ -128,7 +79,7 @@ Here are the criteria for the question:
             console.log("Checking vector store status...", vectorStore.status);
         }
 
-        const run = await openai.beta.threads.runs.createAndPoll(
+        await openai.beta.threads.runs.createAndPoll(
             thread.id,
             { 
                 assistant_id: process.env.QUESTION_ASSISTANT_ID,
@@ -136,9 +87,7 @@ Here are the criteria for the question:
             }
         );
     
-        // await retrieveRun(thread.id, run.id);
-    
-        const JSONRun = await openai.beta.threads.runs.createAndPoll(thread.id, { 
+        await openai.beta.threads.runs.createAndPoll(thread.id, { 
             assistant_id: process.env.QUESTION_ASSISTANT_ID,
             instructions: `Output your answer as a JSON object like so:
 {
@@ -150,13 +99,8 @@ Here are the criteria for the question:
     "answer": [enter answer (A, B, C, or D)]
 }`
         });
-    
-        // await retrieveRun(thread.id, JSONRun.id);
+
         const m = await openai.beta.threads.messages.list(thread.id);
-    
-        console.log(m);
-        console.log(m.data[0].content[0].text.value);
-        console.log(word)
 
         if (m.data[0].content[0].text.value) {
             let content = m.data[0].content[0].text.value;
@@ -165,7 +109,6 @@ Here are the criteria for the question:
     
             if (!match && initRequestOptions === "") {
                 const run = await openai.beta.threads.runs.createAndPoll(thread.id);
-                // await retrieveRun(thread.id, run.id);
                 const m = await openai.beta.threads.messages.list(thread.id);
 
                 content = m.data[0].content[0].text.value;
@@ -179,19 +122,17 @@ Here are the criteria for the question:
                 throw new Error("One of the choices is empty.");
             }
             
-            // for (let answer of answers) {
-                if (answer === "A" || answer.toLowerCase() === questionData.choiceA.toLowerCase()) {
-                    correctAnswers.push("A");
-                } else if (answer === "B" || answer.toLowerCase() === questionData.choiceB.toLowerCase()) {
-                    correctAnswers.push("B");
-                } else if (answer === "C" || answer.toLowerCase() === questionData.choiceC.toLowerCase()) {
-                    correctAnswers.push("C");
-                } else if (answer === "D" || answer.toLowerCase() === questionData.choiceD.toLowerCase()) {
-                    correctAnswers.push("D");
-                } else {
-                    throw new Error("No correct answer found.");
-                }
-            // }
+            if (answer === "A" || answer.toLowerCase() === questionData.choiceA.toLowerCase()) {
+                correctAnswers.push("A");
+            } else if (answer === "B" || answer.toLowerCase() === questionData.choiceB.toLowerCase()) {
+                correctAnswers.push("B");
+            } else if (answer === "C" || answer.toLowerCase() === questionData.choiceC.toLowerCase()) {
+                correctAnswers.push("C");
+            } else if (answer === "D" || answer.toLowerCase() === questionData.choiceD.toLowerCase()) {
+                correctAnswers.push("D");
+            } else {
+                throw new Error("No correct answer found.");
+            }
             let incorrectAnswers = ["A", "B", "C", "D"].filter(x => !correctAnswers.includes(x));
             let explanationData = {};
             let settleFetch = [];
@@ -200,7 +141,6 @@ Here are the criteria for the question:
                 try {
 
                     const t = await openai.beta.threads.create();
-                    // Readd the question and choices
                     await openai.beta.threads.messages.create(t.id, { role: "user", content: `Question: ${questionData.question}\n\nA) ${questionData.choiceA}\nB) ${questionData.choiceB}\nC) ${questionData.choiceC}\nD) ${questionData.choiceD}\n\nAnswer: ${questionData.answer}`});
                     await openai.beta.threads.messages.create(t.id, { role: "user", content: `Explain in one sentence why option "${answer}" is ${ifCorrect ? "correct" : "incorrect"}. Do not use words in any of the choices. Output the explanation.`});
     
@@ -209,9 +149,7 @@ Here are the criteria for the question:
                         tool_choice: { type: "file_search" },
                     });
     
-                    // await retrieveRun(t.id, run.id);
                     const explainData = await openai.beta.threads.messages.list(t.id);
-                    console.log(explainData)
         
                     if (explainData.data[0].content[0].text.value && run.status === "completed") {
                         explanationData[answer] = explainData.data[0].content[0].text.value.replace(/【(\s|.)*†source】/g, "");
@@ -231,13 +169,10 @@ Here are the criteria for the question:
     
             for (let answer of correctAnswers) {
                 settleFetch.push(fetchExplanation(answer, true));
-                // await fetchExplanation(answer, true)
             }
     
             for (let answer of incorrectAnswers) {
-                // await fetchExplanation(answer, false)
                 settleFetch.push(fetchExplanation(answer, false));
-                // settleFetch.push(() => "");
             }
             await Promise.all(settleFetch);
             
@@ -257,40 +192,17 @@ Here are the criteria for the question:
     }
 }
 
-export async function getPhrase(term1, term2) {    
-    let rand = Math.random() * -1;
-
-    return new Promise((resolve, reject) => {
-        resolve(JSON.parse(`{
-            "definitionTerm1": ${rand < 0.5 ? `{
-                "term": "${term1}",
-                "definition": "${term1} is a ${term1}."
-            }` : `{}`},
-            "definitionTerm2": ${rand < 0.5 ? `{
-                "term": "${term2}",
-                "definition": "${term2} is a ${term2}."
-            }` : `{}`},
-            "definitionPhrase": ${rand < 0.5 ? `{
-                "isPhrase": true,
-                "phrase": "${term1} ${term2}",
-                "definition": "${term1} is a ${term1}. ${term2} is a ${term2}."
-            }` : `{}`},
-            "example": [${rand < 0.5 ? `"${term1} ${term2} is a ${term1} ${term2}."` : ""}]
-        }`));
-    });
-
+export async function getPhrase(term1, term2) {
     try {
         const thread = await openai.beta.threads.create();
 
         await openai.beta.threads.messages.create(thread.id, { role: "user", content: `"${term1} ${term2}" is a phrase\n\nA) True\nB) False`});
     
-        const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
+        await openai.beta.threads.runs.createAndPoll(thread.id, {
             assistant_id: process.env.PHRASE_ASSISTANT_ID,
         });
-
-        // await retrieveRun(thread.id, run.id);
     
-        const JSONRun = await openai.beta.threads.runs.createAndPoll(thread.id, {
+        await openai.beta.threads.runs.createAndPoll(thread.id, {
             assistant_id: process.env.PHRASE_ASSISTANT_ID,
             response_format: {type: "json_object"},
             additional_instructions: `Output your answer as a JSON object like so:
@@ -311,10 +223,7 @@ export async function getPhrase(term1, term2) {
     "example": [enter example]
 }`});
 
-        // await retrieveRun(thread.id, JSONRun.id);
         const m = await openai.beta.threads.messages.list(thread.id);
-        console.log(m);
-        console.log(m.data[0].content[0].text.value);
 
         if (m.data[0].content[0].text.value) {
             let regex = /{(\s|.)*}/g;
@@ -340,11 +249,11 @@ export async function getPhrase(term1, term2) {
     } catch (error) {
         console.log("error", error);
 
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve(getPhrase(term1, term2));
-            }, 10000);
-        });
+        // return new Promise((resolve, reject) => {
+        //     setTimeout(() => {
+        //         resolve(getPhrase(term1, term2));
+        //     }, 10000);
+        // });
     }
 }
 
@@ -374,18 +283,13 @@ export async function parsePhrase(text) {
                 
                 if (phraseData) {
                     let data = phraseData;
-
-                    // let mapExample = data.example.map(example => typeof example === "string" && example.toLowerCase().includes(data.definitionPhrase.phrase.toLowerCase())).includes(true);
                     
                     if (
                         Object.keys(data.definitionPhrase).length > 0 && 
                         data.definitionPhrase.isPhrase &&
                         Object.keys(data.definitionTerm1).length > 0 && 
                         Object.keys(data.definitionTerm2).length > 0 && 
-                        data.definitionPhrase.phrase.trim() !== "" && 
-                        // mapExample &&
-                        // data.example.length > 0 &&
-                        // data.definitionTerm1.term.toLowerCase() + " " + data.definitionTerm2.term.toLowerCase() === data.definitionPhrase.phrase.toLowerCase() &&
+                        data.definitionPhrase.phrase.trim() !== "" &&
                         (
                             (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionPhrase.phrase.toLowerCase() ||
                             (phrase[0] + " " + phrase[1]).toLowerCase() === data.definitionTerm1.term.toLowerCase() ||
@@ -394,11 +298,8 @@ export async function parsePhrase(text) {
                     ) {
                         phrase = [phrase[0] + " " + phrase[1]];
                         phrases.set(phrase[0].toLowerCase(), data);
-
-                        // i += j - i;
                     } else {
                         console.log("Discarded", phrase[0] + " " + phrase[1]);
-                        // i += j - i;
                         break;
                     }
                 }
