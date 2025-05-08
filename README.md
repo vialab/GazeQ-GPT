@@ -14,7 +14,7 @@ npm install
 - Tobii Eye Tracker 5
 
 ### OpenAI Prerequisites
-The current version uses the Assistant API from OpenAI. You will need to create the Assistant yourself or change it to use the new Responses API.
+The current version uses the Assistant API from OpenAI. You must create the Assistant yourself or change it to use the new Responses API.
 
 <details>
 <summary>System Prompt for Question Generator Assistant</summary>
@@ -22,9 +22,9 @@ The current version uses the Assistant API from OpenAI. You will need to create 
 <i>You are a professor making a multiple-choice test about a video. Describe your steps first.</i>
 </details>
 
-You also need to attach the vector store to the assistant and upload the subtitle file to the vector stroe. The subtitle file is provided in `src/assets/videos/*.txt`.  The others IDs are optional.
+You also need to attach a vector store to the assistant and upload the subtitle file to the vector store. The subtitle file is provided in `src/assets/videos/*.txt`.
 
-Once eveything is setup, in `.env` please provide the `QUESTION_ASSISTANT_ID` and `FILE_1_ID` from OpenAI. All other IDs are optional to run one video.
+Once everything is set up, in `.env`, please provide the `QUESTION_ASSISTANT_ID` and `FILE_1_ID` from OpenAI. All other IDs are optional to run one video.
 
 ### How to Run
 
