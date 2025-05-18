@@ -38,3 +38,11 @@ Once everything is set up, in `.env`, please provide the `QUESTION_ASSISTANT_ID`
 npm start
 ```
 *Note: this will start an eye tracker server and the application*
+
+### Troubleshooting
+
+#### Calibrate the Tobii 5
+You need to install [Tobii Experience](https://help.tobii.com/hc/en-us/articles/360009929118-Get-the-Tobii-Experience-app) to use the eyetracker.
+
+#### Eye tracker server issues
+If the `TobiiServer.exe` file gives you an error about `Tobii.EyeX.Client.dll` being missing, the issue might be with your Visual C++ redistributable. Install the latest versions of BOTH x86 and x64, then try again. Also, download the 2012 versions (both x86 and x64), linked [here](https://learn.microsoft.com/en-GB/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2012-vc-110-update-4): 
